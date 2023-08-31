@@ -25,7 +25,7 @@ export function UserAuthForm({className, ...props}: UserAuthFormProps) {
                 password: "223232"
             }
             await AuthenticationService.loginWithEmail(payload)
-            // navigate("/app")
+            navigate("/app")
         }
         catch (error){
             console.error("Hit error")
