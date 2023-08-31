@@ -1,0 +1,29 @@
+import axios from "axios";
+const axiosInstance = axios.create({
+    baseURL: `${import.meta.env["VITE_AUTH_BASE_URL"]}/v1`,
+    timeout: 1000,
+    withCredentials:true
+});
+
+const PostRequestWrapper = async(url:string, payload:unknown)=>{
+    try {
+        const axiosResponse = await axiosInstance.post(url,payload);
+        if(axiosResponse.data.success){
+            return axiosResponse.data;
+        }
+    }
+    catch (error:unknown){
+        ResponseErrorHandler(error)
+    }
+}
+
+const ResponseErrorHandler = (error: unknown)=>{
+    if(axios.isAxiosError(error)){
+        throw new Error("Axios error")
+    }
+    else{
+        throw new Error("Unknown error")
+    }
+}
+
+export default PostRequestWrapper;
