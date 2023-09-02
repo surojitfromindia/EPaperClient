@@ -7,38 +7,51 @@ import {Button} from "@/components/ui/button.tsx";
 import {Label} from "@radix-ui/react-label";
 import {Input} from "@/components/ui/input.tsx";
 import {useNavigate} from "react-router-dom";
-import {useCallback} from "react";
-import AuthenticationService from "@/API/Authentication/v1/loginService.ts";
+import AuthenticationService, {LoginWithEmailPayload} from "@/API/Authentication/v1/loginService.ts";
+import {FormEvent} from "react";
 
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
+interface CustomElements extends HTMLFormControlsCollection   {
+    email: HTMLInputElement;
+    password: HTMLInputElement;
+}
+
+interface LoginForm extends HTMLFormElement {
+    readonly elements: CustomElements;
+}
+
+
 export function UserAuthForm({className, ...props}: UserAuthFormProps) {
+    // library states
+    const navigate = useNavigate();
+
+    // local states
     const [isLoading, setIsLoading] = React.useState<boolean>(false)
 
-    const navigate = useNavigate();
-    const logIn =useCallback(async()=>{
+
+    async function onSubmit(event: FormEvent<LoginForm>) {
+        event.preventDefault()
+        setIsLoading(true)
+
+        const target = event.currentTarget.elements;
+        const loginPayload: LoginWithEmailPayload = {
+            email: target.email.value,
+            password : target.password.value
+        }
+
         try{
-            const payload ={
-                email : "suroj",
-                password: "223232"
-            }
-            await AuthenticationService.loginWithEmail(payload)
+            await AuthenticationService.loginWithEmail(loginPayload)
             navigate("/app")
         }
         catch (error){
             console.error("Hit error")
         }
-    },[navigate]);
-
-    async function onSubmit(event: React.SyntheticEvent) {
-        event.preventDefault()
-        setIsLoading(true)
-
-        setTimeout(() => {
+        finally {
             setIsLoading(false)
-        }, 3000)
+        }
     }
 
     return (<div className={cn("grid gap-6", className)} {...props}>
@@ -69,9 +82,10 @@ export function UserAuthForm({className, ...props}: UserAuthFormProps) {
                         autoCapitalize="none"
                         autoCorrect="off"
                         disabled={isLoading}
+                        autoComplete={"current-password"}
                     />
                 </div>
-                <Button onClick={logIn} disabled={isLoading}>
+                <Button type={"submit"} disabled={isLoading}>
                     Sign In with Email
                 </Button>
             </div>

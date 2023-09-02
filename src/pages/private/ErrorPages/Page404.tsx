@@ -1,9 +1,8 @@
-import {Link, useRouteError} from "react-router-dom";
+import {Link} from "react-router-dom";
 import {Button} from "@/components/ui/button.tsx";
 
 export default function  Page404(){
-    const error = useRouteError();
-    console.error(error);
+    // const error = useRouteError();
 
     return (
         <div id="error-page">

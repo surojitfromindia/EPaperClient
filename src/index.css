@@ -73,4 +73,19 @@
   body {
     @apply bg-background text-foreground;
   }
+  .display-node-name{
+    @apply  relative  border-l-[1px] border-b-[1px]
+    bottom-4 right-2 pt-[22px]  pb-[8px] border-gray-700
+  }
+
+  .intermediary-nodes {
+    @apply relative
+    w-5
+    right-2
+    bottom-[13px]
+    pt-[31px]
+    pb-3
+    border-l-[1px] border-gray-700
+  }
 }
+

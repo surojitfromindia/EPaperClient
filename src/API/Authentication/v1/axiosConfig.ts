@@ -7,6 +7,7 @@ const axiosInstance = axios.create({
 
 const PostRequestWrapper = async(url:string, payload:unknown)=>{
     try {
+        console.log("payload===>", payload)
         const axiosResponse = await axiosInstance.post(url,payload);
         if(axiosResponse.data.success){
             return axiosResponse.data;
@@ -22,6 +23,7 @@ const ResponseErrorHandler = (error: unknown)=>{
         throw new Error("Axios error")
     }
     else{
+        console.log(error)
         throw new Error("Unknown error")
     }
 }

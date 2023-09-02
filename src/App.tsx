@@ -4,6 +4,7 @@ import {default as PubicErrorPage} from "@/pages/public/ErrorPages/Page404.tsx";
 import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
 import EPaper from "@/components/app/EPaper.tsx";
 import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
+import ChartOfAccountPage from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
 
 
 function App() {
@@ -22,6 +23,11 @@ function App() {
                     index:true,
                     path: "dashboard",
                     element: <Dashboard/>
+                },
+                {
+                    index:true,
+                    path: "chart_of_accounts",
+                    element: <ChartOfAccountPage/>
                 },
                 {
                     path:"*",
