@@ -1,6 +1,5 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
-import * as React from "react";
-import {useMemo} from "react";
+import React, {useMemo} from "react";
 import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount.Service.ts";
 import {FolderIcon} from "lucide-react";
 
@@ -11,52 +10,40 @@ interface ChartOfAccountListingProps extends React.HTMLAttributes<HTMLDivElement
 }
 
 export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
-    const GiveSpace = (account_depth: number, account_bar: number[], has_children:boolean) => {
-
+    const GiveSpace = (account_depth: number, account_bar: number[], has_children: boolean) => {
         const SShape = []
-
         const depth = account_depth - DEPTH_OFFSET;
         if (account_bar.length > 1) {
-
+            const IShape = <span className={"intermediary-nodes"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
+            const SpaceBetweenShape = <span> &nbsp;&nbsp;&nbsp;&nbsp; </span>
+            const SpaceBetweenShapeInInter = <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
             let LShape = <span className={"display-node-name"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
-            if(has_children){
+            if (has_children) {
                 // if it has some children, we add more space around
                 LShape = <span className={"display-node-name"}> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>;
             }
-
-
-
-            const IShape = <span className={"intermediary-nodes"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
-            const SpaceBetweenShape = <span> &nbsp;&nbsp;&nbsp;&nbsp; </span>
-            const SpaceBetweenShapeInInter =  <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
-
-            for (let s = 1; s < depth ; s += 1) {
+            for (let s = 1; s < depth; s += 1) {
                 // if the number is positive, we add '|' shape
                 //if not a string of spaces, number of space after "|" is smaller than regular
                 if (account_bar[s] > 0) {
                     SShape.push(IShape)
                     SShape.push(SpaceBetweenShape)
-                }
-                else{
+                } else {
                     SShape.push(SpaceBetweenShapeInInter)
                 }
 
             }
             SShape.push(LShape)
-
         }
-
-
         let iconBasic = "h-4 w-4 mr-1 mb-0.5 inline -ml-4"
-        if(has_children){
+        if (has_children) {
             // prepare the folder icon, custom margin
-            if(account_bar.length!==1){
-                iconBasic+= " -ml-[4px]"
+            if (account_bar.length !== 1) {
+                iconBasic += " -ml-[4px]"
             }
             SShape.push(<FolderIcon className={iconBasic}/>)
         }
-
-        return <>{SShape}</>
+        return React.createElement("span", {}, React.Children.map(SShape,children=><React.Fragment>{children}</React.Fragment>));
     }
 
     const accountsWithTreeFormat = useMemo(() => {
@@ -83,16 +70,9 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
                         {accountsWithTreeFormat.map((account) => (<TableRow className={""} key={account.account_id}>
                             <TableCell>
                                 <>
-                                        <span className={"font-medium text-center "}>
-
-                                        {GiveSpace(account.depth, account.bar, account.no_of_children>0)}
-                                            {/*{account.no_of_children > 0 &&*/}
-                                            {/*    <FolderIcon className={"h-4 w-4 mr-1 mb-0.5 inline -ml-4"}/>}*/}
-                                            <span className={" whitespace-nowrap"}>
-                                                {account.name}
-                                        </span>
-
-
+                                    <span className={"font-medium text-center "}>
+                                        {GiveSpace(account.depth, account.bar, account.no_of_children > 0)}
+                                        <span className={" whitespace-nowrap"}>{account.name}</span>
                                     </span>
                                 </>
                             </TableCell>
@@ -132,19 +112,16 @@ const generateTreeLine = (flatArray: ChartOfAccount[], depthOffSet = DEPTH_OFFSE
             // after updating the last element
             if (el.no_of_children > 0) {
                 // either update an existing position or push
-                if(pointerDepth+1>=aux.length){
-                aux.push(el.no_of_children)
+                if (pointerDepth + 1 >= aux.length) {
+                    aux.push(el.no_of_children)
 
-                }
-                else{
-                    aux[pointerDepth+1]+=el.no_of_children;
+                } else {
+                    aux[pointerDepth + 1] += el.no_of_children;
                 }
             }
 
 
         }
     }
-
-    console.log(newArray.map(acc => ({name: acc.name, bar: acc.bar})))
     return newArray;
 };
