@@ -15,10 +15,12 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
 
         const SShape = []
 
+        const depth = account_depth - DEPTH_OFFSET;
         if (account_bar.length > 1) {
 
             let LShape = <span className={"display-node-name"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
             if(has_children){
+                // if it has some children, we add more space around
                 LShape = <span className={"display-node-name"}> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>;
             }
 
@@ -26,14 +28,19 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
 
             const IShape = <span className={"intermediary-nodes"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
             const SpaceBetweenShape = <span> &nbsp;&nbsp;&nbsp;&nbsp; </span>
+            const SpaceBetweenShapeInInter =  <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
 
-            for (let s = 1; s < account_depth - DEPTH_OFFSET; s += 1) {
+            for (let s = 1; s < depth ; s += 1) {
                 // if the number is positive, we add '|' shape
-                //if not a string of spaces
+                //if not a string of spaces, number of space after "|" is smaller than regular
                 if (account_bar[s] > 0) {
                     SShape.push(IShape)
                     SShape.push(SpaceBetweenShape)
                 }
+                else{
+                    SShape.push(SpaceBetweenShapeInInter)
+                }
+
             }
             SShape.push(LShape)
 
@@ -124,9 +131,20 @@ const generateTreeLine = (flatArray: ChartOfAccount[], depthOffSet = DEPTH_OFFSE
             // if it has children more than zero, then push the count
             // after updating the last element
             if (el.no_of_children > 0) {
+                // either update an existing position or push
+                if(pointerDepth+1>=aux.length){
                 aux.push(el.no_of_children)
+
+                }
+                else{
+                    aux[pointerDepth+1]+=el.no_of_children;
+                }
             }
+
+
         }
     }
+
+    console.log(newArray.map(acc => ({name: acc.name, bar: acc.bar})))
     return newArray;
 };
