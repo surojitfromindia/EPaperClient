@@ -2,7 +2,6 @@ import axios, {AxiosResponse} from "axios";
 const baseURL = `${import.meta.env["VITE_API_BASE_URL"]}/v1`;
 const axiosInstance = axios.create({
     baseURL,
-    timeout: 1000,
     withCredentials: true
 });
 
@@ -30,7 +29,7 @@ class APIAxiosConfig {
         this.#commonQuery = [
             {
                 key: "organization_id",
-                value: 65
+                value: 2
             }
         ]
     }
