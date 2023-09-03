@@ -9,7 +9,7 @@ const PostRequestWrapper = async(url:string, payload:unknown)=>{
         console.log("payload===>", payload)
         const axiosResponse = await axiosInstance.post(url,payload);
         if(axiosResponse.data.success){
-            return axiosResponse.data;
+            return axiosResponse.data.data;
         }
     }
     catch (error:unknown){

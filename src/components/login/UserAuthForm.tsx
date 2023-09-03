@@ -43,7 +43,8 @@ export function UserAuthForm({className, ...props}: UserAuthFormProps) {
         }
 
         try{
-            await AuthenticationService.loginWithEmail(loginPayload)
+            const {token} = await AuthenticationService.loginWithEmail(loginPayload)
+            localStorage.setItem("_ePaperC",token)
             navigate("/app")
         }
         catch (error){

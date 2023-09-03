@@ -78,7 +78,6 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
                             </TableCell>
                             <TableCell>{account.code}</TableCell>
                             <TableCell>{account.account_parent_name}</TableCell>
-                            <TableCell>{account.bar}</TableCell>
                         </TableRow>))}
 
                     </TableBody>
