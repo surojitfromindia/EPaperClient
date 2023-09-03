@@ -20,12 +20,15 @@ function App() {
             errorElement: <Page404/>,
             children: [
                 {
+                    path: "",
+                    element: <Dashboard/>
+                },
+                {
                     index:true,
                     path: "dashboard",
                     element: <Dashboard/>
                 },
                 {
-                    index:true,
                     path: "chart_of_accounts",
                     element: <ChartOfAccountPage/>
                 },

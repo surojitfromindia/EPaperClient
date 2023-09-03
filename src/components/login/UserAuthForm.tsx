@@ -9,6 +9,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {useNavigate} from "react-router-dom";
 import AuthenticationService, {LoginWithEmailPayload} from "@/API/Authentication/v1/loginService.ts";
 import {FormEvent} from "react";
+import {Loader2} from "lucide-react";
 
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -45,7 +46,7 @@ export function UserAuthForm({className, ...props}: UserAuthFormProps) {
         try{
             const {token} = await AuthenticationService.loginWithEmail(loginPayload)
             localStorage.setItem("_ePaperC",token)
-            navigate("/app")
+            navigate("/app/dashboard")
         }
         catch (error){
             console.error("Hit error")
@@ -87,6 +88,7 @@ export function UserAuthForm({className, ...props}: UserAuthFormProps) {
                     />
                 </div>
                 <Button type={"submit"} disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                     Sign In with Email
                 </Button>
             </div>

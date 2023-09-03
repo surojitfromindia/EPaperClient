@@ -2,13 +2,17 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.t
 import {LucideSettings} from "lucide-react";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {Link} from "react-router-dom";
 
 export default function TopBar() {
     return (<div className={"h-12 bg-primary flex items-center w-full shrink-0 text-primary-foreground"}>
             <div className={"logo_container h-12 w-[200px] -m-1 overflow-hidden"}>
                 <div className={"logo-collapse flex items-center"}>
                     <span className={"mt-3 mb-3 ml-4 h-6"}>
+                        <Link to={"/app/dashboard"}>
                         EPaper
+
+                        </Link>
                     </span>
                 </div>
             </div>

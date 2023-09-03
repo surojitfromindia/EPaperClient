@@ -1,7 +1,7 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
-import React, {useMemo} from "react";
+import React, {useEffect, useMemo} from "react";
 import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount.Service.ts";
-import {FolderIcon} from "lucide-react";
+import {FolderIcon, Loader2} from "lucide-react";
 
 const DEPTH_OFFSET = 2;
 
@@ -10,6 +10,8 @@ interface ChartOfAccountListingProps extends React.HTMLAttributes<HTMLDivElement
 }
 
 export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
+    const [isLoading, setIsLoading] = React.useState<boolean>(true)
+
     const GiveSpace = (account_depth: number, account_bar: number[], has_children: boolean) => {
         const SShape = []
         const depth = account_depth - DEPTH_OFFSET;
@@ -50,6 +52,12 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
         return generateTreeLine(accounts)
     }, [accounts])
 
+    useEffect(()=>{
+        if(accounts.length>1){
+            setIsLoading(false)
+        }
+    },[accounts])
+
     return (<>
         <main>
             <section className={"flex mb-6"}>
@@ -57,8 +65,9 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
                     Chart of Accounts
                 </h1>
             </section>
-            <section className={"mb-12"}>
-                <Table className={"h-full"}>
+            <section className={"mb-12 flex flex-col items-center"}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                {!isLoading && <Table className={"h-full"}>
                     <TableHeader>
                         <TableRow className={"uppercase"}>
                             <TableHead>account name</TableHead>
@@ -67,6 +76,7 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
+
                         {accountsWithTreeFormat.map((account) => (<TableRow className={""} key={account.account_id}>
                             <TableCell>
                                 <>
@@ -82,7 +92,7 @@ export function ChartOfAccountListing({accounts}: ChartOfAccountListingProps) {
 
                     </TableBody>
                 </Table>
-            </section>
+                }            </section>
         </main>
     </>)
 }
