@@ -1,6 +1,6 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
 import React, {useEffect, useMemo} from "react";
-import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount.Service.ts";
+import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import {FolderIcon, Loader2} from "lucide-react";
 
 const DEPTH_OFFSET = 2;

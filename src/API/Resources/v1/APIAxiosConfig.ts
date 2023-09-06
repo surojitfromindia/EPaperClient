@@ -23,14 +23,15 @@ interface APISearchParam {
 }
 
 interface GetOptions {
-    searchParameters: APISearchParam[]
+    searchParameters: APISearchParam[],
+    abortController : AbortController
 }
 
 class APIAxiosConfig {
-    #commonQuery: APISearchParam[];
+    private readonly _commonQuery: APISearchParam[];
 
     constructor() {
-        this.#commonQuery = [
+        this._commonQuery = [
             {
                 key: "organization_id",
                 value: 2
@@ -42,7 +43,7 @@ class APIAxiosConfig {
         try {
             const postURL = new URL(url);
             const postURLSearchParams = postURL.searchParams;
-            this.setAllSearchParameters(this.#commonQuery, postURLSearchParams)
+            this.setAllSearchParameters(this._commonQuery, postURLSearchParams)
             const axiosResponse = await axiosInstance.post<TPayload, APIResponse<TResponse>>(url.toString(), payload);
             if (axiosResponse.data.success) {
                 return axiosResponse.data.data;
@@ -57,7 +58,7 @@ class APIAxiosConfig {
             const url = new URL(path,baseURL);
             const postURLSearchParams = url.searchParams;
             const searchParametersFromOption = options?.searchParameters ?? []
-            this.setAllSearchParameters([...this.#commonQuery, ...searchParametersFromOption], postURLSearchParams)
+            this.setAllSearchParameters([...this._commonQuery, ...searchParametersFromOption], postURLSearchParams)
             console.log(url)
             const getURL = url.pathname+url.search;
             const axiosResponse = await axiosInstance.get<never, APIResponse<TResponse>, never>(getURL);
@@ -73,7 +74,7 @@ class APIAxiosConfig {
         return axiosInstance;
     }
 
-    ResponseErrorHandler(error: unknown) {
+    private ResponseErrorHandler(error: unknown) {
         if (axios.isAxiosError(error)) {
             throw new Error("Axios error")
         } else {
@@ -83,7 +84,7 @@ class APIAxiosConfig {
     }
 
 
-    setAllSearchParameters(parameterArray: APISearchParam[], urlSearchParams: URLSearchParams) {
+    private setAllSearchParameters(parameterArray: APISearchParam[], urlSearchParams: URLSearchParams) {
         // loop over each key value of parameterArray and set it to urlSearchParams
         for (const [, value] of parameterArray.entries()) {
             urlSearchParams.set(value.key, value.value.toString())

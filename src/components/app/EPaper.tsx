@@ -1,9 +1,19 @@
 import {Outlet,} from "react-router-dom";
 import {Sidebar} from "@/components/app/SideBar.tsx";
 import TopBar from "@/components/app/TopBar.tsx";
+import {useEffect, useState} from "react";
+import {AppState, IAppState} from "@/API/Resources/v1/AppState/AppState.ts";
 
 export default function EPaper() {
 
+    const [appState, setAppState] = useState<IAppState>();
+
+    useEffect(()=>{
+        AppState.build().then((appState)=>{
+            setAppState(appState)
+        })
+    },[])
+    console.log("appState",appState)
 
     // header, navbar and side components will stay here,
     // as those must appear all the time.

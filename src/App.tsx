@@ -21,16 +21,22 @@ function App() {
             children: [
                 {
                     path: "",
-                    element: <Dashboard/>
+                    element: <Dashboard/>,
+                    errorElement: <Page404/>,
+
                 },
                 {
                     index:true,
                     path: "dashboard",
-                    element: <Dashboard/>
+                    element: <Dashboard/>,
+                    errorElement: <Page404/>,
+
                 },
                 {
                     path: "chart_of_accounts",
-                    element: <ChartOfAccountPage/>
+                    element: <ChartOfAccountPage/>,
+                    errorElement: <Page404/>,
+
                 },
                 {
                     path:"*",
