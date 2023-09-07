@@ -1,7 +1,3 @@
-export default function Dashboard(){
-    return (
-        <>
-        App Dashboard
-        </>
-    )
+export default function Dashboard() {
+  return <>App Dashboard</>;
 }

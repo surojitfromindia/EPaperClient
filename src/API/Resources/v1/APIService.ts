@@ -1,6 +1,6 @@
 interface APIService {
-    readonly  urlFragment: string,
-    abortGetRequest:()=> void
-
+  readonly urlFragment: string;
+  abortGetRequest: () => void;
 }
-export type {APIService}
+
+export type { APIService };
