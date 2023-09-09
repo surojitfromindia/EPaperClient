@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/app/SideBar.tsx";
 import TopBar from "@/components/app/TopBar.tsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  applicationState,
+  ApplicationState,
   AppState,
 } from "@/API/Resources/v1/AppState/AppState.ts";
 import LoaderFullPage from "@/components/app/common/LoaderFullPage.tsx";
@@ -12,10 +12,20 @@ export default function EPaper() {
   const [, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
 
-  useEffect(() => {
-    setAppState(applicationState.getAppState());
-    setApplicationLoading(false);
+  // load app state.
+  const loadApplicationState = useCallback(async (): Promise<boolean> => {
+    await ApplicationState.build();
+    setAppState(ApplicationState.getInstance().getAppState());
+    return true;
   }, []);
+
+  useEffect(() => {
+    loadApplicationState()
+      .then(() => {
+        setApplicationLoading(false);
+      })
+      .catch((error) => console.log(error));
+  }, [loadApplicationState]);
 
   // header, navbar and side components will stay here,
   // as those must appear all the time.

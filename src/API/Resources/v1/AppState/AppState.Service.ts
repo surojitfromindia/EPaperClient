@@ -2,12 +2,15 @@ import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 
 type AppStateResponse = {
-  name: string;
-  primary_address: string;
-  organization_id: number;
-  currency_code: string;
-  sector: string;
-  country_code: string;
+  organization:{
+    name: string;
+    primary_address: string;
+    organization_id: number;
+    currency_code: string;
+    sector: string;
+    country_code: string;
+  }
+
 };
 
 class AppStateService implements APIService {

@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 
 const baseURL = `${import.meta.env["VITE_API_BASE_URL"]}/v1`;
 const _ePaperC = localStorage.getItem("_ePaperC");
-const axiosInstance = axios.create({
+const axiosInstance = ()=>  axios.create({
   baseURL,
   withCredentials: true,
   headers: {
@@ -33,11 +33,8 @@ class APIAxiosConfig {
 
   constructor() {
     const organizationId = localStorage.getItem("organizationId");
+    console.log("oid",organizationId)
     this._commonQuery = [
-      {
-        key: "organization_id",
-        value: 2,
-      },
     ];
     if (organizationId) {
       this._commonQuery.push({
@@ -55,7 +52,7 @@ class APIAxiosConfig {
       const postURL = new URL(url);
       const postURLSearchParams = postURL.searchParams;
       this.setAllSearchParameters(this._commonQuery, postURLSearchParams);
-      const axiosResponse = await axiosInstance.post<
+      const axiosResponse = await axiosInstance().post<
         TPayload,
         APIResponse<TResponse>
       >(url.toString(), payload);
@@ -78,7 +75,7 @@ class APIAxiosConfig {
       );
       console.log(url);
       const getURL = url.pathname + url.search;
-      const axiosResponse = await axiosInstance.get<
+      const axiosResponse = await axiosInstance().get<
         never,
         APIResponse<TResponse>,
         never

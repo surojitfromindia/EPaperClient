@@ -3,59 +3,67 @@ import AppStateService, {
 } from "@/API/Resources/v1/AppState/AppState.Service.ts";
 
 interface AppState {
-  name: string;
-  primary_address: string;
-  organization_id: number;
-  currency_code: string;
-  sector: string;
-  country_code: string;
+  organization:{
+    name: string;
+    primary_address: string;
+    organization_id: number;
+    currency_code: string;
+    sector: string;
+    country_code: string;
+  },
+
+
 }
 
 class ApplicationState {
   private static applicationState: ApplicationState;
-  readonly appState: AppState;
+  private readonly appState: AppState;
 
   private constructor(appState: AppStateResponse) {
     this.appState = appState;
   }
 
-  static async getInstance() {
+  static getInstance() {
     if (this.applicationState) {
       return this.applicationState;
-    } else {
-      return await this.build();
+    }
+    else{
+      throw new Error("no instance found")
     }
   }
 
-  private static async build() {
+   static async build() {
     const appStateService = new AppStateService();
     const appStateResponse = await appStateService.getAppState();
     if (appStateResponse) {
-      return new ApplicationState(appStateResponse.app_state);
+      this.applicationState =new ApplicationState(appStateResponse.app_state);
+      this.applicationState.setCurrentOrganization();
+      return;
     }
     throw new Error("can not build AppState");
   }
 
   getAppState(): AppState {
     return {
-      organization_id: this.appState.organization_id,
-      name: this.appState.name,
-      primary_address: this.appState.primary_address,
-      country_code: this.appState.country_code,
-      sector: this.appState.sector,
-      currency_code: this.appState.currency_code,
+      organization :{
+        organization_id: this.appState.organization.organization_id,
+        name: this.appState.organization.name,
+        primary_address: this.appState.organization.primary_address,
+        country_code: this.appState.organization.country_code,
+        sector: this.appState.organization.sector,
+        currency_code: this.appState.organization.currency_code,
+      }
+
     };
   }
 
   setCurrentOrganization(): void {
     localStorage.setItem(
       "currentOrganization",
-      this.appState.organization_id.toString(),
+      this.appState.organization.organization_id.toString(),
     );
   }
 }
 
-const applicationState = await ApplicationState.getInstance();
-applicationState.setCurrentOrganization();
-export { applicationState };
+export { ApplicationState };
 export type { AppState };
