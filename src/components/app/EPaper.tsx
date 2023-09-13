@@ -9,7 +9,7 @@ import {
 import LoaderFullPage from "@/components/app/common/LoaderFullPage.tsx";
 
 export default function EPaper() {
-  const [, setAppState] = useState<AppState>();
+  const [appState, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
 
   // load app state.
@@ -32,23 +32,25 @@ export default function EPaper() {
   return (
     <>
       {applicationLoading && <LoaderFullPage />}
-      <div className={"block"}>
-        <div
-          className={
-            "absolute top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden"
-          }
-        >
-          <TopBar />
-          <div className={"grid lg:grid-cols-5"}>
-            <Sidebar className={"hidden lg:block"} />
-            <div className={"col-span-3 lg:col-span-4"}>
-              <div className={"h-screen p-5 overflow-scroll"}>
-                <Outlet />
+      {!applicationLoading && (
+        <div className={"block"}>
+          <div
+            className={
+              "absolute top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden"
+            }
+          >
+            <TopBar organization={appState?.organization} />
+            <div className={"grid lg:grid-cols-5"}>
+              <Sidebar className={"hidden lg:block"} />
+              <div className={"col-span-3 lg:col-span-4"}>
+                <div className={"h-screen p-5 overflow-scroll"}>
+                  <Outlet />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

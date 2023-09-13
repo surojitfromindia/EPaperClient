@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/table";
 import React, { useEffect, useMemo } from "react";
 import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
-import { FolderIcon, Loader2 } from "lucide-react";
+import {FolderIcon, Loader2, Plus} from "lucide-react";
+import {Button} from "@/components/ui/button.tsx";
 
-const DEPTH_OFFSET = 2;
+const DEPTH_OFFSET = 0;
 
 interface ChartOfAccountListingProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -91,8 +92,11 @@ export function ChartOfAccountListing({
   return (
     <>
       <main>
-        <section className={"flex mb-6"}>
+        <section className={"flex mb-6 justify-between"}>
           <h1 className={"text-xl"}>Chart of Accounts</h1>
+          <Button className={"ml-2"}>
+            <Plus className="mr-2 h-4 w-4" /> Add Account
+          </Button>
         </section>
         <section className={"mb-12 flex flex-col items-center"}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -102,7 +106,8 @@ export function ChartOfAccountListing({
                 <TableRow className={"uppercase"}>
                   <TableHead>account name</TableHead>
                   <TableHead>account code</TableHead>
-                  <TableHead>parent account</TableHead>
+                  <TableHead>account type</TableHead>
+                  <TableHead>parent account name</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -123,6 +128,7 @@ export function ChartOfAccountListing({
                       </>
                     </TableCell>
                     <TableCell>{account.code}</TableCell>
+                    <TableCell>{account.account_type_name_formatted}</TableCell>
                     <TableCell>{account.account_parent_name}</TableCell>
                   </TableRow>
                 ))}

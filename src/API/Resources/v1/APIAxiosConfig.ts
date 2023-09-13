@@ -33,7 +33,6 @@ class APIAxiosConfig {
 
   constructor() {
     const organizationId = localStorage.getItem("organizationId");
-    console.log("oid",organizationId)
     this._commonQuery = [
     ];
     if (organizationId) {

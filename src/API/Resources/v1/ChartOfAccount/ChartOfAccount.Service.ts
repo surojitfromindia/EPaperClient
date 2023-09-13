@@ -9,6 +9,8 @@ type ChartOfAccount = {
   user_id: number;
   account_parent_name: string;
   no_of_children: number;
+  account_type_name_formatted: string;
+  account_group_name_formatted: string;
 };
 
 class ChartOfAccountService implements APIService {

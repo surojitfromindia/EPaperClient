@@ -4,11 +4,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover.tsx";
 import { LucideSettings } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
+// import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
+import * as React from "react";
+import {AppStateOrganization} from "@/API/Resources/v1/AppState/AppState.ts";
+import {useMemo} from "react";
 
-export default function TopBar() {
+
+interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
+  organization?: AppStateOrganization
+}
+
+export default function TopBar({organization}:TopBarProps) {
+  const organizationName:string = useMemo(()=> organization?.name ?? "<No Name>",[organization])
+  const organizationAddress:string = useMemo(()=> organization?.primary_address ?? "<No Address>",[organization])
   return (
     <div
       className={
@@ -32,13 +42,17 @@ export default function TopBar() {
                   "text-xs mx-2 max-w-[90px] block overflow-hidden whitespace-nowrap overflow-ellipsis"
                 }
               >
-                Reducer & Play Pvt Ltd.
+                {organizationName}
               </span>
             </PopoverTrigger>
             <PopoverContent
-              className={"p-2 bg-primary border-0 text-primary-foreground"}
+              className={"p-2 bg-primary mt-1 border-0 rounded-0.5 rounded-r-none text-primary-foreground"}
             >
-              <span className={"text-xs"}>Reducer & Play Pvt Ltd.</span>
+              <div className={"flex flex-col space-y-2"}>
+                <span className={"text-md"}>{organizationName}</span>
+                <span className={"text-xs"}>{organizationAddress}</span>
+              </div>
+
             </PopoverContent>
           </Popover>
         </div>
@@ -46,9 +60,9 @@ export default function TopBar() {
           <Button size={"icon"}>
             <LucideSettings className={"h-4"} />
           </Button>
-          <Avatar className={"h-8 w-8"}>
-            <AvatarFallback className={"text-primary"}>S</AvatarFallback>
-          </Avatar>
+          {/*<Avatar className={"h-8 w-8"}>*/}
+          {/*  <AvatarFallback className={"text-primary"}>S</AvatarFallback>*/}
+          {/*</Avatar>*/}
         </div>
       </div>
     </div>

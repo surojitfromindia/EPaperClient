@@ -1,18 +1,20 @@
 import AppStateService, {
   AppStateResponse,
 } from "@/API/Resources/v1/AppState/AppState.Service.ts";
+import reduxStore from  "../../../../redux/store.ts"
+import {setOrganizationState} from "@/redux/features/organization/organizationSlice.ts";
+import store from "../../../../redux/store.ts";
 
+interface AppStateOrganization{
+  name: string;
+  primary_address: string;
+  organization_id: number;
+  currency_code: string;
+  sector: string;
+  country_code: string;
+}
 interface AppState {
-  organization:{
-    name: string;
-    primary_address: string;
-    organization_id: number;
-    currency_code: string;
-    sector: string;
-    country_code: string;
-  },
-
-
+  organization: AppStateOrganization,
 }
 
 class ApplicationState {
@@ -21,6 +23,8 @@ class ApplicationState {
 
   private constructor(appState: AppStateResponse) {
     this.appState = appState;
+    // update the store
+    reduxStore.dispatch(setOrganizationState(appState.organization))
   }
 
   static getInstance() {
@@ -44,15 +48,17 @@ class ApplicationState {
   }
 
   getAppState(): AppState {
+    const organization = store.getState().organization;
     return {
-      organization :{
-        organization_id: this.appState.organization.organization_id,
-        name: this.appState.organization.name,
-        primary_address: this.appState.organization.primary_address,
-        country_code: this.appState.organization.country_code,
-        sector: this.appState.organization.sector,
-        currency_code: this.appState.organization.currency_code,
-      }
+      // organization :{
+      //   organization_id: this.appState.organization.organization_id,
+      //   name: this.appState.organization.name,
+      //   primary_address: this.appState.organization.primary_address,
+      //   country_code: this.appState.organization.country_code,
+      //   sector: this.appState.organization.sector,
+      //   currency_code: this.appState.organization.currency_code,
+      // }
+      organization,
 
     };
   }
@@ -66,4 +72,4 @@ class ApplicationState {
 }
 
 export { ApplicationState };
-export type { AppState };
+export type { AppState, AppStateOrganization };
