@@ -20,7 +20,7 @@ interface APIResponse<T> extends AxiosResponse {
 
 interface APISearchParam {
   key: string;
-  value: string | number;
+  value?: string | number;
 }
 
 interface GetOptions {
@@ -80,6 +80,7 @@ class APIAxiosConfig {
         never
       >(getURL);
       if (axiosResponse.data.success) {
+        console.log("Got data from", url.toString())
         return axiosResponse.data.data;
       }
     } catch (error: unknown) {
@@ -106,7 +107,9 @@ class APIAxiosConfig {
   ) {
     // loop over each key value of parameterArray and set it to urlSearchParams
     for (const [, value] of parameterArray.entries()) {
-      urlSearchParams.set(value.key, value.value.toString());
+      if(value?.value){
+        urlSearchParams.set(value.key, value.value.toString());
+      }
     }
   }
 }
