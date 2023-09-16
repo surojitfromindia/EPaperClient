@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { ModelProps } from "@/components/app/common/Modal.tsx";
 import ChartOfAccountService, {
   ChartOfAccount,
+  ChartOfAccountCreatePayload,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import ReactSelect from "react-select";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -32,23 +33,31 @@ import {
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
+type OnAccountAddSuccess = (action_type: "add" | "edit", account_id: number) => void;
 interface ChartOfAccountAddProps
   extends React.HTMLAttributes<HTMLDivElement>,
     ModelProps<{ added_account: string }> {
   editAccountId?: number;
+  onActionSuccess: OnAccountAddSuccess;
 }
 type OptionType = {
   label: string;
   value: number;
 };
+export type {OnAccountAddSuccess}
 const chartOfAccountService = new ChartOfAccountService();
 
 export default function ChartOfAccountAdd({
   editAccountId,
   onClose,
   isOpen,
+  onActionSuccess,
 }: ChartOfAccountAddProps) {
+  const { toast } = useToast();
+
   // states
   const [editPageContent, setEditPageContent] = useState<EditPageContent>({
     account_types: [],
@@ -57,6 +66,7 @@ export default function ChartOfAccountAdd({
   const [editPageAccountDetails, setEditPageAccountDetails] =
     useState<ChartOfAccount>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
   const [accountsListDDOptions, setAccountsListDDOptions] = useState<
     OptionType[]
   >([]);
@@ -92,7 +102,7 @@ export default function ChartOfAccountAdd({
   const basicSchema = z.object({
     account_type: z.object({ value: z.string().trim(), label: z.string() }),
     account_name: z.string().trim().min(1),
-    account_code: z.string().optional(),
+    account_code: z.string().trim().min(1),
     description: z.string().optional(),
   });
   const hasParentSchema = z.object({
@@ -136,8 +146,6 @@ export default function ChartOfAccountAdd({
   const selectedAccountType = watch("account_type", accountTypeDefaultSelect);
   const hasParentAccount = watch("has_parent_account");
 
-  console.log("hasParentAccount", hasParentAccount);
-
   // memo and variables
   const dialogTitle = useMemo(
     () => (editAccountId ? "edit account" : "add account"),
@@ -155,15 +163,16 @@ export default function ChartOfAccountAdd({
       depth_of_edit_account?: number;
       id_of_edit_account?: number;
     }) => {
-      const onlyParentAccounts =
-        depth_of_edit_account > -1
-          ? (account: ChartOfAccount) => account.depth <= depth_of_edit_account && account.account_id!==id_of_edit_account
-          : () => false;
+      const allChildAccountsOfType = (account: ChartOfAccount) =>
+        account.account_type_name === account_type;
+      const availableParentAccounts = (account: ChartOfAccount) =>
+        account.account_type_name === account_type &&
+        account.depth < depth_of_edit_account;
       return editPageContent.accounts_list
-        .filter(
-          (account) =>
-            account.account_type_name === account_type &&
-            onlyParentAccounts(account),
+        .filter((account) =>
+          id_of_edit_account
+            ? availableParentAccounts(account)
+            : allChildAccountsOfType(account),
         )
         .map((account) => ({
           label: account.account_name,
@@ -209,10 +218,39 @@ export default function ChartOfAccountAdd({
     [setValue],
   );
 
-  const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = (data) => {
-    console.log("FORM:");
-    console.log("account type", data.account_type.value);
-    console.log("account name", data.account_name);
+  const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
+    data,
+  ) => {
+    const chartOfAccountCreatePayload: ChartOfAccountCreatePayload = {
+      account_name: data.account_name,
+      account_code: data?.account_code,
+      account_parent_id: null,
+      account_type_name: data.account_type.value,
+      description: data.description ?? "",
+    };
+    if (data.has_parent_account) {
+      chartOfAccountCreatePayload.account_parent_id = data.account_parent.value;
+    }
+
+    try {
+      setIsButtonLoading(true);
+      const accountDetails = await chartOfAccountService.addChartOfAccounts({
+        payload: chartOfAccountCreatePayload,
+      });
+      if(accountDetails && accountDetails.chart_of_account){
+        onActionSuccess?.("add",accountDetails.chart_of_account.account_id);
+        handleDialogClose();
+        toast({
+          title: "Success",
+          description: "Account is added successfully",
+        });
+      }
+
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsButtonLoading(false);
+    }
   };
 
   // effects
@@ -260,7 +298,7 @@ export default function ChartOfAccountAdd({
             {
               <DialogContent
                 forceMount={true}
-                className="sm:max-w-[700x] top-0 translate-y-0 sm:rounded-t-none md:rounded-t-none p-0 overflow-scroll"
+                className="sm:max-w-[700x] top-0 translate-y-0 sm:rounded-t-none md:rounded-t-none p-0"
                 onPointerDownOutside={(ev) => ev.preventDefault()}
               >
                 <DialogHeader className={"bg-gray-50 shadow-sm p-3"}>
@@ -441,10 +479,17 @@ export default function ChartOfAccountAdd({
                         onClick={() => {
                           handleDialogClose();
                         }}
+                        disabled={isButtonLoading}
                       >
                         Cancel
                       </Button>
-                      <Button onClick={handleSubmit(handleFormSubmit)}>
+                      <Button
+                        disabled={isButtonLoading}
+                        onClick={handleSubmit(handleFormSubmit)}
+                      >
+                        {isButtonLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
                         Save
                       </Button>
                     </DialogFooter>

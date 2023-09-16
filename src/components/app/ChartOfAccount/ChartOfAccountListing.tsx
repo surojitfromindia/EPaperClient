@@ -6,15 +6,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, { useEffect, useMemo, useState } from "react";
-import {
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
-import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
-// import {DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
+import ChartOfAccountAdd, {
+  OnAccountAddSuccess
+} from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,22 +24,37 @@ import {
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 
 const DEPTH_OFFSET = 0;
-
-interface ChartOfAccountListingProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  accounts: ChartOfAccount[];
-}
-
 type EditPageContent = {
   account_types: AccountType[];
   accounts_list: ChartOfAccount[];
 };
 
 export type { EditPageContent };
+const chartOfAccountService = new ChartOfAccountService();
 
-export function ChartOfAccountListing({
-  accounts,
-}: ChartOfAccountListingProps) {
+
+export function ChartOfAccountListing() {
+  const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
+
+  const loadAccounts = useCallback(()=>{
+    chartOfAccountService.getChartOfAccounts().then((chartOfAccounts) => {
+      setChartOfAccounts(chartOfAccounts?.chart_of_accounts ?? []);
+      setIsLoading(false);
+    });
+  },[chartOfAccountService])
+
+  useEffect(() => {
+    loadAccounts()
+    return () => {
+      chartOfAccountService.abortGetRequest();
+    };
+  }, [chartOfAccountService, loadAccounts]);
+
+
+
+
+
+
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingAccountId, setEditingAccountId] = useState<number>();
@@ -114,11 +130,10 @@ export function ChartOfAccountListing({
     return generateTreeLine(accounts);
   }, [accounts]);
 
-  useEffect(() => {
-    if (accounts.length > 1) {
-      setIsLoading(false);
-    }
-  }, [accounts]);
+
+  const onActionSuccess = useCallback<OnAccountAddSuccess>(()=>{
+   loadAccounts()
+  },[loadAccounts])
 
   return (
     <>
@@ -193,11 +208,12 @@ export function ChartOfAccountListing({
             </Table>
           )}{" "}
         </section>
-        {isEditModalOpen && (
+        {(
           <ChartOfAccountAdd
             isOpen={isEditModalOpen}
             onClose={() => handleEditModalOpenCloseAction(false)}
             editAccountId={editingAccountId}
+            onActionSuccess={onActionSuccess}
           />
         )}
       </main>

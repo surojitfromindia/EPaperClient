@@ -7,6 +7,7 @@ import {
   AppState,
 } from "@/API/Resources/v1/AppState/AppState.ts";
 import LoaderFullPage from "@/components/app/common/LoaderFullPage.tsx";
+import {Toaster} from "@/components/ui/toaster.tsx";
 
 export default function EPaper() {
   const [appState, setAppState] = useState<AppState>();
@@ -46,6 +47,7 @@ export default function EPaper() {
                 <div className={"h-screen p-5 overflow-scroll"}>
                   <Outlet />
                 </div>
+                <Toaster />
               </div>
             </div>
           </div>

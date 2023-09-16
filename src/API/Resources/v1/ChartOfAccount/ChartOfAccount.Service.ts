@@ -14,7 +14,7 @@ type ChartOfAccount = {
   account_type_name_formatted: string;
   account_type_name: string;
   account_type_id?:number,
-  // account type
+  // account group
   account_group_name_formatted: string;
   account_group_name: string;
   account_group_id?:number;
@@ -25,6 +25,17 @@ type AccountType = {
   "account_type_name_formatted": string,
   "account_group_name": string,
   "account_group_name_formatted": string,
+}
+
+type ChartOfAccountCreatePayload = {
+
+  account_name: string;
+  account_code: string;
+  // account parent
+  account_parent_id: number|null;
+  // account type
+  account_type_name: string;
+  description: string
 }
 
 
@@ -45,26 +56,38 @@ class ChartOfAccountService implements APIService {
   getChartOfAccounts() {
     const url = "/accounts";
     return this.#axiosConfig.APIGetRequestWrapper<{
-      accounts: ChartOfAccount[];
+      chart_of_accounts: ChartOfAccount[];
     }>(url, {
       searchParameters: [],
       abortController: this.abortController,
     });
   }
 
-  getChartOfAccountEditPage({account_id}:EditPageServiceParams={}){
-    const url = "/accounts/edit_page"
+  getChartOfAccountEditPage({ account_id }: EditPageServiceParams = {}) {
+    const url = "/accounts/edit_page";
     return this.#axiosConfig.APIGetRequestWrapper<{
-      account_types: AccountType[],
-      accounts_list: ChartOfAccount[],
-      chart_of_account: ChartOfAccount,
+      account_types: AccountType[];
+      accounts_list: ChartOfAccount[];
+      chart_of_account: ChartOfAccount;
     }>(url, {
-      searchParameters: [{
-        key: "account_id",
-        value: account_id
-      }],
+      searchParameters: [
+        {
+          key: "account_id",
+          value: account_id,
+        },
+      ],
       abortController: this.abortController,
     });
+  }
+
+  addChartOfAccounts({ payload }:{payload: ChartOfAccountCreatePayload}) {
+    const url = "/accounts";
+    return this.#axiosConfig.APIPostRequestWrapper<
+      ChartOfAccountCreatePayload,
+      {
+        chart_of_account: ChartOfAccount;
+      }
+    >(url, payload);
   }
 
   abortGetRequest(): void {
@@ -73,4 +96,4 @@ class ChartOfAccountService implements APIService {
 }
 
 export default ChartOfAccountService;
-export type { ChartOfAccount, AccountType };
+export type { ChartOfAccount, AccountType,ChartOfAccountCreatePayload };

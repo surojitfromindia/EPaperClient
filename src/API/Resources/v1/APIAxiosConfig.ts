@@ -44,17 +44,23 @@ class APIAxiosConfig {
   }
 
   async APIPostRequestWrapper<TPayload, TResponse>(
-    url: string,
+    path: string,
     payload: TPayload,
   ) {
     try {
-      const postURL = new URL(url);
-      const postURLSearchParams = postURL.searchParams;
+      const url = new URL(path,baseURL);
+      const postURLSearchParams = url.searchParams;
       this.setAllSearchParameters(this._commonQuery, postURLSearchParams);
+      this.setAllSearchParameters(
+          [...this._commonQuery],
+          postURLSearchParams,
+      );
+      console.log("POST: ",url);
+      const postURL = url.pathname + url.search;
       const axiosResponse = await axiosInstance().post<
         TPayload,
         APIResponse<TResponse>
-      >(url.toString(), payload);
+      >(postURL, payload);
       if (axiosResponse.data.success) {
         return axiosResponse.data.data;
       }
@@ -72,7 +78,7 @@ class APIAxiosConfig {
         [...this._commonQuery, ...searchParametersFromOption],
         postURLSearchParams,
       );
-      console.log(url);
+      console.log("GET:",url);
       const getURL = url.pathname + url.search;
       const axiosResponse = await axiosInstance().get<
         never,
