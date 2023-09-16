@@ -32,7 +32,7 @@ class APIAxiosConfig {
   private readonly _commonQuery: APISearchParam[];
 
   constructor() {
-    const organizationId = localStorage.getItem("organizationId");
+    const organizationId = localStorage.getItem("currentOrganization");
     this._commonQuery = [
     ];
     if (organizationId) {

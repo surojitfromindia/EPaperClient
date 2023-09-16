@@ -6,14 +6,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, {useEffect, useMemo, useState} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   AccountType,
-  ChartOfAccount
+  ChartOfAccount,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
-import {FolderIcon, Loader2, Plus} from "lucide-react";
-import {Button} from "@/components/ui/button.tsx";
+import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button.tsx";
 import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
+// import {DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu.tsx";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 
 const DEPTH_OFFSET = 0;
 
@@ -23,20 +30,29 @@ interface ChartOfAccountListingProps
 }
 
 type EditPageContent = {
-  account_types: AccountType[]
-}
+  account_types: AccountType[];
+  accounts_list: ChartOfAccount[];
+};
 
-export type {EditPageContent}
-
+export type { EditPageContent };
 
 export function ChartOfAccountListing({
   accounts,
 }: ChartOfAccountListingProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const handleEditModalOpenCloseAction=(action:boolean)=>{
-    setIsEditModalOpen(action)
-  }
+  const [editingAccountId, setEditingAccountId] = useState<number>();
+  const handleEditModalOpenCloseAction = (
+    action: boolean,
+    edit_account_id?: number,
+  ) => {
+    if (edit_account_id && action) {
+      setEditingAccountId(edit_account_id);
+    } else {
+      setEditingAccountId(undefined);
+    }
+    setIsEditModalOpen(action);
+  };
 
   const GiveSpace = (
     account_depth: number,
@@ -104,14 +120,15 @@ export function ChartOfAccountListing({
     }
   }, [accounts]);
 
-
-
   return (
     <>
       <main className={"relative"}>
         <section className={"flex mb-6 justify-between"}>
           <h1 className={"text-xl"}>Chart of Accounts</h1>
-          <Button className={"ml-2"} onClick={()=>handleEditModalOpenCloseAction(true)}>
+          <Button
+            className={"ml-2"}
+            onClick={() => handleEditModalOpenCloseAction(true)}
+          >
             <Plus className="mr-2 h-4 w-4" /> Add Account
           </Button>
         </section>
@@ -147,15 +164,42 @@ export function ChartOfAccountListing({
                     <TableCell>{account.account_code}</TableCell>
                     <TableCell>{account.account_type_name_formatted}</TableCell>
                     <TableCell>{account.account_parent_name}</TableCell>
+                    <TableCell>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <MoreVertical className={"h-4 cursor-pointer"} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="text-sm w-56 bg-gray-50 outline-none  p-1"
+                          align={"end"}
+                        >
+                          <DropdownMenuItem
+                            className={"menu-item-ok"}
+                            role={"button"}
+                            onClick={() => handleEditModalOpenCloseAction(true, account.account_id)}
+                          >
+                            <Edit className={"h-4 w-4"} />
+                            <span>Configure</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className={"menu-item-danger"}>
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}{" "}
         </section>
-        <section className={"absolute"}>
-          <ChartOfAccountAdd isOpen={isEditModalOpen} onClose={()=>handleEditModalOpenCloseAction(false)} editAccountId={undefined} />
-        </section>
+        {isEditModalOpen && (
+          <ChartOfAccountAdd
+            isOpen={isEditModalOpen}
+            onClose={() => handleEditModalOpenCloseAction(false)}
+            editAccountId={editingAccountId}
+          />
+        )}
       </main>
     </>
   );
