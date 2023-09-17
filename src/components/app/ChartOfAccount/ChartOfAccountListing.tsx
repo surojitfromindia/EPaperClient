@@ -13,9 +13,7 @@ import ChartOfAccountService, {
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
-import ChartOfAccountAdd, {
-  OnAccountAddSuccess,
-} from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
+import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +28,13 @@ type EditPageContent = {
   accounts_list: ChartOfAccount[];
 };
 
-export type { EditPageContent };
+type OnAccountsDeleteSuccess = (account_ids: number[]) => void;
+type OnAccountAddSuccess = (
+  action_type: "add" | "edit",
+  account_id: number,
+) => void;
+
+export type { EditPageContent, OnAccountAddSuccess, OnAccountsDeleteSuccess };
 const chartOfAccountService = new ChartOfAccountService();
 
 export function ChartOfAccountListing() {
@@ -142,6 +146,24 @@ export function ChartOfAccountListing() {
     },
     [loadAccounts],
   );
+  const onAccountDeleteSuccess = useCallback<OnAccountsDeleteSuccess>(() => {
+    loadAccounts();
+  }, [loadAccounts]);
+
+  const handleAccountDeleteAction = async (selected_account_ids: number[]) => {
+    try {
+      const accountId = selected_account_ids[0];
+      await chartOfAccountService.deleteSingleChartOfAccounts({
+        account_id: accountId,
+      });
+      toast({
+        title: "Success",
+        description: "Account is delete successfully",
+      });      onAccountDeleteSuccess(selected_account_ids);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <>
@@ -209,7 +231,13 @@ export function ChartOfAccountListing() {
                             <Edit className={"h-4 w-4"} />
                             <span>Configure</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className={"menu-item-danger"}>
+                          <DropdownMenuItem
+                            className={"menu-item-danger"}
+                            role={"button"}
+                            onClick={() =>
+                              handleAccountDeleteAction([account.account_id])
+                            }
+                          >
                             <span>Delete</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>

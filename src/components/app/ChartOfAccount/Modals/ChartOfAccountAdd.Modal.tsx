@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { EditPageContent } from "@/components/app/ChartOfAccount/ChartOfAccountListing.tsx";
+import {
+  EditPageContent,
+  OnAccountAddSuccess
+} from "@/components/app/ChartOfAccount/ChartOfAccountListing.tsx";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +40,6 @@ import { Loader2 } from "lucide-react";
 import {reactSelectComponentOverride, reactSelectStyle} from "@/util/style/reactSelectStyle.ts";
 
 
-type OnAccountAddSuccess = (action_type: "add" | "edit", account_id: number) => void;
 interface ChartOfAccountAddProps
   extends React.HTMLAttributes<HTMLDivElement>,
     ModelProps<{ added_account: string }> {
@@ -48,7 +50,6 @@ type OptionType = {
   label: string;
   value: number;
 };
-export type {OnAccountAddSuccess}
 const chartOfAccountService = new ChartOfAccountService();
 
 export default function ChartOfAccountAdd({

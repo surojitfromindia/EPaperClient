@@ -90,6 +90,17 @@ class ChartOfAccountService implements APIService {
     >(url, payload);
   }
 
+  deleteSingleChartOfAccounts({ account_id }:{account_id: number}) {
+    const url = `/accounts/${account_id}`;
+    return this.#axiosConfig.APIDeleteRequestWrapper<
+      {
+        account_ids: number[];
+      }
+    >(url);
+  }
+
+
+
   abortGetRequest(): void {
     this.abortController.abort();
   }
