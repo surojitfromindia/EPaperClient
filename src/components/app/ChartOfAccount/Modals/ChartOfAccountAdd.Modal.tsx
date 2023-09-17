@@ -34,7 +34,8 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import {reactSelectComponentOverride, reactSelectStyle} from "@/util/style/reactSelectStyle.ts";
+
 
 type OnAccountAddSuccess = (action_type: "add" | "edit", account_id: number) => void;
 interface ChartOfAccountAddProps
@@ -56,7 +57,6 @@ export default function ChartOfAccountAdd({
   isOpen,
   onActionSuccess,
 }: ChartOfAccountAddProps) {
-  const { toast } = useToast();
 
   // states
   const [editPageContent, setEditPageContent] = useState<EditPageContent>({
@@ -240,10 +240,7 @@ export default function ChartOfAccountAdd({
       if(accountDetails && accountDetails.chart_of_account){
         onActionSuccess?.("add",accountDetails.chart_of_account.account_id);
         handleDialogClose();
-        toast({
-          title: "Success",
-          description: "Account is added successfully",
-        });
+
       }
 
     } catch (error) {
@@ -328,6 +325,8 @@ export default function ChartOfAccountAdd({
                                   options={accountTypeDropDownOptions}
                                   {...field}
                                   inputId={"account_type"}
+                                  classNames={reactSelectStyle}
+                                  components={reactSelectComponentOverride}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -343,7 +342,7 @@ export default function ChartOfAccountAdd({
                             <FormItem>
                               <FormLabel
                                 htmlFor={"account_name_input"}
-                                className={"capitalize"}
+                                className={"capitalize "}
                               >
                                 account name
                               </FormLabel>
@@ -407,7 +406,6 @@ export default function ChartOfAccountAdd({
                                   </FormLabel>
                                   <FormControl>
                                     <ReactSelect
-                                      className={"col-span-3"}
                                       options={[
                                         {
                                           label: selectedAccountType.label,
@@ -416,6 +414,8 @@ export default function ChartOfAccountAdd({
                                       ]}
                                       {...field}
                                       inputId={"account_parent_input"}
+                                      classNames={reactSelectStyle}
+                                      components={reactSelectComponentOverride}
                                     />
                                   </FormControl>
                                   <FormMessage />

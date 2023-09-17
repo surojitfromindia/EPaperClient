@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
@@ -14,7 +14,7 @@ import ChartOfAccountService, {
 import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import ChartOfAccountAdd, {
-  OnAccountAddSuccess
+  OnAccountAddSuccess,
 } from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { toast } from "@/components/ui/use-toast.ts";
 
 const DEPTH_OFFSET = 0;
 type EditPageContent = {
@@ -32,28 +33,22 @@ type EditPageContent = {
 export type { EditPageContent };
 const chartOfAccountService = new ChartOfAccountService();
 
-
 export function ChartOfAccountListing() {
   const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
 
-  const loadAccounts = useCallback(()=>{
+  const loadAccounts = useCallback(() => {
     chartOfAccountService.getChartOfAccounts().then((chartOfAccounts) => {
       setChartOfAccounts(chartOfAccounts?.chart_of_accounts ?? []);
       setIsLoading(false);
     });
-  },[chartOfAccountService])
+  }, [chartOfAccountService]);
 
   useEffect(() => {
-    loadAccounts()
+    loadAccounts();
     return () => {
       chartOfAccountService.abortGetRequest();
     };
   }, [chartOfAccountService, loadAccounts]);
-
-
-
-
-
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -130,10 +125,23 @@ export function ChartOfAccountListing() {
     return generateTreeLine(accounts);
   }, [accounts]);
 
-
-  const onActionSuccess = useCallback<OnAccountAddSuccess>(()=>{
-   loadAccounts()
-  },[loadAccounts])
+  const onActionSuccess = useCallback<OnAccountAddSuccess>(
+    (action_type) => {
+      if (action_type === "add") {
+        toast({
+          title: "Success",
+          description: "Account is added successfully",
+        });
+      } else if (action_type === "edit") {
+        toast({
+          title: "Success",
+          description: "Account is updated successfully",
+        });
+      }
+      loadAccounts();
+    },
+    [loadAccounts],
+  );
 
   return (
     <>
@@ -191,7 +199,12 @@ export function ChartOfAccountListing() {
                           <DropdownMenuItem
                             className={"menu-item-ok"}
                             role={"button"}
-                            onClick={() => handleEditModalOpenCloseAction(true, account.account_id)}
+                            onClick={() =>
+                              handleEditModalOpenCloseAction(
+                                true,
+                                account.account_id,
+                              )
+                            }
                           >
                             <Edit className={"h-4 w-4"} />
                             <span>Configure</span>
@@ -208,14 +221,14 @@ export function ChartOfAccountListing() {
             </Table>
           )}{" "}
         </section>
-        {(
+        {
           <ChartOfAccountAdd
             isOpen={isEditModalOpen}
             onClose={() => handleEditModalOpenCloseAction(false)}
             editAccountId={editingAccountId}
             onActionSuccess={onActionSuccess}
           />
-        )}
+        }
       </main>
     </>
   );
