@@ -79,6 +79,10 @@
     @apply relative  border-l-[1px] border-b-[1px]
         bottom-4 right-2 pt-[22px]  pb-[8px] border-gray-700;
   }
+  .display-node-name-extended {
+    @apply relative  border-l-[1px] border-b-[1px]
+    bottom-4 right-2  pb-[8px] border-gray-700 pt-[33px]
+  }
 
   .intermediary-nodes {
     @apply relative

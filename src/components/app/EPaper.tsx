@@ -44,7 +44,7 @@ export default function EPaper() {
             <div className={"grid lg:grid-cols-5"}>
               <Sidebar className={"hidden lg:block"} />
               <div className={"col-span-3 lg:col-span-4"}>
-                <div className={"h-screen p-5 overflow-scroll"}>
+                <div className={"h-screen"}>
                   <Outlet />
                 </div>
                 <Toaster />

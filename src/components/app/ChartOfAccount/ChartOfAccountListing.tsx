@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { toast } from "@/components/ui/use-toast.ts";
+import {Checkbox} from "@/components/ui/checkbox.tsx";
+import {useNavigate} from "react-router-dom";
 
 const DEPTH_OFFSET = 0;
 type EditPageContent = {
@@ -33,11 +35,18 @@ type OnAccountAddSuccess = (
   action_type: "add" | "edit",
   account_id: number,
 ) => void;
+interface ChartOfAccountListingProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  shrinkTable?: boolean;
+}
 
 export type { EditPageContent, OnAccountAddSuccess, OnAccountsDeleteSuccess };
 const chartOfAccountService = new ChartOfAccountService();
 
-export function ChartOfAccountListing() {
+export function ChartOfAccountListing({
+  shrinkTable = false,
+}: ChartOfAccountListingProps) {
+  const navigate = useNavigate();
   const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
 
   const loadAccounts = useCallback(() => {
@@ -45,14 +54,14 @@ export function ChartOfAccountListing() {
       setChartOfAccounts(chartOfAccounts?.chart_of_accounts ?? []);
       setIsLoading(false);
     });
-  }, [chartOfAccountService]);
+  }, []);
 
   useEffect(() => {
     loadAccounts();
     return () => {
       chartOfAccountService.abortGetRequest();
     };
-  }, [chartOfAccountService, loadAccounts]);
+  }, [ loadAccounts]);
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -69,13 +78,14 @@ export function ChartOfAccountListing() {
     setIsEditModalOpen(action);
   };
 
-  const GiveSpace = (
+  const GiveSpace = useCallback( (
     account_depth: number,
     account_bar: number[],
     has_children: boolean,
   ) => {
     const SShape = [];
     const depth = account_depth - DEPTH_OFFSET;
+    const d_n_n = shrinkTable?`display-node-name-extended`:`display-node-name`;
     if (account_bar.length > 1) {
       const IShape = (
         <span className={"intermediary-nodes"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>
@@ -85,12 +95,15 @@ export function ChartOfAccountListing() {
         <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
       );
       let LShape = (
-        <span className={"display-node-name"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>
+        <span className={d_n_n}>
+          {" "}
+          &nbsp;&nbsp;&nbsp;&nbsp;{" "}
+        </span>
       );
       if (has_children) {
         // if it has some children, we add more space around
         LShape = (
-          <span className={"display-node-name"}>
+          <span className={d_n_n}>
             {" "}
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{" "}
           </span>
@@ -123,7 +136,7 @@ export function ChartOfAccountListing() {
         <React.Fragment>{children}</React.Fragment>
       )),
     );
-  };
+  },[shrinkTable]);
 
   const accountsWithTreeFormat = useMemo(() => {
     return generateTreeLine(accounts);
@@ -159,16 +172,20 @@ export function ChartOfAccountListing() {
       toast({
         title: "Success",
         description: "Account is delete successfully",
-      });      onAccountDeleteSuccess(selected_account_ids);
+      });
+      onAccountDeleteSuccess(selected_account_ids);
     } catch (error) {
       console.log(error);
     }
   };
+  const handleRowClick = (account_id:number)=>{
+    navigate(`/app/chart_of_accounts/${account_id}`)
+  }
 
   return (
     <>
-      <main className={"relative"}>
-        <section className={"flex mb-6 justify-between"}>
+      <main className={"relative flex max-h-screen flex-col"}>
+        <section className={"flex p-5 justify-between items-center shrink-0 bg-accent"}>
           <h1 className={"text-xl"}>Chart of Accounts</h1>
           <Button
             className={"ml-2"}
@@ -177,22 +194,34 @@ export function ChartOfAccountListing() {
             <Plus className="mr-2 h-4 w-4" /> Add Account
           </Button>
         </section>
-        <section className={"mb-12 flex flex-col items-center"}>
+        <section
+          className={
+            "mb-12 flex flex-col items-center overflow-y-scroll grow-0"
+          }
+        >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isLoading && (
             <Table className={"h-full"}>
-              <TableHeader>
-                <TableRow className={"uppercase"}>
-                  <TableHead>account name</TableHead>
-                  <TableHead>account code</TableHead>
-                  <TableHead>account type</TableHead>
-                  <TableHead>parent account name</TableHead>
-                </TableRow>
-              </TableHeader>
+              {!shrinkTable &&
+                (<TableHeader className={" bg-accent sticky top-0 z-[1]"}>
+                  <TableRow className={"uppercase"}>
+                    <TableHead className={"w-12"}>&nbsp;</TableHead>
+                    <TableHead>account name</TableHead>
+                        <TableHead>account code</TableHead>
+                        <TableHead>account type</TableHead>
+                        <TableHead>parent account name</TableHead>
+                        <TableHead>&nbsp;</TableHead>
+
+                  </TableRow>
+                </TableHeader>)
+              }
               <TableBody>
                 {accountsWithTreeFormat.map((account) => (
-                  <TableRow className={""} key={account.account_id}>
+                  <TableRow key={account.account_id} onClick={()=>{handleRowClick(account.account_id)}}>
                     <TableCell>
+                      <Checkbox />
+                    </TableCell>
+                    <TableCell className={"py-3"}>
                       <>
                         <span className={"font-medium text-center "}>
                           {GiveSpace(
@@ -200,55 +229,73 @@ export function ChartOfAccountListing() {
                             account.bar,
                             account.no_of_children > 0,
                           )}
-                          <span className={" whitespace-nowrap"}>
-                            {account.account_name}
+                          <span
+                            className={
+                              " whitespace-nowrap inline-flex flex-col items-start align-middle "
+                            }
+                          >
+                            <span>{account.account_name}</span>
+                            {shrinkTable && (
+                              <span className={"text-muted-foreground tx-xs"}>
+                                {account.account_type_name_formatted}
+                              </span>
+                            )}
                           </span>
                         </span>
                       </>
                     </TableCell>
-                    <TableCell>{account.account_code}</TableCell>
-                    <TableCell>{account.account_type_name_formatted}</TableCell>
-                    <TableCell>{account.account_parent_name}</TableCell>
-                    <TableCell>
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <MoreVertical className={"h-4 cursor-pointer"} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="text-sm w-56 bg-gray-50 outline-none  p-1"
-                          align={"end"}
-                        >
-                          <DropdownMenuItem
-                            className={"menu-item-ok"}
-                            role={"button"}
-                            onClick={() =>
-                              handleEditModalOpenCloseAction(
-                                true,
-                                account.account_id,
-                              )
-                            }
-                          >
-                            <Edit className={"h-4 w-4"} />
-                            <span>Configure</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className={"menu-item-danger"}
-                            role={"button"}
-                            onClick={() =>
-                              handleAccountDeleteAction([account.account_id])
-                            }
-                          >
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    {!shrinkTable && (
+                      <>
+                        <TableCell>{account.account_code}</TableCell>
+                        <TableCell>
+                          {account.account_type_name_formatted}
+                        </TableCell>
+                        <TableCell>{account.account_parent_name}</TableCell>
+                        <TableCell>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <MoreVertical className={"h-4 cursor-pointer"} />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              className="text-sm w-56 bg-gray-50 outline-none  p-1"
+                              align={"end"}
+                            >
+                              <DropdownMenuItem
+                                className={"menu-item-ok"}
+                                role={"button"}
+                                onClick={() =>
+                                  handleEditModalOpenCloseAction(
+                                    true,
+                                    account.account_id,
+                                  )
+                                }
+                              >
+                                <Edit className={"h-4 w-4"} />
+                                <span>Configure</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className={"menu-item-danger"}
+                                role={"button"}
+                                onClick={() =>
+                                  handleAccountDeleteAction([
+                                    account.account_id,
+                                  ])
+                                }
+                              >
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}{" "}
         </section>
+
         {
           <ChartOfAccountAdd
             isOpen={isEditModalOpen}

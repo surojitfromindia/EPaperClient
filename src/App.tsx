@@ -5,6 +5,7 @@ import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
 import EPaper from "@/components/app/EPaper.tsx";
 import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
 import ChartOfAccountPage from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
+import ChartOfAccountDetails from "@/components/app/ChartOfAccount/ChartOfAccountDetails.tsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -33,6 +34,12 @@ function App() {
           path: "chart_of_accounts",
           element: <ChartOfAccountPage />,
           errorElement: <Page404 />,
+          children:[
+            {
+              path:":account_id",
+              element: <ChartOfAccountDetails/>
+            }
+          ]
         },
         {
           path: "*",
