@@ -13,35 +13,33 @@ type ChartOfAccount = {
   // account type
   account_type_name_formatted: string;
   account_type_name: string;
-  account_type_id?:number,
+  account_type_id?: number;
   // account group
   account_group_name_formatted: string;
   account_group_name: string;
-  account_group_id?:number;
+  account_group_id?: number;
 };
 
 type AccountType = {
-  "account_type_name": string,
-  "account_type_name_formatted": string,
-  "account_group_name": string,
-  "account_group_name_formatted": string,
-}
+  account_type_name: string;
+  account_type_name_formatted: string;
+  account_group_name: string;
+  account_group_name_formatted: string;
+};
 
 type ChartOfAccountCreatePayload = {
-
   account_name: string;
   account_code: string;
   // account parent
-  account_parent_id: number|null;
+  account_parent_id: number | null;
   // account type
   account_type_name: string;
-  description: string
-}
-
+  description: string;
+};
 
 type EditPageServiceParams = {
-  account_id ?: number,
-}
+  account_id?: number;
+};
 
 class ChartOfAccountService implements APIService {
   readonly urlFragment: string = "/accounts";
@@ -80,7 +78,7 @@ class ChartOfAccountService implements APIService {
     });
   }
 
-  addChartOfAccounts({ payload }:{payload: ChartOfAccountCreatePayload}) {
+  addChartOfAccounts({ payload }: { payload: ChartOfAccountCreatePayload }) {
     const url = "/accounts";
     return this.#axiosConfig.APIPostRequestWrapper<
       ChartOfAccountCreatePayload,
@@ -90,16 +88,22 @@ class ChartOfAccountService implements APIService {
     >(url, payload);
   }
 
-  deleteSingleChartOfAccounts({ account_id }:{account_id: number}) {
+  deleteSingleChartOfAccounts({ account_id }: { account_id: number }) {
     const url = `/accounts/${account_id}`;
-    return this.#axiosConfig.APIDeleteRequestWrapper<
-      {
-        account_ids: number[];
-      }
-    >(url);
+    return this.#axiosConfig.APIDeleteRequestWrapper<{
+      account_ids: number[];
+    }>(url);
   }
 
-
+  getChartOfAccount({ account_id }: EditPageServiceParams = {}) {
+    const url = `/accounts/${account_id}`;
+    return this.#axiosConfig.APIGetRequestWrapper<{
+      chart_of_account: ChartOfAccount;
+    }>(url, {
+      searchParameters: [],
+      abortController: this.abortController,
+    });
+  }
 
   abortGetRequest(): void {
     this.abortController.abort();
@@ -107,4 +111,4 @@ class ChartOfAccountService implements APIService {
 }
 
 export default ChartOfAccountService;
-export type { ChartOfAccount, AccountType,ChartOfAccountCreatePayload };
+export type { ChartOfAccount, AccountType, ChartOfAccountCreatePayload };
