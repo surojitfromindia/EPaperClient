@@ -6,23 +6,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
-import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { toast } from "@/components/ui/use-toast.ts";
-import {Checkbox} from "@/components/ui/checkbox.tsx";
-import {useNavigate} from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { useNavigate } from "react-router-dom";
+import { OnAccountModification } from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
+import classNames from "classnames";
 
 const DEPTH_OFFSET = 0;
 type EditPageContent = {
@@ -30,138 +30,92 @@ type EditPageContent = {
   accounts_list: ChartOfAccount[];
 };
 
-type OnAccountsDeleteSuccess = (account_ids: number[]) => void;
-type OnAccountAddSuccess = (
-  action_type: "add" | "edit",
-  account_id: number,
-) => void;
 interface ChartOfAccountListingProps
   extends React.HTMLAttributes<HTMLDivElement> {
   shrinkTable?: boolean;
+  selectedAccountId?: number;
+  accounts: ChartOfAccount[];
+  isAccountsFetching: boolean;
+  onAccountEditClick: (account_id: number) => void;
+  onAccountAddClick: () => void;
+  onAccountModificationSuccess: OnAccountModification;
 }
 
-export type { EditPageContent, OnAccountAddSuccess, OnAccountsDeleteSuccess };
+export type { EditPageContent };
 const chartOfAccountService = new ChartOfAccountService();
 
 export function ChartOfAccountListing({
   shrinkTable = false,
+  selectedAccountId,
+  accounts = [],
+  isAccountsFetching = true,
+  onAccountModificationSuccess,
+  onAccountEditClick,
+  onAccountAddClick,
 }: ChartOfAccountListingProps) {
   const navigate = useNavigate();
-  const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
+  const isLoading = isAccountsFetching;
 
-  const loadAccounts = useCallback(() => {
-    chartOfAccountService.getChartOfAccounts().then((chartOfAccounts) => {
-      setChartOfAccounts(chartOfAccounts?.chart_of_accounts ?? []);
-      setIsLoading(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    loadAccounts();
-    return () => {
-      chartOfAccountService.abortGetRequest();
-    };
-  }, [ loadAccounts]);
-
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [editingAccountId, setEditingAccountId] = useState<number>();
-  const handleEditModalOpenCloseAction = (
-    action: boolean,
-    edit_account_id?: number,
-  ) => {
-    if (edit_account_id && action) {
-      setEditingAccountId(edit_account_id);
-    } else {
-      setEditingAccountId(undefined);
-    }
-    setIsEditModalOpen(action);
-  };
-
-  const GiveSpace = useCallback( (
-    account_depth: number,
-    account_bar: number[],
-    has_children: boolean,
-  ) => {
-    const SShape = [];
-    const depth = account_depth - DEPTH_OFFSET;
-    const d_n_n = shrinkTable?`display-node-name-extended`:`display-node-name`;
-    if (account_bar.length > 1) {
-      const IShape = (
-        <span className={"intermediary-nodes"}> &nbsp;&nbsp;&nbsp;&nbsp; </span>
-      );
-      const SpaceBetweenShape = <span> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
-      const SpaceBetweenShapeInInter = (
-        <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
-      );
-      let LShape = (
-        <span className={d_n_n}>
-          {" "}
-          &nbsp;&nbsp;&nbsp;&nbsp;{" "}
-        </span>
-      );
-      if (has_children) {
-        // if it has some children, we add more space around
-        LShape = (
-          <span className={d_n_n}>
-            {" "}
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{" "}
-          </span>
+  const GiveSpace = useCallback(
+    (account_depth: number, account_bar: number[], has_children: boolean) => {
+      const SShape = [];
+      const depth = account_depth - DEPTH_OFFSET;
+      const d_n_n = shrinkTable
+        ? `display-node-name-extended`
+        : `display-node-name`;
+      const i_n = shrinkTable
+        ? `intermediary-nodes-extended`
+        : `intermediary-nodes`;
+      if (account_bar.length > 1) {
+        const IShape = <span className={i_n}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
+        const SpaceBetweenShape = <span> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
+        const SpaceBetweenShapeInInter = (
+          <span> &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; </span>
         );
-      }
-      for (let s = 1; s < depth; s += 1) {
-        // if the number is positive, we add '|' shape
-        //if not a string of spaces, number of space after "|" is smaller than regular
-        if (account_bar[s] > 0) {
-          SShape.push(IShape);
-          SShape.push(SpaceBetweenShape);
-        } else {
-          SShape.push(SpaceBetweenShapeInInter);
+        let LShape = <span className={d_n_n}> &nbsp;&nbsp;&nbsp;&nbsp; </span>;
+        if (has_children) {
+          // if it has some children, we add more space around
+          LShape = (
+            <span className={d_n_n}>
+              {" "}
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{" "}
+            </span>
+          );
         }
+        for (let s = 1; s < depth; s += 1) {
+          // if the number is positive, we add '|' shape
+          //if not a string of spaces, number of space after "|" is smaller than regular
+          if (account_bar[s] > 0) {
+            SShape.push(IShape);
+            SShape.push(SpaceBetweenShape);
+          } else {
+            SShape.push(SpaceBetweenShapeInInter);
+          }
+        }
+        SShape.push(LShape);
       }
-      SShape.push(LShape);
-    }
-    let iconBasic = "h-4 w-4 mr-1 mb-0.5 inline -ml-4";
-    if (has_children) {
-      // prepare the folder icon, custom margin
-      if (account_bar.length !== 1) {
-        iconBasic += " -ml-[4px]";
+      let iconBasic = "h-4 w-4 mr-1 mb-0.5 inline -ml-4";
+      if (has_children) {
+        // prepare the folder icon, custom margin
+        if (account_bar.length !== 1) {
+          iconBasic += " -ml-[4px]";
+        }
+        SShape.push(<FolderIcon className={iconBasic} />);
       }
-      SShape.push(<FolderIcon className={iconBasic} />);
-    }
-    return React.createElement(
-      "span",
-      {},
-      React.Children.map(SShape, (children) => (
-        <React.Fragment>{children}</React.Fragment>
-      )),
-    );
-  },[shrinkTable]);
+      return React.createElement(
+        "span",
+        {},
+        React.Children.map(SShape, (children) => (
+          <React.Fragment>{children}</React.Fragment>
+        )),
+      );
+    },
+    [shrinkTable],
+  );
 
   const accountsWithTreeFormat = useMemo(() => {
     return generateTreeLine(accounts);
   }, [accounts]);
-
-  const onActionSuccess = useCallback<OnAccountAddSuccess>(
-    (action_type) => {
-      if (action_type === "add") {
-        toast({
-          title: "Success",
-          description: "Account is added successfully",
-        });
-      } else if (action_type === "edit") {
-        toast({
-          title: "Success",
-          description: "Account is updated successfully",
-        });
-      }
-      loadAccounts();
-    },
-    [loadAccounts],
-  );
-  const onAccountDeleteSuccess = useCallback<OnAccountsDeleteSuccess>(() => {
-    loadAccounts();
-  }, [loadAccounts]);
 
   const handleAccountDeleteAction = async (selected_account_ids: number[]) => {
     try {
@@ -169,59 +123,66 @@ export function ChartOfAccountListing({
       await chartOfAccountService.deleteSingleChartOfAccounts({
         account_id: accountId,
       });
-      toast({
-        title: "Success",
-        description: "Account is delete successfully",
-      });
-      onAccountDeleteSuccess(selected_account_ids);
+      onAccountModificationSuccess("delete", selected_account_ids);
     } catch (error) {
       console.log(error);
     }
   };
-  const handleRowClick = (account_id:number)=>{
-    navigate(`/app/chart_of_accounts/${account_id}`)
-  }
-
+  const handleRowClick = (account_id: number) => {
+    navigate(`/app/chart_of_accounts/${account_id}`);
+  };
+  const handleAccountEditOptionClick = (account_id: number) => {
+    onAccountEditClick(account_id);
+  };
   return (
     <>
       <main className={"relative flex max-h-screen flex-col"}>
-        <section className={"flex p-5 justify-between items-center shrink-0 bg-accent"}>
-          <h1 className={"text-xl"}>Chart of Accounts</h1>
-          <Button
-            className={"ml-2"}
-            onClick={() => handleEditModalOpenCloseAction(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Account
+        <section
+          className={
+            "flex px-5 py-3  justify-between items-center shrink-0 bg-accent drop-shadow-sm"
+          }
+        >
+          <h1 className={"text-md"}>Chart of Accounts</h1>
+          <Button size={"sm"} onClick={onAccountAddClick}>
+            <Plus className="h-4 w-4" /> Add Account
           </Button>
         </section>
         <section
-          className={
-            "mb-12 flex flex-col items-center overflow-y-scroll grow-0"
-          }
+          className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isLoading && (
             <Table className={"h-full"}>
-              {!shrinkTable &&
-                (<TableHeader className={" bg-accent sticky top-0 z-[1]"}>
-                  <TableRow className={"uppercase"}>
+              {!shrinkTable && (
+                <TableHeader className={" bg-accent sticky top-0 z-[1]"}>
+                  <TableRow className={"uppercase text-xs"}>
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
                     <TableHead>account name</TableHead>
-                        <TableHead>account code</TableHead>
-                        <TableHead>account type</TableHead>
-                        <TableHead>parent account name</TableHead>
-                        <TableHead>&nbsp;</TableHead>
-
+                    <TableHead>account code</TableHead>
+                    <TableHead>account type</TableHead>
+                    <TableHead>parent account name</TableHead>
+                    <TableHead>&nbsp;</TableHead>
                   </TableRow>
-                </TableHeader>)
-              }
+                </TableHeader>
+              )}
               <TableBody>
                 {accountsWithTreeFormat.map((account) => (
-                  <TableRow key={account.account_id} onClick={()=>{handleRowClick(account.account_id)}}>
+                  <TableRow
+                    key={account.account_id}
+                    className={classNames(
+                      account.account_id === selectedAccountId && "bg-accent",
+                      "cursor-pointer",
+                    )}
+                  >
                     <TableCell>
                       <Checkbox />
                     </TableCell>
-                    <TableCell className={"py-3"}>
+                    <TableCell
+                      onClick={() => {
+                        handleRowClick(account.account_id);
+                      }}
+                      className={"py-3"}
+                    >
                       <>
                         <span className={"font-medium text-center "}>
                           {GiveSpace(
@@ -246,11 +207,27 @@ export function ChartOfAccountListing({
                     </TableCell>
                     {!shrinkTable && (
                       <>
-                        <TableCell>{account.account_code}</TableCell>
-                        <TableCell>
+                        <TableCell
+                          onClick={() => {
+                            handleRowClick(account.account_id);
+                          }}
+                        >
+                          {account.account_code}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => {
+                            handleRowClick(account.account_id);
+                          }}
+                        >
                           {account.account_type_name_formatted}
                         </TableCell>
-                        <TableCell>{account.account_parent_name}</TableCell>
+                        <TableCell
+                          onClick={() => {
+                            handleRowClick(account.account_id);
+                          }}
+                        >
+                          {account.account_parent_name}
+                        </TableCell>
                         <TableCell>
                           <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
@@ -264,8 +241,7 @@ export function ChartOfAccountListing({
                                 className={"menu-item-ok"}
                                 role={"button"}
                                 onClick={() =>
-                                  handleEditModalOpenCloseAction(
-                                    true,
+                                  handleAccountEditOptionClick(
                                     account.account_id,
                                   )
                                 }
@@ -295,15 +271,6 @@ export function ChartOfAccountListing({
             </Table>
           )}{" "}
         </section>
-
-        {
-          <ChartOfAccountAdd
-            isOpen={isEditModalOpen}
-            onClose={() => handleEditModalOpenCloseAction(false)}
-            editAccountId={editingAccountId}
-            onActionSuccess={onActionSuccess}
-          />
-        }
       </main>
     </>
   );

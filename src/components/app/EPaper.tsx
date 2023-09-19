@@ -41,9 +41,9 @@ export default function EPaper() {
             }
           >
             <TopBar organization={appState?.organization} />
-            <div className={"grid lg:grid-cols-5"}>
-              <Sidebar className={"hidden lg:block"} />
-              <div className={"col-span-3 lg:col-span-4"}>
+            <div className={"grid lg:grid-cols-6"}>
+              <Sidebar className={"hidden lg:block w-full"} />
+              <div className={"col-span-5"}>
                 <div className={"h-screen"}>
                   <Outlet />
                 </div>

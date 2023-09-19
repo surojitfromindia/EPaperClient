@@ -7,9 +7,11 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const { pathname } = useLocation();
+
   const isActiveLink = useCallback(
     (linkName: string) => {
-      const lastEnd = pathname.split("/").pop();
+      const lastEnd = pathname.split("/")[2];
+        console.log(lastEnd)
       if (lastEnd === linkName) {
         return "default";
       }

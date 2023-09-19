@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  EditPageContent,
-  OnAccountAddSuccess
+  EditPageContent
 } from "@/components/app/ChartOfAccount/ChartOfAccountListing.tsx";
 import {
   Dialog,
@@ -38,13 +37,14 @@ import { Textarea } from "@/components/ui/textarea.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { Loader2 } from "lucide-react";
 import {reactSelectComponentOverride, reactSelectStyle} from "@/util/style/reactSelectStyle.ts";
+import {OnAccountAddOrEditSuccess} from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
 
 
 interface ChartOfAccountAddProps
   extends React.HTMLAttributes<HTMLDivElement>,
     ModelProps<{ added_account: string }> {
   editAccountId?: number;
-  onActionSuccess: OnAccountAddSuccess;
+  onActionSuccess: OnAccountAddOrEditSuccess;
 }
 type OptionType = {
   label: string;
@@ -286,11 +286,11 @@ export default function ChartOfAccountAdd({
   useEffect(() => {
     setValue("account_parent", null);
     setValue("has_parent_account", false);
-  }, [selectedAccountType]);
+  }, [selectedAccountType, setValue]);
 
   if (isOpen)
     return (
-      <div className={"fixed inset-0  backdrop"}>
+      <div className={"fixed inset-0  backdrop z-10"}>
         {
           <Dialog open={isOpen} onOpenChange={handleDialogClose} modal={false}>
             {

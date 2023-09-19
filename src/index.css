@@ -93,6 +93,15 @@
         pb-3
         border-l-[1px] border-gray-700;
   }
+  .intermediary-nodes-extended {
+    @apply relative
+        w-5
+        right-2
+        bottom-[13px]
+        pt-[43px]
+        pb-3
+        border-l-[1px] border-gray-700;
+  }
 
   .backdrop {
     background: rgba(20, 25, 47, 0.5);
