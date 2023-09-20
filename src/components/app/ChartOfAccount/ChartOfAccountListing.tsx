@@ -129,7 +129,7 @@ export function ChartOfAccountListing({
     }
   };
   const handleRowClick = (account_id: number) => {
-    navigate(`/app/chart_of_accounts/${account_id}`);
+    navigate(`/app/chart_of_accounts/${account_id}?i=12`);
   };
   const handleAccountEditOptionClick = (account_id: number) => {
     onAccountEditClick(account_id);
