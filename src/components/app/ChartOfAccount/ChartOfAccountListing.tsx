@@ -139,7 +139,7 @@ export function ChartOfAccountListing({
       <main className={"relative flex max-h-screen flex-col"}>
         <section
           className={
-            "flex px-5 py-3  justify-between items-center shrink-0 bg-accent drop-shadow-sm"
+            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"
           }
         >
           <h1 className={"text-md"}>Chart of Accounts</h1>
@@ -154,7 +154,7 @@ export function ChartOfAccountListing({
           {!isLoading && (
             <Table className={"h-full"}>
               {!shrinkTable && (
-                <TableHeader className={" bg-accent sticky top-0 z-[1]"}>
+                <TableHeader className={"bg-background shadow-sm sticky top-0 z-[1]"}>
                   <TableRow className={"uppercase text-xs"}>
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
                     <TableHead>account name</TableHead>

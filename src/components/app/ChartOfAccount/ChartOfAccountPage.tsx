@@ -133,6 +133,3 @@ export default function ChartOfAccountPage() {
   );
 }
 
-// export function useUser() {
-//   return useOutletContext<ContextType>();
-// }

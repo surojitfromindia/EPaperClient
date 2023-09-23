@@ -12,7 +12,6 @@ import {Toaster} from "@/components/ui/toaster.tsx";
 export default function EPaper() {
   const [appState, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
-
   // load app state.
   const loadApplicationState = useCallback(async (): Promise<boolean> => {
     await ApplicationState.build();
@@ -40,9 +39,9 @@ export default function EPaper() {
               "absolute top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden"
             }
           >
-            <TopBar organization={appState?.organization} />
+            <TopBar organization={appState?.organization} isSideBarCollapsed/>
             <div className={"grid lg:grid-cols-6"}>
-              <Sidebar className={"hidden lg:block w-full"} />
+              <Sidebar />
               <div className={"col-span-5"}>
                 <div className={"h-screen"}>
                   <Outlet />

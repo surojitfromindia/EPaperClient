@@ -66,7 +66,7 @@ export default function ChartOfAccountDetails() {
       <section className={"w-full bg-accent"}>
         <div className={"flex"}>
           <Button
-            className={"rounded-none text-primary"}
+            className={"rounded-none"}
             variant={"ghost_primary"}
             onClick={() => handleEditButtonClick(editingAccountId)}
           >
