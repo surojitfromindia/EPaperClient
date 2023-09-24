@@ -7,7 +7,9 @@ import {
   AppState,
 } from "@/API/Resources/v1/AppState/AppState.ts";
 import LoaderFullPage from "@/components/app/common/LoaderFullPage.tsx";
-import {Toaster} from "@/components/ui/toaster.tsx";
+import { Toaster } from "@/components/ui/toaster.tsx";
+import { Provider } from "react-redux";
+import store from "@/redux/store.ts";
 
 export default function EPaper() {
   const [appState, setAppState] = useState<AppState>();
@@ -31,27 +33,32 @@ export default function EPaper() {
   // as those must appear all the time.
   return (
     <>
-      {applicationLoading && <LoaderFullPage />}
-      {!applicationLoading && (
-        <div className={"block"}>
-          <div
-            className={
-              "absolute top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden"
-            }
-          >
-            <TopBar organization={appState?.organization} isSideBarCollapsed/>
-            <div className={"grid lg:grid-cols-6"}>
-              <Sidebar />
-              <div className={"col-span-5"}>
-                <div className={"h-screen"}>
-                  <Outlet />
+      <Provider store={store}>
+        {applicationLoading && <LoaderFullPage />}
+        {!applicationLoading && (
+          <div className={"block"}>
+            <div
+              className={
+                "absolute top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden"
+              }
+            >
+              <TopBar
+                organization={appState?.organization}
+                isSideBarCollapsed
+              />
+              <div className={"flex grid-cols-6"}>
+                <Sidebar />
+                <div className={"col-span-5 w-full"}>
+                  <div className={"h-screen"}>
+                    <Outlet />
+                  </div>
+                  <Toaster />
                 </div>
-                <Toaster />
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Provider>
     </>
   );
 }

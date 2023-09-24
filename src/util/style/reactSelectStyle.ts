@@ -5,7 +5,7 @@ const reactSelectStyle: ClassNamesConfig = {
   option: (state) =>
     classNames(
       state.isSelected && "!bg-primary",
-      state.isFocused && !state.isSelected && "!bg-accent",
+      state.isFocused && !state.isSelected && "!bg-accent !text-primary",
       "!text-sm",
       "rounded-sm",
     ),

@@ -1,3 +1,3 @@
 export default function Dashboard() {
-  return <>App Dashboard</>;
+  return <div className={"p-5 text-lg"}>App Dashboard</div>;
 }

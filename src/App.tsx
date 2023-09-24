@@ -7,6 +7,7 @@ import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
 import ChartOfAccountPage from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
 import ChartOfAccountDetails from "@/components/app/ChartOfAccount/ChartOfAccountDetails.tsx";
 import { ItemPage } from "@/components/app/Items/ItemPage.tsx";
+import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -32,9 +33,28 @@ function App() {
           errorElement: <Page404 />,
         },
         {
-          path: "items",
-          element: <ItemPage />,
+          path: "inventory",
           errorElement: <Page404 />,
+          children: [
+            {
+              path: "items/new",
+              element: <ItemAdd />,
+            },
+            {
+              path: "items/:item_id/edit",
+              element: <ItemAdd />,
+            },
+            {
+              path: "items",
+              element: <ItemPage />,
+              children: [
+                {
+                  path: ":item_id",
+                  element: <div>Details</div>,
+                },
+              ],
+            },
+          ],
         },
         {
           path: "chart_of_accounts",

@@ -142,7 +142,7 @@ export function ChartOfAccountListing({
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"
           }
         >
-          <h1 className={"text-md"}>Chart of Accounts</h1>
+          <h1 className={"text-lg"}>Chart of Accounts</h1>
           <Button size={"sm"} onClick={onAccountAddClick}>
             <Plus className="h-4 w-4" /> Add Account
           </Button>
@@ -170,7 +170,7 @@ export function ChartOfAccountListing({
                   <TableRow
                     key={account.account_id}
                     className={classNames(
-                      account.account_id === selectedAccountId && "bg-accent",
+                      account.account_id === selectedAccountId && "bg-primary-light",
                       "cursor-pointer",
                     )}
                   >

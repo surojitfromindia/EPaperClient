@@ -1,5 +1,6 @@
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
+import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 
 interface Item  {
     item_id: number;
@@ -12,8 +13,27 @@ interface Item  {
     purchase_price?:number;
     purchase_description?:string
 
-};
+}
+type ItemUnit ={
+    unit_id:number,
+    unit: string,
+    unit_name?:string,
+}
 
+type TaxRate = {
+    tax_id: number,
+    name:string,
+    rate:number,
+    rate_formatted:string,
+}
+
+type ItemEditPageContent ={
+    taxes: TaxRate[];
+    units: ItemUnit[];
+    income_accounts_list: ChartOfAccount[],
+    purchase_accounts_list: ChartOfAccount[],
+    inventory_accounts_list: ChartOfAccount[],
+}
 
 class ItemService implements APIService {
     readonly urlFragment: string = "/items";
@@ -30,6 +50,13 @@ class ItemService implements APIService {
         return this.#axiosConfig.APIGetRequestWrapper<{
             items: Item[];
         }>(url, {
+            searchParameters: [],
+            abortController: this.abortController,
+        });
+    }
+    getItemEditPage() {
+        const url = this.urlFragment+"/edit_page";
+        return this.#axiosConfig.APIGetRequestWrapper<ItemEditPageContent>(url, {
             searchParameters: [],
             abortController: this.abortController,
         });
@@ -85,4 +112,4 @@ class ItemService implements APIService {
 }
 
 export default ItemService;
-export type { Item };
+export type { Item,ItemEditPageContent };

@@ -50,7 +50,7 @@ export default function TopBar({organization}:TopBarProps) {
               </span>
             </PopoverTrigger>
             <PopoverContent
-              className={"p-2 bg-primary mt-1 border-0 rounded-0.5 rounded-r-none text-primary-foreground"}
+              className={"p-2 shadow-md mt-2.5 border-0 h-screen rounded-0.5 rounded-r-none"}
             >
               <div className={"flex flex-col space-y-2"}>
                 <span className={"text-md"}>{organizationName}</span>
