@@ -9,11 +9,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form.tsx";
-import { useForm } from "react-hook-form";
-// import * as z from "zod";
-// import { zodResolver } from "@hookform/resolvers/zod";
+import { SubmitHandler, useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
-import  { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
   ItemEditPageContent,
@@ -27,6 +27,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import { Textarea } from "@/components/ui/textarea.tsx";
+import { formatOptionLabelOfAccounts } from "@/util/FormatAccountsLabel.tsx";
+import RNumberFormat from "@/components/ui/RNumberFormat.tsx";
 
 const itemService = new ItemService();
 
@@ -37,7 +39,6 @@ export default function ItemAdd() {
 
   const navigate = useNavigate();
 
-  const form = useForm({});
   const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
     inventory_accounts_list: [],
     purchase_accounts_list: [],
@@ -47,7 +48,6 @@ export default function ItemAdd() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const { register, control } = form;
   const loadEditPage = useCallback(() => {
     itemService
       .getItemEditPage()
@@ -70,12 +70,14 @@ export default function ItemAdd() {
     return editPageContent.income_accounts_list.map((acc) => ({
       label: acc.account_name,
       value: acc.account_id,
+      ...acc,
     }));
   }, [editPageContent.income_accounts_list]);
   const purchaseAccountsDropDown = useMemo(() => {
     return editPageContent.purchase_accounts_list.map((acc) => ({
       label: acc.account_name,
       value: acc.account_id,
+      ...acc,
     }));
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
@@ -95,9 +97,73 @@ export default function ItemAdd() {
       itemService.abortGetRequest();
     };
   }, [loadEditPage]);
-  if (isLoading) {
-    return <LoaderComponent />;
-  }
+
+  const basicSchema = z
+    .object({
+      name: z.string().trim().nonempty(),
+      product_type: z.enum(["goods", "service"]),
+      unit: z.object({ value: z.string().trim(), label: z.string() }),
+      sku: z.string().trim().min(1),
+      has_selling_price: z.boolean().optional(),
+      has_purchase_price: z.boolean().optional(),
+      tax: z.object({ value: z.number(), label: z.string() }),
+    })
+    .refine(
+      (data) =>
+        (data.has_purchase_price || data.has_selling_price),
+      { message: "good", path: ["has_selling_price"] },
+    );
+  const hasSellingInformationSchema = z.object({
+    has_selling_price: z.literal(true),
+    selling_price: z.number(),
+    selling_account: z.object({ value: z.number(), label: z.string() }),
+    selling_description: z.string().optional(),
+  });
+  const hasNoSellingInformationSchema = z.object({
+    has_selling_price: z.literal(false),
+  });
+  const hasPurchaseInformation = z.object({
+    has_purchase_price: z.literal(true),
+    purchase_price: z.number(),
+    purchase_account: z.object({ value: z.number(), label: z.string() }),
+    purchase_description: z.string().optional(),
+  });
+  const hasNoPurchaseInformation = z.object({
+    has_purchase_price: z.literal(false),
+  });
+  const schema = basicSchema
+    .and(
+      z.discriminatedUnion("has_selling_price", [
+        hasSellingInformationSchema,
+        hasNoSellingInformationSchema,
+      ]),
+    )
+    .and(
+      z.discriminatedUnion("has_purchase_price", [
+        hasPurchaseInformation,
+        hasNoPurchaseInformation,
+      ]),
+    );
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      has_selling_price: true,
+      has_purchase_price: true,
+    },
+  });
+  const {
+    formState: { errors },
+    register,
+    handleSubmit,
+    control,
+  } = form;
+
+  const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
+    data,
+  ) => {
+    console.log(data);
+  };
+  console.log("errors", errors);
 
   const Option = (props: OptionProps<(typeof unitsDropDownOptions)[0]>) => {
     return (
@@ -122,6 +188,9 @@ export default function ItemAdd() {
       </components.Option>
     );
   };
+  if (isLoading) {
+    return <LoaderComponent />;
+  }
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div className={"px-5 py-3 shadow-md flex justify-between items-center"}>
@@ -136,60 +205,63 @@ export default function ItemAdd() {
         <Form {...form}>
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
-              <div className={"md:grid-cols-4 col-span-5 space-y-4"}>
+              <div className={"md:grid-cols-4 col-span-5 space-y-3.5"}>
                 <FormField
                   control={form.control}
-                  name="type"
+                  name="product_type"
                   render={({ field }) => (
-                    <FormItem
-                      className={"grid grid-cols-4   items-center space-y-0"}
-                    >
+                    <FormItem className={"grid grid-cols-4 space-y-0"}>
                       <FormLabel>Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-row space-x-5"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="goods" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Goods</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="services" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Services
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-5"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="goods" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Goods
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="service" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Service
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <span className={"h-4 block"}>
+                          <FormMessage />
+                        </span>{" "}
+                      </div>
                     </FormItem>
                   )}
                 />
                 <FormField
-                  name={"item_name"}
+                  name={"name"}
                   render={() => (
                     <FormItem className={"grid grid-cols-4 items-center "}>
                       <FormLabel
-                        htmlFor={"name_input"}
+                        htmlFor={"name"}
                         className={"capitalize label-required"}
                       >
                         Name
                       </FormLabel>
-                      <FormControl>
-                        <Input
-                          id="name_input"
-                          className="col-span-3"
-                          {...register("name")}
-                        />
-                      </FormControl>
-
-                      <FormMessage />
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <Input id="name" {...register("name")} />
+                        </FormControl>
+                        <span className={"h-4 block"}>
+                          <FormMessage />
+                        </span>
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -197,21 +269,21 @@ export default function ItemAdd() {
                   name={"sku"}
                   render={() => (
                     <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel
-                        htmlFor={"sku"}
-                        className={"capitalize"}
-                      >
+                      <FormLabel htmlFor={"sku"} className={"capitalize"}>
                         SKU
                       </FormLabel>
-                      <FormControl>
-                        <Input
-                          id="sku"
-                          className="col-span-3"
-                          {...register("sku")}
-                        />
-                      </FormControl>
-
-                      <FormMessage />
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <Input
+                            id="sku"
+                            className="col-span-3"
+                            {...register("sku")}
+                          />
+                        </FormControl>
+                        <span className={"h-4 block"}>
+                          <FormMessage />
+                        </span>{" "}
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -222,20 +294,24 @@ export default function ItemAdd() {
                       <FormLabel htmlFor={"unit"} className=" capitalize">
                         unit
                       </FormLabel>
-                      <FormControl>
-                        <ReactSelect
-                          className={"col-span-3"}
-                          options={unitsDropDownOptions}
-                          {...field}
-                          inputId={"unit"}
-                          classNames={reactSelectStyle}
-                          components={{
-                            ...reactSelectComponentOverride,
-                            Option,
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <ReactSelect
+                            className={"col-span-3"}
+                            options={unitsDropDownOptions}
+                            {...field}
+                            inputId={"unit"}
+                            classNames={reactSelectStyle}
+                            components={{
+                              ...reactSelectComponentOverride,
+                              Option,
+                            }}
+                          />
+                        </FormControl>
+                        <span className={"h-4 block"}>
+                          <FormMessage />
+                        </span>{" "}
+                      </div>
                     </FormItem>
                   )}
                   control={control}
@@ -277,7 +353,7 @@ export default function ItemAdd() {
                 <div className={"flex flex-col space-y-2 mt-5"}>
                   <FormField
                     name={"selling_price"}
-                    render={() => (
+                    render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel
                           htmlFor={"selling_price"}
@@ -285,20 +361,26 @@ export default function ItemAdd() {
                         >
                           selling price
                         </FormLabel>
-                        <FormControl>
-                          <div className={"relative col-span-3"}>
-                            <Input
-                              id="name_input"
-                              {...register("selling_price")}
-                              className="pl-12"
-                            />
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-primary text-sm cursor-pointer">
-                              {organizationCurrency}
-                            </div>
-                          </div>
-                        </FormControl>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <div className={"relative col-span-3"}>
+                              <RNumberFormat
+                                id="selling_price"
+                                onValueChange={({ floatValue }) => {
+                                  field.onChange(floatValue);
+                                }}
+                                customInput={Input}
+                                getInputRef={field.ref}
+                                prefix={organizationCurrency}
 
-                        <FormMessage />
+
+                              />
+                            </div>
+                          </FormControl>
+                          <span className={"h-4 block"}>
+                            <FormMessage />
+                          </span>{" "}
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -312,19 +394,24 @@ export default function ItemAdd() {
                         >
                           Account
                         </FormLabel>
-                        <FormControl>
-                          <ReactSelect
-                            className={"col-span-3"}
-                            options={incomeAccountsDropDown}
-                            {...field}
-                            inputId={"selling_account"}
-                            classNames={reactSelectStyle}
-                            components={{
-                              ...reactSelectComponentOverride,
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <ReactSelect
+                              className={"col-span-3"}
+                              options={incomeAccountsDropDown}
+                              {...field}
+                              inputId={"selling_account"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              formatOptionLabel={formatOptionLabelOfAccounts}
+                            />
+                          </FormControl>
+                          <span className={"h-4 block"}>
+                            <FormMessage />
+                          </span>{" "}
+                        </div>
                       </FormItem>
                     )}
                     control={control}
@@ -346,38 +433,41 @@ export default function ItemAdd() {
                             {...register("selling_description")}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <span className={"h-4 block"}>
+                          <FormMessage />
+                        </span>
                       </FormItem>
                     )}
                     name={"selling_description"}
                   />
                   <FormField
-                      name={"tax"}
-                      render={({ field }) => (
-                          <FormItem className={"grid grid-cols-4 items-center "}>
-                            <FormLabel
-                                htmlFor={"tax"}
-                                className=" capitalize"
-                            >
-                              tax rate
-                            </FormLabel>
-                            <FormControl>
-                              <ReactSelect
-                                  className={"col-span-3"}
-                                  options={taxesDropDown}
-                                  {...field}
-                                  inputId={"tax"}
-                                  classNames={reactSelectStyle}
-                                  components={{
-                                    ...reactSelectComponentOverride,
-                                  }}
-                                  isClearable={true}
-                              />
-                            </FormControl>
+                    name={"tax"}
+                    render={({ field }) => (
+                      <FormItem className={"grid grid-cols-4 items-center "}>
+                        <FormLabel htmlFor={"tax"} className=" capitalize">
+                          tax rate
+                        </FormLabel>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <ReactSelect
+                              className={"col-span-3"}
+                              options={taxesDropDown}
+                              {...field}
+                              inputId={"tax"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              isClearable={true}
+                            />
+                          </FormControl>
+                          <span className={"h-4 block"}>
                             <FormMessage />
-                          </FormItem>
-                      )}
-                      control={control}
+                          </span>{" "}
+                        </div>
+                      </FormItem>
+                    )}
+                    control={control}
                   />
                 </div>
               </div>
@@ -415,28 +505,29 @@ export default function ItemAdd() {
                 <div className={"flex flex-col space-y-2 mt-5"}>
                   <FormField
                     name={"purchase_price"}
-                    render={() => (
+                    render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel
                           htmlFor={"purchase_price"}
                           className={"capitalize label-required"}
                         >
-                          purchase price
+                          cost price
                         </FormLabel>
-                        <FormControl>
-                          <div className={"relative col-span-3"}>
-                            <Input
-                              id="name_input"
-                              {...register("purchase_price")}
-                              className="pl-12"
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <RNumberFormat
+                              id="purchase_price"
+                              onValueChange={({ floatValue }) => {
+                                field.onChange(floatValue);
+                              }}
+                              getInputRef={field.ref}
+                              customInput={Input}
                             />
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-primary text-sm cursor-pointer">
-                              {organizationCurrency}
-                            </div>
-                          </div>
-                        </FormControl>
-
-                        <FormMessage />
+                          </FormControl>
+                          <span className={"h-4 block"}>
+                            <FormMessage />
+                          </span>{" "}
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -450,19 +541,24 @@ export default function ItemAdd() {
                         >
                           Account
                         </FormLabel>
-                        <FormControl>
-                          <ReactSelect
-                            className={"col-span-3"}
-                            options={purchaseAccountsDropDown}
-                            {...field}
-                            inputId={"purchase_account"}
-                            classNames={reactSelectStyle}
-                            components={{
-                              ...reactSelectComponentOverride,
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <ReactSelect
+                              className={"col-span-3"}
+                              options={purchaseAccountsDropDown}
+                              {...field}
+                              inputId={"purchase_account"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              formatOptionLabel={formatOptionLabelOfAccounts}
+                            />
+                          </FormControl>
+                          <span className={"h-4 block"}>
+                            <FormMessage />
+                          </span>{" "}
+                        </div>
                       </FormItem>
                     )}
                     control={control}
@@ -476,15 +572,19 @@ export default function ItemAdd() {
                         >
                           description
                         </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            id="purchase_description"
-                            placeholder={"Description"}
-                            className="col-span-3"
-                            {...register("purchase_description")}
-                          />
-                        </FormControl>
-                        <FormMessage />
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <Textarea
+                              id="purchase_description"
+                              placeholder={"Description"}
+                              className="col-span-3"
+                              {...register("purchase_description")}
+                            />
+                          </FormControl>
+                          <span className={"h-4 block"}>
+                            <FormMessage />
+                          </span>{" "}
+                        </div>
                       </FormItem>
                     )}
                     name={"purchase_description"}
@@ -492,11 +592,12 @@ export default function ItemAdd() {
                 </div>
               </div>
             </div>
+            <div className={"h-32"}></div>
           </form>
         </Form>
       </div>
-      <div className={"h-14 mb-12 py-2 px-5 flex space-x-2 "}>
-        <Button>Save</Button>
+      <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 bg-accent "}>
+        <Button onClick={handleSubmit(handleFormSubmit)}>Save</Button>
         <Button variant={"outline"}>Cancel</Button>
       </div>
     </div>
