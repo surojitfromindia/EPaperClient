@@ -12,7 +12,19 @@ const reactSelectStyle: ClassNamesConfig = {
   groupHeading: () => classNames("!text-primary"),
 
   control: (state) =>
-    classNames(state.isFocused && "!border-ring !shadow-none", "!text-sm"),
+    classNames(
+        "!border-input",
+
+      state.isFocused && "!border-ring !shadow-none",
+      "!text-sm",
+        state.isDisabled && "!cursor-not-allowed",
+
+    ),
+  container:(state)=> classNames(
+      "!border-input",
+      state.isDisabled && "!cursor-not-allowed !pointer-events-auto",
+  ),
+
   menuList: () => classNames("!p-2"),
 };
 const reactSelectComponentOverride = {

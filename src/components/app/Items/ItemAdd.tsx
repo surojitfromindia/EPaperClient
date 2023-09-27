@@ -16,7 +16,8 @@ import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
-  ItemEditPageContent,
+    ItemCreatePayload,
+    ItemEditPageContent, ItemFor,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect, { components, OptionProps } from "react-select";
@@ -29,17 +30,17 @@ import { useAppSelector } from "@/redux/hooks.ts";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { formatOptionLabelOfAccounts } from "@/util/FormatAccountsLabel.tsx";
 import RNumberFormat from "@/components/ui/RNumberFormat.tsx";
+import {toast} from "@/components/ui/use-toast.ts";
 
 const itemService = new ItemService();
 
 export default function ItemAdd() {
-  const organizationCurrency: string = useAppSelector(
-    (appState) => appState.organization.currency_code,
-  );
+    useAppSelector(
+        (appState) => appState.organization.currency_code,
+    );
 
-  const navigate = useNavigate();
-
-  const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
+    const navigate = useNavigate();
+    const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
     inventory_accounts_list: [],
     purchase_accounts_list: [],
     taxes: [],
@@ -100,23 +101,31 @@ export default function ItemAdd() {
 
   const basicSchema = z
     .object({
-      name: z.string().trim().nonempty(),
+      name: z.string().trim().nonempty({message:"enter item name"}),
       product_type: z.enum(["goods", "service"]),
-      unit: z.object({ value: z.string().trim(), label: z.string() }),
-      sku: z.string().trim().min(1),
+      unit: z.object({ value: z.string().nonempty(), label: z.string() },{
+          invalid_type_error:"select or type a unit",
+          required_error:"select or type a unit"
+      }),
+      sku: z.string().trim().optional(),
       has_selling_price: z.boolean().optional(),
       has_purchase_price: z.boolean().optional(),
-      tax: z.object({ value: z.number(), label: z.string() }),
+      tax: z.object({ value: z.number(), label: z.string() },{
+          invalid_type_error:"select a tax",
+          required_error:"select a tax"
+      }),
     })
-    .refine(
-      (data) =>
-        (data.has_purchase_price || data.has_selling_price),
-      { message: "good", path: ["has_selling_price"] },
-    );
+    .refine((data) => data.has_purchase_price || data.has_selling_price, {
+      message: "good",
+      path: ["has_selling_price"],
+    });
   const hasSellingInformationSchema = z.object({
     has_selling_price: z.literal(true),
-    selling_price: z.number(),
-    selling_account: z.object({ value: z.number(), label: z.string() }),
+    selling_price: z.number({required_error:"enter selling price"}),
+    sales_account: z.object({ value: z.number(), label: z.string() },{
+        invalid_type_error:"select an account",
+        required_error:"select an account"
+    }),
     selling_description: z.string().optional(),
   });
   const hasNoSellingInformationSchema = z.object({
@@ -124,8 +133,11 @@ export default function ItemAdd() {
   });
   const hasPurchaseInformation = z.object({
     has_purchase_price: z.literal(true),
-    purchase_price: z.number(),
-    purchase_account: z.object({ value: z.number(), label: z.string() }),
+    purchase_price: z.number({required_error:"enter purchase price"}),
+    purchase_account: z.object({ value: z.number(), label: z.string() },{
+        invalid_type_error:"select an account",
+        required_error:"select an account"
+    }),
     purchase_description: z.string().optional(),
   });
   const hasNoPurchaseInformation = z.object({
@@ -149,19 +161,57 @@ export default function ItemAdd() {
     defaultValues: {
       has_selling_price: true,
       has_purchase_price: true,
+      product_type: "goods",
     },
   });
   const {
     formState: { errors },
     register,
     handleSubmit,
+      watch,
     control,
   } = form;
+  const has_selling_price = watch('has_selling_price');
+  const has_purchase_price = watch('has_purchase_price');
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-    console.log(data);
+      let itemFor:ItemFor = "sales";
+      const newItem :ItemCreatePayload= {
+          name: data.name,
+          product_type:data.product_type,
+          unit:data?.unit?.value,
+          item_for:itemFor,
+          tax_id: data.tax.value,
+      }
+      if(data.has_selling_price){
+          itemFor ="sales"
+          newItem.selling_price = data.selling_price;
+          newItem.selling_description = data.selling_description;
+          newItem.sales_account_id = data.sales_account.value;
+      }
+      if(data.has_purchase_price){
+          itemFor ="purchase"
+          newItem.purchase_price = data.purchase_price
+          newItem.purchase_description = data.purchase_description
+          newItem.purchase_account_id = data.purchase_account.value
+      }
+      if(data.has_selling_price && data.has_purchase_price){
+          itemFor ="sales_and_purchase"
+      }
+      newItem.item_for = itemFor;
+
+      await  itemService.addItem({
+          payload: newItem
+      })
+
+      toast({
+          title: "Success",
+          description: "Item is created successfully",
+      });
+      navigate("/app/inventory/items")
+
   };
   console.log("errors", errors);
 
@@ -193,7 +243,9 @@ export default function ItemAdd() {
   }
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
-      <div className={"px-5 py-3 shadow-md flex justify-between items-center"}>
+      <div
+        className={"px-5 py-3 shadow-md flex justify-between items-center z-10"}
+      >
         <span className={"text-2xl"}>New Item</span>
         <span>
           <Button variant={"ghost"} onClick={handleCloseClick}>
@@ -205,7 +257,7 @@ export default function ItemAdd() {
         <Form {...form}>
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
-              <div className={"md:grid-cols-4 col-span-5 space-y-3.5"}>
+              <div className={"md:grid-cols-4 col-span-5 space-y-2.5"}>
                 <FormField
                   control={form.control}
                   name="product_type"
@@ -318,7 +370,7 @@ export default function ItemAdd() {
                 />
               </div>
             </div>
-            <div className={"grid grid-cols-6 md:grid-cols-12 p-5 space-x-10"}>
+            <div className={"grid grid-cols-6 md:grid-cols-12 p-5 bg-gray-50 bg-opacity-60 space-x-10"}>
               {/*sales information*/}
               <div className={"col-span-5"}>
                 <div>
@@ -371,9 +423,7 @@ export default function ItemAdd() {
                                 }}
                                 customInput={Input}
                                 getInputRef={field.ref}
-                                prefix={organizationCurrency}
-
-
+                                disabled={!has_selling_price}
                               />
                             </div>
                           </FormControl>
@@ -385,7 +435,8 @@ export default function ItemAdd() {
                     )}
                   />
                   <FormField
-                    name={"selling_account"}
+
+                    name={"sales_account"}
                     render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel
@@ -406,6 +457,7 @@ export default function ItemAdd() {
                                 ...reactSelectComponentOverride,
                               }}
                               formatOptionLabel={formatOptionLabelOfAccounts}
+                              isDisabled={!has_selling_price}
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
@@ -431,6 +483,8 @@ export default function ItemAdd() {
                             placeholder={"Description"}
                             className="col-span-3"
                             {...register("selling_description")}
+                            disabled={!has_selling_price}
+
                           />
                         </FormControl>
                         <span className={"h-4 block"}>
@@ -522,6 +576,8 @@ export default function ItemAdd() {
                               }}
                               getInputRef={field.ref}
                               customInput={Input}
+                              disabled={!has_purchase_price}
+
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
@@ -553,6 +609,7 @@ export default function ItemAdd() {
                                 ...reactSelectComponentOverride,
                               }}
                               formatOptionLabel={formatOptionLabelOfAccounts}
+                              isDisabled={!has_purchase_price}
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
@@ -579,6 +636,7 @@ export default function ItemAdd() {
                               placeholder={"Description"}
                               className="col-span-3"
                               {...register("purchase_description")}
+                                disabled={!has_purchase_price}
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
