@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Trash, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
+    Item,
     ItemCreatePayload,
     ItemEditPageContent, ItemFor,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
@@ -26,20 +27,27 @@ import {
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { useAppSelector } from "@/redux/hooks.ts";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { formatOptionLabelOfAccounts } from "@/util/FormatAccountsLabel.tsx";
 import RNumberFormat from "@/components/ui/RNumberFormat.tsx";
 import {toast} from "@/components/ui/use-toast.ts";
+import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 
 const itemService = new ItemService();
 
 export default function ItemAdd() {
-    useAppSelector(
-        (appState) => appState.organization.currency_code,
-    );
+    const {item_id} = useParams();
+    const editItemId = useMemo(() => {
+        //try to parse the number, check the return if NaN then return nothing from this memo
+        const parseResult = Number.parseInt(item_id ?? "");
+        if (!Number.isNaN(parseResult)) {
+            return parseResult;
+        }
+    }, [item_id]);
 
     const navigate = useNavigate();
+    const [editPageItemDetails, setEditPageItemDetails] =
+        useState<Item>();
     const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
     inventory_accounts_list: [],
     purchase_accounts_list: [],
@@ -51,9 +59,14 @@ export default function ItemAdd() {
 
   const loadEditPage = useCallback(() => {
     itemService
-      .getItemEditPage()
+      .getItemEditPage(
+          {
+              item_id : editItemId
+          }
+      )
       .then((data) => {
         setEditPageContent(data!);
+        setEditPageItemDetails(data?.item)
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));

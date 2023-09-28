@@ -57,11 +57,11 @@ export function ItemListing({
     //     console.log(error);
     // }
   };
-  const handleRowClick = (account_id: number) => {
-    // navigate(`/app/chart_of_accounts/${account_id}?i=12`);
+  const handleRowClick = (item_id: number) => {
+    navigate(`/app/inventory/items/${item_id}`);
   };
-  const handleAccountEditOptionClick = (account_id: number) => {
-    // onAccountEditClick(account_id);
+  const handleAccountEditOptionClick = (item_id: number) => {
+    navigate(`/app/inventory/items/${item_id}/edit`);
   };
 
 
@@ -137,7 +137,7 @@ export function ItemListing({
                       "cursor-pointer",
                     )}
                   >
-                    <TableCell>
+                    <TableCell className={"w-6"}>
                       <Checkbox />
                     </TableCell>
                     <TableCell
@@ -150,7 +150,7 @@ export function ItemListing({
                         <span className={"font-medium text-center "}>
                           <span
                             className={
-                              " whitespace-nowrap inline-flex flex-col items-start align-middle "
+                              " flex-col items-start "
                             }
                           >
                             <span>{item.name}</span>
