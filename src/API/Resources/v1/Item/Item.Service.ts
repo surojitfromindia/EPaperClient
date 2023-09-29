@@ -3,7 +3,16 @@ import { APIService } from "@/API/Resources/v1/APIService.ts";
 import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 
 type ItemFor = "sales" | "purchase" | "sales_and_purchase";
-interface Item {
+
+interface ItemGenerated {
+  item_id: number;
+  product_type_formatted: string;
+  tax_percentage: number;
+  tax_name: string;
+  sales_account_name?: string;
+  purchase_account_name?: string;
+}
+interface Item extends ItemGenerated {
   item_id: number;
   name: string;
   product_type: "service" | "goods";
@@ -15,13 +24,21 @@ interface Item {
   purchase_price?: number;
   purchase_description?: string;
   sales_account_id?: number;
-  sales_account_name?: string;
   purchase_account_id?: number;
-  purchase_account_name?: string;
   tax_id: number;
 }
-interface ItemCreatePayload
-  extends Omit<Item, "item_id" | "product_type_formatted"> {}
+interface ItemTableView
+  extends Pick<
+    Item,
+    | "name"
+    | "unit"
+    | "product_type_formatted"
+    | "selling_price"
+    | "selling_description"
+    | "purchase_price"
+    | "purchase_description"
+  > {}
+interface ItemCreatePayload extends Omit<Item, keyof ItemGenerated> {}
 
 type ItemUnit = {
   unit_id: number;
@@ -31,9 +48,9 @@ type ItemUnit = {
 
 type TaxRate = {
   tax_id: number;
-  name: string;
-  rate: number;
-  rate_formatted: string;
+  tax_name: string;
+  tax_percentage: number;
+  tax_rate_formatted: string;
 };
 
 type ItemEditPageContent = {
@@ -129,4 +146,4 @@ class ItemService implements APIService {
 }
 
 export default ItemService;
-export type { Item, ItemEditPageContent, ItemCreatePayload, ItemFor };
+export type { Item, ItemEditPageContent, ItemCreatePayload, ItemFor,ItemTableView };

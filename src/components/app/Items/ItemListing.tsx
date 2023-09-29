@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { useNavigate } from "react-router-dom";
 import { OnAccountModification } from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
-import { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
+import {Item, ItemTableView} from "@/API/Resources/v1/Item/Item.Service.ts";
 import classNames from "classnames";
 import {objectEntries} from "@/util/typedJSFunctions.ts";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuTrigger} from "@/components/ui/dropdown-menu.tsx";
@@ -31,7 +31,7 @@ interface ItemListingProps extends React.HTMLAttributes<HTMLDivElement> {
 type TableHeaderBody ={
   label:string;
   removable: boolean;
-  type?: "numeric",
+  type?: "numeric"|"text",
 }
 
 export function ItemListing({
@@ -39,20 +39,19 @@ export function ItemListing({
   selectedItemId,
   items = [],
   isItemsFetching = true,
-  onItemModificationSuccess,
-  onItemEditClick,
-  onItemAddClick,
+                              onItemAddClick,
 }: ItemListingProps) {
   const navigate = useNavigate();
   const isLoading = isItemsFetching;
 
   const handleAccountDeleteAction = async (selected_account_ids: number[]) => {
+    console.log(selected_account_ids)
     // try {
     //     const accountId = selected_account_ids[0];
     //     await chartOfAccountService.deleteSingleChartOfAccounts({
     //         account_id: accountId,
     //     });
-    //     onAccountModificationSuccess("delete", selected_account_ids);
+    //     onAccountModificationSuccess("delete," selected_account_ids);
     // } catch (error) {
     //     console.log(error);
     // }
@@ -65,7 +64,12 @@ export function ItemListing({
   };
 
 
-  const dynamicHeaders:Record<keyof Omit<Item,"item_id"|"product_type"|"name" >, TableHeaderBody>  = {
+  const dynamicHeaders:Record<keyof ItemTableView, TableHeaderBody>  =useMemo(()=> ({
+    name: {
+      label: "name",
+      removable: false,
+      type: "text"
+    },
     unit: {
       label: "unit",
       removable: true,
@@ -91,9 +95,9 @@ export function ItemListing({
     purchase_description: {
       label: "purchase description",
       removable: true,
-    },
-
-  };
+    }
+  }),[]
+  );
   const dynamicHeadersAsArray = useMemo(()=>objectEntries(dynamicHeaders),[dynamicHeaders])
   return (
     <>

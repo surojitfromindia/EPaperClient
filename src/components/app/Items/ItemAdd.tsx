@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Trash, X } from "lucide-react";
-import {useNavigate, useParams} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -16,9 +16,10 @@ import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
-    Item,
-    ItemCreatePayload,
-    ItemEditPageContent, ItemFor,
+  Item,
+  ItemCreatePayload,
+  ItemEditPageContent,
+  ItemFor,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect, { components, OptionProps } from "react-select";
@@ -30,25 +31,23 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { formatOptionLabelOfAccounts } from "@/util/FormatAccountsLabel.tsx";
 import RNumberFormat from "@/components/ui/RNumberFormat.tsx";
-import {toast} from "@/components/ui/use-toast.ts";
-import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import { toast } from "@/components/ui/use-toast.ts";
 
 const itemService = new ItemService();
 
 export default function ItemAdd() {
-    const {item_id} = useParams();
-    const editItemId = useMemo(() => {
-        //try to parse the number, check the return if NaN then return nothing from this memo
-        const parseResult = Number.parseInt(item_id ?? "");
-        if (!Number.isNaN(parseResult)) {
-            return parseResult;
-        }
-    }, [item_id]);
+  const { item_id } = useParams();
+  const editItemId = useMemo(() => {
+    //try to parse the number, check the return if NaN then return nothing from this memo
+    const parseResult = Number.parseInt(item_id ?? "");
+    if (!Number.isNaN(parseResult)) {
+      return parseResult;
+    }
+  }, [item_id]);
 
-    const navigate = useNavigate();
-    const [editPageItemDetails, setEditPageItemDetails] =
-        useState<Item>();
-    const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
+  const navigate = useNavigate();
+  const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
+  const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
     inventory_accounts_list: [],
     purchase_accounts_list: [],
     taxes: [],
@@ -59,18 +58,16 @@ export default function ItemAdd() {
 
   const loadEditPage = useCallback(() => {
     itemService
-      .getItemEditPage(
-          {
-              item_id : editItemId
-          }
-      )
+      .getItemEditPage({
+        item_id: editItemId,
+      })
       .then((data) => {
         setEditPageContent(data!);
-        setEditPageItemDetails(data?.item)
+        setEditPageItemDetails(data?.item);
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [editItemId]);
 
   const unitsDropDownOptions = useMemo(() => {
     const units = editPageContent.units;
@@ -96,37 +93,35 @@ export default function ItemAdd() {
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
-      label: `${acc.name} [${acc.rate_formatted}%]`,
+      label: `${acc.tax_name} [${acc.tax_rate_formatted}%]`,
       value: acc.tax_id,
     }));
   }, [editPageContent.taxes]);
   const handleCloseClick = () => {
     navigate("/app/inventory/items");
   };
-  // effects
-  useEffect(() => {
-    loadEditPage();
-
-    return () => {
-      itemService.abortGetRequest();
-    };
-  }, [loadEditPage]);
 
   const basicSchema = z
     .object({
-      name: z.string().trim().nonempty({message:"enter item name"}),
+      name: z.string().trim().nonempty({ message: "enter item name" }),
       product_type: z.enum(["goods", "service"]),
-      unit: z.object({ value: z.string().nonempty(), label: z.string() },{
-          invalid_type_error:"select or type a unit",
-          required_error:"select or type a unit"
-      }),
+      unit: z.object(
+        { value: z.string().nonempty(), label: z.string() },
+        {
+          invalid_type_error: "select or type a unit",
+          required_error: "select or type a unit",
+        },
+      ),
       sku: z.string().trim().optional(),
       has_selling_price: z.boolean().optional(),
       has_purchase_price: z.boolean().optional(),
-      tax: z.object({ value: z.number(), label: z.string() },{
-          invalid_type_error:"select a tax",
-          required_error:"select a tax"
-      }),
+      tax: z.object(
+        { value: z.number(), label: z.string() },
+        {
+          invalid_type_error: "select a tax",
+          required_error: "select a tax",
+        },
+      ),
     })
     .refine((data) => data.has_purchase_price || data.has_selling_price, {
       message: "good",
@@ -134,11 +129,14 @@ export default function ItemAdd() {
     });
   const hasSellingInformationSchema = z.object({
     has_selling_price: z.literal(true),
-    selling_price: z.number({required_error:"enter selling price"}),
-    sales_account: z.object({ value: z.number(), label: z.string() },{
-        invalid_type_error:"select an account",
-        required_error:"select an account"
-    }),
+    selling_price: z.number({ required_error: "enter selling price" }),
+    sales_account: z.object(
+      { value: z.number(), label: z.string(), account_name: z.string() },
+      {
+        invalid_type_error: "select an account",
+        required_error: "select an account",
+      },
+    ),
     selling_description: z.string().optional(),
   });
   const hasNoSellingInformationSchema = z.object({
@@ -146,11 +144,14 @@ export default function ItemAdd() {
   });
   const hasPurchaseInformation = z.object({
     has_purchase_price: z.literal(true),
-    purchase_price: z.number({required_error:"enter purchase price"}),
-    purchase_account: z.object({ value: z.number(), label: z.string() },{
-        invalid_type_error:"select an account",
-        required_error:"select an account"
-    }),
+    purchase_price: z.number({ required_error: "enter purchase price" }),
+    purchase_account: z.object(
+      { value: z.number(), label: z.string(), account_name: z.string() },
+      {
+        invalid_type_error: "select an account",
+        required_error: "select an account",
+      },
+    ),
     purchase_description: z.string().optional(),
   });
   const hasNoPurchaseInformation = z.object({
@@ -181,52 +182,103 @@ export default function ItemAdd() {
     formState: { errors },
     register,
     handleSubmit,
-      watch,
+    watch,
     control,
+    setValue,
   } = form;
-  const has_selling_price = watch('has_selling_price');
-  const has_purchase_price = watch('has_purchase_price');
+  const has_selling_price = watch("has_selling_price");
+  const has_purchase_price = watch("has_purchase_price");
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-      let itemFor:ItemFor = "sales";
-      const newItem :ItemCreatePayload= {
-          name: data.name,
-          product_type:data.product_type,
-          unit:data?.unit?.value,
-          item_for:itemFor,
-          tax_id: data.tax.value,
-      }
-      if(data.has_selling_price){
-          itemFor ="sales"
-          newItem.selling_price = data.selling_price;
-          newItem.selling_description = data.selling_description;
-          newItem.sales_account_id = data.sales_account.value;
-      }
-      if(data.has_purchase_price){
-          itemFor ="purchase"
-          newItem.purchase_price = data.purchase_price
-          newItem.purchase_description = data.purchase_description
-          newItem.purchase_account_id = data.purchase_account.value
-      }
-      if(data.has_selling_price && data.has_purchase_price){
-          itemFor ="sales_and_purchase"
-      }
-      newItem.item_for = itemFor;
+    let itemFor: ItemFor = "sales";
+    const newItem: ItemCreatePayload = {
+      name: data.name,
+      product_type: data.product_type,
+      unit: data?.unit?.value,
+      item_for: itemFor,
+      tax_id: data.tax.value,
+    };
+    if (data.has_selling_price) {
+      itemFor = "sales";
+      newItem.selling_price = data.selling_price;
+      newItem.selling_description = data.selling_description;
+      newItem.sales_account_id = data.sales_account.value;
+    }
+    if (data.has_purchase_price) {
+      itemFor = "purchase";
+      newItem.purchase_price = data.purchase_price;
+      newItem.purchase_description = data.purchase_description;
+      newItem.purchase_account_id = data.purchase_account.value;
+    }
+    if (data.has_selling_price && data.has_purchase_price) {
+      itemFor = "sales_and_purchase";
+    }
+    newItem.item_for = itemFor;
 
-      await  itemService.addItem({
-          payload: newItem
-      })
+    await itemService.addItem({
+      payload: newItem,
+    });
 
-      toast({
-          title: "Success",
-          description: "Item is created successfully",
-      });
-      navigate("/app/inventory/items")
-
+    toast({
+      title: "Success",
+      description: "Item is created successfully",
+    });
+    navigate("/app/inventory/items");
   };
   console.log("errors", errors);
+  const setFormData = useCallback(
+    (data: typeof editPageItemDetails) => {
+      if (data) {
+        setValue("name", data.name!);
+        setValue("product_type", data.product_type!);
+        setValue("unit", {label:data.unit!, value:data.unit!});
+        setValue("tax", {label:`${data.tax_name} [${data.tax_percentage!}%]`, value:data.tax_id!});
+        if (
+          data?.item_for === "sales_and_purchase" ||
+          data?.item_for === "sales"
+        ) {
+          setValue("has_selling_price", true);
+          setValue("selling_price", data.selling_price!);
+          setValue("sales_account", {
+            label: data?.sales_account_name ?? "",
+            value: data.sales_account_id!,
+            account_name: data?.sales_account_name ?? "",
+          });
+          setValue("selling_description", data.selling_description);
+        }
+        if (
+          data?.item_for === "sales_and_purchase" ||
+          data?.item_for === "purchase"
+        ) {
+          setValue("has_purchase_price", true);
+          setValue("purchase_price", data.purchase_price!);
+          setValue("purchase_account",{
+              label: data?.purchase_account_name ?? "",
+              value: data.purchase_account_id!,
+              account_name: data?.purchase_account_name ?? "",
+          })
+          setValue("purchase_description", data.purchase_description);
+        }
+      }
+    },
+    [setValue],
+  );
+
+  // effects
+  useEffect(() => {
+    loadEditPage();
+
+    return () => {
+      itemService.abortGetRequest();
+    };
+  }, [loadEditPage]);
+  useEffect(() => {
+    if (editPageItemDetails) {
+      setFormData(editPageItemDetails);
+    }
+  }, [editPageItemDetails, setFormData]);
 
   const Option = (props: OptionProps<(typeof unitsDropDownOptions)[0]>) => {
     return (
@@ -383,7 +435,11 @@ export default function ItemAdd() {
                 />
               </div>
             </div>
-            <div className={"grid grid-cols-6 md:grid-cols-12 p-5 bg-gray-50 bg-opacity-60 space-x-10"}>
+            <div
+              className={
+                "grid grid-cols-6 md:grid-cols-12 p-5 bg-gray-50 bg-opacity-60 space-x-10"
+              }
+            >
               {/*sales information*/}
               <div className={"col-span-5"}>
                 <div>
@@ -415,7 +471,7 @@ export default function ItemAdd() {
                     control={control}
                   />
                 </div>
-                <div className={"flex flex-col space-y-2 mt-5"}>
+                <div className={"flex flex-col space-y-1 mt-5"}>
                   <FormField
                     name={"selling_price"}
                     render={({ field }) => (
@@ -430,6 +486,7 @@ export default function ItemAdd() {
                           <FormControl>
                             <div className={"relative col-span-3"}>
                               <RNumberFormat
+                                  value={field.value}
                                 id="selling_price"
                                 onValueChange={({ floatValue }) => {
                                   field.onChange(floatValue);
@@ -448,7 +505,6 @@ export default function ItemAdd() {
                     )}
                   />
                   <FormField
-
                     name={"sales_account"}
                     render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
@@ -497,7 +553,6 @@ export default function ItemAdd() {
                             className="col-span-3"
                             {...register("selling_description")}
                             disabled={!has_selling_price}
-
                           />
                         </FormControl>
                         <span className={"h-4 block"}>
@@ -569,7 +624,7 @@ export default function ItemAdd() {
                     control={control}
                   />
                 </div>
-                <div className={"flex flex-col space-y-2 mt-5"}>
+                <div className={"flex flex-col space-y-1 mt-5"}>
                   <FormField
                     name={"purchase_price"}
                     render={({ field }) => (
@@ -584,13 +639,14 @@ export default function ItemAdd() {
                           <FormControl>
                             <RNumberFormat
                               id="purchase_price"
+                              value={field.value}
+
                               onValueChange={({ floatValue }) => {
                                 field.onChange(floatValue);
                               }}
                               getInputRef={field.ref}
                               customInput={Input}
                               disabled={!has_purchase_price}
-
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
@@ -649,7 +705,7 @@ export default function ItemAdd() {
                               placeholder={"Description"}
                               className="col-span-3"
                               {...register("purchase_description")}
-                                disabled={!has_purchase_price}
+                              disabled={!has_purchase_price}
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
