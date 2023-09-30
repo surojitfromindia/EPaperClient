@@ -7,6 +7,7 @@ type ItemFor = "sales" | "purchase" | "sales_and_purchase";
 interface ItemGenerated {
   item_id: number;
   product_type_formatted: string;
+  item_for_formatted: string;
   tax_percentage: number;
   tax_name: string;
   sales_account_name?: string;
@@ -64,9 +65,9 @@ type ItemEditPageContent = {
 type EditPageServiceParams = {
   item_id?: number;
 };
-type UpdateServiceParams ={
+type UpdateServiceParams = {
   item_id?: number;
-}
+};
 class ItemService implements APIService {
   readonly urlFragment: string = "/items";
   #axiosConfig: typeof APIAxiosConfig;
@@ -108,7 +109,13 @@ class ItemService implements APIService {
       }
     >(url, payload);
   }
-  updateItem({ payload, params, }: { payload: ItemCreatePayload , params: UpdateServiceParams}) {
+  updateItem({
+    payload,
+    params,
+  }: {
+    payload: ItemCreatePayload;
+    params: UpdateServiceParams;
+  }) {
     const url = `${this.urlFragment}/${params.item_id}`;
     return this.#axiosConfig.APIPutRequestWrapper<
       ItemCreatePayload,
@@ -125,15 +132,15 @@ class ItemService implements APIService {
   //     }>(url);
   // }
   //
-  // getChartOfAccount({ account_id }: EditPageServiceParams = {}) {
-  //     const url = `/accounts/${account_id}`;
-  //     return this.#axiosConfig.APIGetRequestWrapper<{
-  //         chart_of_account: ChartOfAccount;
-  //     }>(url, {
-  //         searchParameters: [],
-  //         abortController: this.abortController,
-  //     });
-  // }
+  getItem({ item_id }: EditPageServiceParams = {}) {
+    const url = `${this.urlFragment}/${item_id}`;
+    return this.#axiosConfig.APIGetRequestWrapper<{
+      item: Item;
+    }>(url, {
+      searchParameters: [],
+      abortController: this.abortController,
+    });
+  }
 
   abortGetRequest(): void {
     this.abortController.abort();
@@ -141,4 +148,10 @@ class ItemService implements APIService {
 }
 
 export default ItemService;
-export type { Item, ItemEditPageContent, ItemCreatePayload, ItemFor,ItemTableView };
+export type {
+  Item,
+  ItemEditPageContent,
+  ItemCreatePayload,
+  ItemFor,
+  ItemTableView,
+};

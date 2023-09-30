@@ -29,8 +29,8 @@ import {
 } from "@/util/style/reactSelectStyle.ts";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { formatOptionLabelOfAccounts } from "@/util/FormatAccountsLabel.tsx";
-import RNumberFormat from "@/components/ui/RNumberFormat.tsx";
+import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
+import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
 
 const itemService = new ItemService();
@@ -44,9 +44,9 @@ export default function ItemAdd() {
       return parseResult;
     }
   }, [item_id]);
-  const isEditMode = useMemo(()=> !!editItemId,[editItemId])
-  const submitButtonText = isEditMode ? "update" : "save"
-  const pageHeaderText = isEditMode ? "update item" : "new item"
+  const isEditMode = useMemo(() => !!editItemId, [editItemId]);
+  const submitButtonText = isEditMode ? "update" : "save";
+  const pageHeaderText = isEditMode ? "update item" : "new item";
 
   const navigate = useNavigate();
   const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
@@ -181,13 +181,7 @@ export default function ItemAdd() {
       product_type: "goods",
     },
   });
-  const {
-    register,
-    handleSubmit,
-    watch,
-    control,
-    setValue,
-  } = form;
+  const { register, handleSubmit, watch, control, setValue } = form;
   const has_selling_price = watch("has_selling_price");
   const has_purchase_price = watch("has_purchase_price");
 
@@ -219,22 +213,23 @@ export default function ItemAdd() {
     }
     newItem.item_for = itemFor;
 
-    if(isEditMode){
-      await  itemService.updateItem({
-        payload:newItem,
-        params :{
+    if (isEditMode) {
+      await itemService.updateItem({
+        payload: newItem,
+        params: {
           item_id: editItemId,
-        }
-      })
-    }
-    else{
+        },
+      });
+    } else {
       await itemService.addItem({
         payload: newItem,
       });
     }
 
     // show a success message
-    const toastMessage = isEditMode ? "Item is updated successfully":"Item is created successfully"
+    const toastMessage = isEditMode
+      ? "Item is updated successfully"
+      : "Item is created successfully";
     toast({
       title: "Success",
       description: toastMessage,
@@ -250,11 +245,13 @@ export default function ItemAdd() {
       if (data) {
         setValue("name", data.name!);
         setValue("product_type", data.product_type!);
-        setValue("unit", {label:data.unit!, value:data.unit!});
-        setValue("tax", {label:`${data.tax_name} [${data.tax_percentage!}%]`, value:data.tax_id!});
+        setValue("unit", { label: data.unit!, value: data.unit! });
+        setValue("tax", {
+          label: `${data.tax_name} [${data.tax_percentage!}%]`,
+          value: data.tax_id!,
+        });
         setValue("selling_price", data.selling_price!);
         setValue("purchase_price", data.purchase_price!);
-
 
         if (
           data?.item_for === "sales_and_purchase" ||
@@ -273,11 +270,11 @@ export default function ItemAdd() {
           data?.item_for === "purchase"
         ) {
           setValue("has_purchase_price", true);
-          setValue("purchase_account",{
-              label: data?.purchase_account_name ?? "",
-              value: data.purchase_account_id!,
-              account_name: data?.purchase_account_name ?? "",
-          })
+          setValue("purchase_account", {
+            label: data?.purchase_account_name ?? "",
+            value: data.purchase_account_id!,
+            account_name: data?.purchase_account_name ?? "",
+          });
           setValue("purchase_description", data.purchase_description);
         }
       }
@@ -327,7 +324,7 @@ export default function ItemAdd() {
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div
-        className={"px-5 py-3 shadow-md flex justify-between items-center z-10"}
+        className={"px-5 pl-3 pr-2 h-28 shadow-md flex justify-between items-center z-10"}
       >
         <span className={"text-2xl capitalize"}>{pageHeaderText}</span>
         <span>
@@ -455,11 +452,11 @@ export default function ItemAdd() {
             </div>
             <div
               className={
-                "grid grid-cols-6 md:grid-cols-12 p-5 bg-gray-50 bg-opacity-60 space-x-10"
+                "grid grid-cols-1 md:grid-cols-5 p-5 bg-gray-50 space-y-6 bg-opacity-60 md:space-y-0   md:space-x-10"
               }
             >
               {/*sales information*/}
-              <div className={"col-span-5"}>
+              <div className={"col-span-2"}>
                 <div>
                   <FormField
                     render={({ field }) => (
@@ -612,7 +609,7 @@ export default function ItemAdd() {
                 </div>
               </div>
               {/*purchase information*/}
-              <div className={"col-span-5"}>
+              <div className={"col-span-2"}>
                 <div>
                   <FormField
                     render={({ field }) => (
@@ -741,8 +738,15 @@ export default function ItemAdd() {
         </Form>
       </div>
       <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 bg-accent "}>
-        <Button className={"capitalize"} onClick={handleSubmit(handleFormSubmit)}>{submitButtonText}</Button>
-        <Button className={"capitalize"} variant={"outline"}>cancel</Button>
+        <Button
+          className={"capitalize"}
+          onClick={handleSubmit(handleFormSubmit)}
+        >
+          {submitButtonText}
+        </Button>
+        <Button className={"capitalize"} variant={"outline"} onClick={handleCloseClick}>
+          cancel
+        </Button>
       </div>
     </div>
   );

@@ -21,8 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { RNumberFormatAsText } from "@/components/ui/RNumberFormat.tsx";
+import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
+import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 
 interface ItemListingProps extends React.HTMLAttributes<HTMLDivElement> {
   shrinkTable?: boolean;
@@ -122,6 +123,10 @@ export function ItemListing({
     () => objectEntries(dynamicHeaders),
     [dynamicHeaders],
   );
+  if (isLoading) {
+    return <LoaderComponent />;
+  }
+
   return (
     <>
       <main
@@ -129,7 +134,7 @@ export function ItemListing({
       >
         <section
           className={
-            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"
+            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
           }
         >
           <h1 className={"text-lg"}>Items</h1>

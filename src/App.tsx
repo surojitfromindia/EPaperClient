@@ -8,6 +8,7 @@ import ChartOfAccountPage from "@/components/app/ChartOfAccount/ChartOfAccountPa
 import ChartOfAccountDetails from "@/components/app/ChartOfAccount/ChartOfAccountDetails.tsx";
 import { ItemPage } from "@/components/app/Items/ItemPage.tsx";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
+import ItemDetails from "@/components/app/Items/ItemDetails.tsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -15,6 +16,10 @@ function App() {
       path: "/",
       element: <LoginPage />,
       errorElement: <PubicErrorPage />,
+    },
+    {
+      path:"/404",
+      element:<PubicErrorPage/>
     },
     {
       path: "app",
@@ -50,7 +55,13 @@ function App() {
               children: [
                 {
                   path: ":item_id",
-                  element: <div>Details</div>,
+                  element: <ItemDetails/>,
+                  children:[
+                    {
+                      path:"transactions",
+                      element : <div className={"px-5"}>all transactions</div>
+                    }
+                  ]
                 },
               ],
             },

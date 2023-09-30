@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import {Outlet, useLocation, useNavigate} from "react-router-dom";
 import { Sidebar } from "@/components/app/SideBar.tsx";
 import TopBar from "@/components/app/TopBar.tsx";
 import { useCallback, useEffect, useState } from "react";
@@ -10,10 +10,15 @@ import LoaderFullPage from "@/components/app/common/LoaderFullPage.tsx";
 import { Toaster } from "@/components/ui/toaster.tsx";
 import { Provider } from "react-redux";
 import store from "@/redux/store.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { MenuIcon } from "lucide-react";
 
 export default function EPaper() {
+  const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
+  const [openSideDrawer,setOpenSideDrawer] = useState(false);
+  const {pathname} = useLocation()
   // load app state.
   const loadApplicationState = useCallback(async (): Promise<boolean> => {
     await ApplicationState.build();
@@ -26,11 +31,18 @@ export default function EPaper() {
       .then(() => {
         setApplicationLoading(false);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        console.log(error);
+        setApplicationLoading(false);
+        navigate("/404")
+      });
   }, [loadApplicationState]);
 
   // header, navbar and side components will stay here,
   // as those must appear all the time.
+  useEffect(() => {
+    setOpenSideDrawer(false)
+  }, [pathname]);
   return (
     <>
       <Provider store={store}>
@@ -46,14 +58,23 @@ export default function EPaper() {
                 organization={appState?.organization}
                 isSideBarCollapsed
               />
-              <div className={"flex grid-cols-6"}>
-                <Sidebar />
+              <div className={"flex grid-cols-6 relative"}>
+                <Sidebar sideBarFloat={openSideDrawer} />
                 <div className={"col-span-5 w-full"}>
                   <div className={"h-screen"}>
                     <Outlet />
                   </div>
                   <Toaster />
                 </div>
+                <Button
+                    onClick={()=>{
+                      setOpenSideDrawer(prev=>!prev)
+                    }}
+                  size={"icon"}
+                  className={"sm:hidden p-3 rounded-3xl fixed right-10 bottom-10"}
+                >
+                  <MenuIcon />
+                </Button>
               </div>
             </div>
           </div>
