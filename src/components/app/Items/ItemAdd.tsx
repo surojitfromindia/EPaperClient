@@ -13,7 +13,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import  { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
   Item,
@@ -318,13 +318,18 @@ export default function ItemAdd() {
       </components.Option>
     );
   };
+
   if (isLoading) {
-    return <LoaderComponent />;
+    return (
+        <div className={"relative h-screen w-full"}>
+          <LoaderComponent />
+        </div>
+    );
   }
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div
-        className={"px-5 pl-3 pr-2 h-28 shadow-md flex justify-between items-center z-10"}
+        className={"px-5 pl-3 pr-2 py-3 shadow-md flex justify-between items-center z-10"}
       >
         <span className={"text-2xl capitalize"}>{pageHeaderText}</span>
         <span>
