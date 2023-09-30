@@ -21,6 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { RNumberFormatAsText } from "@/components/ui/RNumberFormat.tsx";
+import { useAppSelector } from "@/redux/hooks.ts";
 
 interface ItemListingProps extends React.HTMLAttributes<HTMLDivElement> {
   shrinkTable?: boolean;
@@ -35,7 +37,9 @@ interface ItemListingProps extends React.HTMLAttributes<HTMLDivElement> {
 type TableHeaderBody = {
   label: string;
   removable: boolean;
-  type?: "numeric" | "text";
+  type: "numeric" | "text";
+  prefix?: string;
+  suffix?: string;
 };
 
 export function ItemListing({
@@ -45,6 +49,9 @@ export function ItemListing({
   isItemsFetching = true,
   onItemAddClick,
 }: ItemListingProps) {
+  const organizationCurrencyCode = useAppSelector(
+    ({ organization }) => organization.currency_code,
+  );
   const navigate = useNavigate();
   const isLoading = isItemsFetching;
   // highlight row after coming from the details page
@@ -79,28 +86,34 @@ export function ItemListing({
       unit: {
         label: "unit",
         removable: true,
+        type: "text",
       },
       product_type_formatted: {
         label: "product type",
         removable: true,
+        type: "text",
       },
       selling_price: {
         label: "rate",
         removable: true,
         type: "numeric",
+        prefix: organizationCurrencyCode,
       },
       selling_description: {
         label: "description",
         removable: true,
+        type: "text",
       },
       purchase_price: {
         label: "purchase price",
         removable: true,
         type: "numeric",
+        prefix: organizationCurrencyCode,
       },
       purchase_description: {
         label: "purchase description",
         removable: true,
+        type: "text",
       },
     }),
     [],
@@ -111,7 +124,9 @@ export function ItemListing({
   );
   return (
     <>
-      <main className={"relative flex max-h-screen flex-col border-r-2 h-screen"}>
+      <main
+        className={"relative flex max-h-screen flex-col border-r-1 h-screen"}
+      >
         <section
           className={
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"
@@ -169,20 +184,30 @@ export function ItemListing({
                     </TableCell>
                     <>
                       {!shrinkTable &&
-                        dynamicHeadersAsArray.map(([col_key]) => (
+                        dynamicHeadersAsArray.map(([col_key, col_data]) => (
                           <TableCell
+                            key={col_key}
                             onClick={() => {
                               handleRowClick(item.item_id);
                             }}
-                            className={"align-top"}
-                            key={col_key}
+                            className={classNames(
+                              "align-top",
+                              col_data.type === "numeric" && "text-right",
+                            )}
                           >
-                            {item[col_key] ?? ""}
+                            {col_data.type === "text" && (item[col_key] ?? "")}
+                            {col_data.type === "numeric" && (
+                              <RNumberFormatAsText
+                                prefix={item[col_key] !== 0 ? col_data.prefix : ""}
+                                value={item[col_key] ?? 0}
+                                thousandSeparator={true}
+                              />
+                            )}
                           </TableCell>
                         ))}
                     </>
                     {!shrinkTable && (
-                      <TableCell>
+                      <TableCell className={"align-top"}>
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <MoreVertical className={"h-4 cursor-pointer"} />

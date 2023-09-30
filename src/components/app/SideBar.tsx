@@ -18,7 +18,7 @@ export function Sidebar() {
   return (
     <div
       className={
-        "col-span-1 flex-shrink-0 w-[220px]  h-screen max-h-screen flex flex-col justify-between border-r-[1.5px]"
+        "col-span-1 flex-shrink-0 w-[220px]  h-screen max-h-screen flex flex-col justify-between border-r-1"
       }
     >
       <div className="px-2 flex-shrink overflow-y-auto   py-2">

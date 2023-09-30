@@ -79,6 +79,10 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
         "twinkle":"twinkle 2s 1 linear"
       },
+      borderWidth:{
+        '1.5':'1.5px',
+        '1':'1px'
+      }
     },
   },
   plugins: [require("tailwindcss-animate")],

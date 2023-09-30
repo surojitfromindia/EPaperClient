@@ -139,7 +139,7 @@ export function ChartOfAccountListing({
   };
   return (
     <>
-      <main className={"relative flex max-h-screen flex-col border-r-2"}>
+      <main className={"relative flex max-h-screen flex-col border-r-1"}>
         <section
           className={
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"

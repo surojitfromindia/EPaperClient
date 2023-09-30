@@ -252,12 +252,15 @@ export default function ItemAdd() {
         setValue("product_type", data.product_type!);
         setValue("unit", {label:data.unit!, value:data.unit!});
         setValue("tax", {label:`${data.tax_name} [${data.tax_percentage!}%]`, value:data.tax_id!});
+        setValue("selling_price", data.selling_price!);
+        setValue("purchase_price", data.purchase_price!);
+
+
         if (
           data?.item_for === "sales_and_purchase" ||
           data?.item_for === "sales"
         ) {
           setValue("has_selling_price", true);
-          setValue("selling_price", data.selling_price!);
           setValue("sales_account", {
             label: data?.sales_account_name ?? "",
             value: data.sales_account_id!,
@@ -270,7 +273,6 @@ export default function ItemAdd() {
           data?.item_for === "purchase"
         ) {
           setValue("has_purchase_price", true);
-          setValue("purchase_price", data.purchase_price!);
           setValue("purchase_account",{
               label: data?.purchase_account_name ?? "",
               value: data.purchase_account_id!,
