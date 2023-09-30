@@ -1,21 +1,23 @@
 import { Edit, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
-import {useEffect, useMemo, useState} from "react";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
-import ChartOfAccountService, {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import  { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import ChartOfAccountService, {
+  ChartOfAccount,
+} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import {useAccountAddEditModal} from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
-import {mergePathNameAndSearchParams} from "@/util/urlUtil.ts";
+import { useAccountAddEditModal } from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
+import { mergePathNameAndSearchParams } from "@/util/urlUtil.ts";
 
 const chartOfAccountService = new ChartOfAccountService();
 
 export default function ChartOfAccountDetails() {
-  const {onAccountEditClick} = useAccountAddEditModal();
+  const { onAccountEditClick } = useAccountAddEditModal();
   const { account_id } = useParams();
-  const {search} = useLocation()
+  const { search } = useLocation();
   const navigate = useNavigate();
 
-  const [isLoading, setIsLoading] =useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const editingAccountId = useMemo(
     () => (account_id ? Number(account_id) : 0),
     [account_id],
@@ -23,22 +25,32 @@ export default function ChartOfAccountDetails() {
   const [accountDetails, setAccountDetails] = useState<ChartOfAccount>();
 
   useEffect(() => {
-    if(editingAccountId){
-       chartOfAccountService.getChartOfAccount({account_id:editingAccountId}).then((data)=>{
-         if(data && data.chart_of_account){
-           setAccountDetails(data.chart_of_account)
-         }
-       }).finally(()=>setIsLoading(false))
+    if (editingAccountId) {
+      setIsLoading(true);
+      chartOfAccountService
+        .getChartOfAccount({ account_id: editingAccountId })
+        .then((data) => {
+          if (data && data.chart_of_account) {
+            setAccountDetails(data.chart_of_account);
+          }
+        })
+        .finally(() => setIsLoading(false));
     }
   }, [editingAccountId]);
 
-  const handleEditButtonClick =(account_id:number)=> {
+  const handleEditButtonClick = (account_id: number) => {
     onAccountEditClick?.(account_id);
-  }
+  };
 
-  const handleCloseClick =()=>{
-    navigate(mergePathNameAndSearchParams({path_name:"/app/chart_of_accounts",search_params: search}))
-  }
+  const handleCloseClick = () => {
+    navigate(
+      mergePathNameAndSearchParams({
+        path_name: "/app/chart_of_accounts",
+        search_params: search,
+      }),
+    );
+  };
+
   return (
     <div className={"w-full h-full relative"}>
       {isLoading && <LoaderComponent />}

@@ -124,13 +124,17 @@ export function ItemListing({
     [dynamicHeaders],
   );
   if (isLoading) {
-    return <LoaderComponent />;
+    return (
+        <div className={"relative h-screen w-full"}>
+          <LoaderComponent />
+        </div>
+    );
   }
 
   return (
     <>
       <main
-        className={"relative flex max-h-screen flex-col border-r-1 h-screen"}
+        className={" flex max-h-screen flex-col border-r-1 h-screen"}
       >
         <section
           className={

@@ -6,12 +6,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, {useCallback, useMemo, useState} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
-import { Edit, FolderIcon, Loader2, MoreVertical, Plus } from "lucide-react";
+import { Edit, FolderIcon, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import {
   DropdownMenu,
@@ -23,6 +23,8 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { useNavigate } from "react-router-dom";
 import { OnAccountModification } from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
 import classNames from "classnames";
+import { generateTreeLine } from "@/util/accountUtil.ts";
+import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 
 const DEPTH_OFFSET = 0;
 type EditPageContent = {
@@ -137,6 +139,13 @@ export function ChartOfAccountListing({
   const handleAccountEditOptionClick = (account_id: number) => {
     onAccountEditClick(account_id);
   };
+  if (isLoading) {
+    return (
+      <div className={"relative h-screen w-full"}>
+        <LoaderComponent />
+      </div>
+    );
+  }
   return (
     <>
       <main className={"relative flex max-h-screen flex-col border-r-1"}>
@@ -153,167 +162,126 @@ export function ChartOfAccountListing({
         <section
           className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
         >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {!isLoading && (
-            <Table className={"h-full"}>
-              {!shrinkTable && (
-                <TableHeader className={"bg-background shadow-sm sticky top-0 z-[1]"}>
-                  <TableRow className={"uppercase text-xs"}>
-                    <TableHead className={"w-12"}>&nbsp;</TableHead>
-                    <TableHead>account name</TableHead>
-                    <TableHead>account code</TableHead>
-                    <TableHead>account type</TableHead>
-                    <TableHead>parent account name</TableHead>
-                    <TableHead>&nbsp;</TableHead>
-                  </TableRow>
-                </TableHeader>
-              )}
-              <TableBody>
-                {accountsWithTreeFormat.map((account) => (
-                  <TableRow
-                    key={account.account_id}
-                    className={classNames(
-                      account.account_id === selectedAccountId && "bg-accent",
-                        account.account_id === lastSelectedId &&
-                        onListingPage &&
-                        "animate-twinkle",
-                      "cursor-pointer",
-                    )}
+          <Table className={"h-full"}>
+            {!shrinkTable && (
+              <TableHeader
+                className={"bg-background shadow-sm sticky top-0 z-[1]"}
+              >
+                <TableRow className={"uppercase text-xs"}>
+                  <TableHead className={"w-12"}>&nbsp;</TableHead>
+                  <TableHead>account name</TableHead>
+                  <TableHead>account code</TableHead>
+                  <TableHead>account type</TableHead>
+                  <TableHead>parent account name</TableHead>
+                  <TableHead>&nbsp;</TableHead>
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
+              {accountsWithTreeFormat.map((account) => (
+                <TableRow
+                  key={account.account_id}
+                  className={classNames(
+                    account.account_id === selectedAccountId && "bg-accent",
+                    account.account_id === lastSelectedId &&
+                      onListingPage &&
+                      "animate-twinkle",
+                    "cursor-pointer",
+                  )}
+                >
+                  <TableCell>
+                    <Checkbox />
+                  </TableCell>
+                  <TableCell
+                    onClick={() => {
+                      handleRowClick(account.account_id);
+                    }}
+                    className={"py-3"}
                   >
-                    <TableCell>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        handleRowClick(account.account_id);
-                      }}
-                      className={"py-3"}
-                    >
-                      <>
-                        <span className={"font-medium text-center "}>
-                          {GiveSpace(
-                            account.depth,
-                            account.bar,
-                            account.no_of_children > 0,
+                    <>
+                      <span className={"font-medium text-center "}>
+                        {GiveSpace(
+                          account.depth,
+                          account.bar,
+                          account.no_of_children > 0,
+                        )}
+                        <span
+                          className={
+                            " whitespace-nowrap inline-flex flex-col items-start align-middle "
+                          }
+                        >
+                          <span>{account.account_name}</span>
+                          {shrinkTable && (
+                            <span className={"text-muted-foreground tx-xs"}>
+                              {account.account_type_name_formatted}
+                            </span>
                           )}
-                          <span
-                            className={
-                              " whitespace-nowrap inline-flex flex-col items-start align-middle "
-                            }
-                          >
-                            <span>{account.account_name}</span>
-                            {shrinkTable && (
-                              <span className={"text-muted-foreground tx-xs"}>
-                                {account.account_type_name_formatted}
-                              </span>
-                            )}
-                          </span>
                         </span>
-                      </>
-                    </TableCell>
-                    {!shrinkTable && (
-                      <>
-                        <TableCell
-                          onClick={() => {
-                            handleRowClick(account.account_id);
-                          }}
-                        >
-                          {account.account_code}
-                        </TableCell>
-                        <TableCell
-                          onClick={() => {
-                            handleRowClick(account.account_id);
-                          }}
-                        >
-                          {account.account_type_name_formatted}
-                        </TableCell>
-                        <TableCell
-                          onClick={() => {
-                            handleRowClick(account.account_id);
-                          }}
-                        >
-                          {account.account_parent_name}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <MoreVertical className={"h-4 cursor-pointer"} />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              className="text-sm w-56 bg-gray-50 outline-none  p-1"
-                              align={"end"}
+                      </span>
+                    </>
+                  </TableCell>
+                  {!shrinkTable && (
+                    <>
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(account.account_id);
+                        }}
+                      >
+                        {account.account_code}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(account.account_id);
+                        }}
+                      >
+                        {account.account_type_name_formatted}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(account.account_id);
+                        }}
+                      >
+                        {account.account_parent_name}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <MoreVertical className={"h-4 cursor-pointer"} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            className="text-sm w-56 bg-gray-50 outline-none  p-1"
+                            align={"end"}
+                          >
+                            <DropdownMenuItem
+                              className={"menu-item-ok"}
+                              role={"button"}
+                              onClick={() =>
+                                handleAccountEditOptionClick(account.account_id)
+                              }
                             >
-                              <DropdownMenuItem
-                                className={"menu-item-ok"}
-                                role={"button"}
-                                onClick={() =>
-                                  handleAccountEditOptionClick(
-                                    account.account_id,
-                                  )
-                                }
-                              >
-                                <Edit className={"h-4 w-4"} />
-                                <span>Configure</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className={"menu-item-danger"}
-                                role={"button"}
-                                onClick={() =>
-                                  handleAccountDeleteAction([
-                                    account.account_id,
-                                  ])
-                                }
-                              >
-                                <span>Delete</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}{" "}
+                              <Edit className={"h-4 w-4"} />
+                              <span>Configure</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className={"menu-item-danger"}
+                              role={"button"}
+                              onClick={() =>
+                                handleAccountDeleteAction([account.account_id])
+                              }
+                            >
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </section>
       </main>
     </>
   );
 }
-
-const generateTreeLine = (
-  flatArray: ChartOfAccount[],
-  depthOffSet = DEPTH_OFFSET,
-) => {
-  let aux = [0];
-  const newArray: ({ bar: number[] } & ChartOfAccount)[] = [];
-  for (const el of flatArray) {
-    if (el.depth === depthOffSet) {
-      // at root we reset
-      aux = [0];
-      newArray.push({ ...el, bar: Array.from(aux) });
-      if (el.no_of_children > 0) {
-        aux.push(el.no_of_children);
-      }
-    } else {
-      // read the last element
-      const pointerDepth = el.depth - depthOffSet;
-      newArray.push({ ...el, bar: Array.from(aux) });
-      if (aux[pointerDepth] > 0) {
-        aux[pointerDepth] -= 1;
-      }
-      // if it has children more than zero, then push the count
-      // after updating the last element
-      if (el.no_of_children > 0) {
-        // either update an existing position or push
-        if (pointerDepth + 1 >= aux.length) {
-          aux.push(el.no_of_children);
-        } else {
-          aux[pointerDepth + 1] += el.no_of_children;
-        }
-      }
-    }
-  }
-  return newArray;
-};
