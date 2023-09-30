@@ -50,7 +50,7 @@ type TaxRate = {
   tax_id: number;
   tax_name: string;
   tax_percentage: number;
-  tax_rate_formatted: string;
+  tax_percentage_formatted: string;
 };
 
 type ItemEditPageContent = {
@@ -64,6 +64,9 @@ type ItemEditPageContent = {
 type EditPageServiceParams = {
   item_id?: number;
 };
+type UpdateServiceParams ={
+  item_id?: number;
+}
 class ItemService implements APIService {
   readonly urlFragment: string = "/items";
   #axiosConfig: typeof APIAxiosConfig;
@@ -95,27 +98,19 @@ class ItemService implements APIService {
       abortController: this.abortController,
     });
   }
-  //
-  // getChartOfAccountEditPage({ account_id }: EditPageServiceParams = {}) {
-  //     const url = "/accounts/edit_page";
-  //     return this.#axiosConfig.APIGetRequestWrapper<{
-  //         account_types: AccountType[];
-  //         accounts_list: ChartOfAccount[];
-  //         chart_of_account: ChartOfAccount;
-  //     }>(url, {
-  //         searchParameters: [
-  //             {
-  //                 key: "account_id",
-  //                 value: account_id,
-  //             },
-  //         ],
-  //         abortController: this.abortController,
-  //     });
-  // }
-  //
+
   addItem({ payload }: { payload: ItemCreatePayload }) {
     const url = this.urlFragment;
     return this.#axiosConfig.APIPostRequestWrapper<
+      ItemCreatePayload,
+      {
+        item: Item;
+      }
+    >(url, payload);
+  }
+  updateItem({ payload, params, }: { payload: ItemCreatePayload , params: UpdateServiceParams}) {
+    const url = `${this.urlFragment}/${params.item_id}`;
+    return this.#axiosConfig.APIPutRequestWrapper<
       ItemCreatePayload,
       {
         item: Item;

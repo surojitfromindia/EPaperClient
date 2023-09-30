@@ -65,10 +65,19 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        "twinkle":{
+          '0%': {
+            'background-color' :"#fffbd7"
+          },
+          '100%': {
+            'background-color' :"transparent"
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "twinkle":"twinkle 2s 1 linear"
       },
     },
   },

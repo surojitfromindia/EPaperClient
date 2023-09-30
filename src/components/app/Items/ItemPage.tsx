@@ -27,7 +27,7 @@ export function ItemPage() {
     }
   }, [item_id]);
   const isDetailsPageOpen: boolean =
-      selectedAccountId && selectedAccountId > 0 ? true : false;
+      !!(selectedAccountId && selectedAccountId > 0);
 
   // states
   const [items, setItems] = useState<Item[]>([]);
@@ -90,8 +90,8 @@ export function ItemPage() {
   return (
 
       <>
-        <div className={"grid grid-cols-3"}>
-          <div className={isDetailsPageOpen ? `col-span-1` : "col-span-3"}>
+        <div className={"grid grid-cols-4"}>
+          <div className={isDetailsPageOpen ? `col-span-1` : "col-span-4"}>
             <ItemListing
                 shrinkTable={isDetailsPageOpen}
                 selectedItemId={selectedAccountId}
@@ -103,7 +103,7 @@ export function ItemPage() {
             />
           </div>
           { (
-              <div className={"col-span-2"}>
+              <div className={"col-span-3"}>
                 <Outlet />
               </div>
           )}

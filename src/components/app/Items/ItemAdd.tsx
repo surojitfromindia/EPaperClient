@@ -44,6 +44,9 @@ export default function ItemAdd() {
       return parseResult;
     }
   }, [item_id]);
+  const isEditMode = useMemo(()=> !!editItemId,[editItemId])
+  const submitButtonText = isEditMode ? "update" : "save"
+  const pageHeaderText = isEditMode ? "update item" : "new item"
 
   const navigate = useNavigate();
   const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
@@ -93,7 +96,7 @@ export default function ItemAdd() {
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_rate_formatted}%]`,
+      label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
       value: acc.tax_id,
     }));
   }, [editPageContent.taxes]);
@@ -179,7 +182,6 @@ export default function ItemAdd() {
     },
   });
   const {
-    formState: { errors },
     register,
     handleSubmit,
     watch,
@@ -217,19 +219,34 @@ export default function ItemAdd() {
     }
     newItem.item_for = itemFor;
 
-    await itemService.addItem({
-      payload: newItem,
-    });
+    if(isEditMode){
+      await  itemService.updateItem({
+        payload:newItem,
+        params :{
+          item_id: editItemId,
+        }
+      })
+    }
+    else{
+      await itemService.addItem({
+        payload: newItem,
+      });
+    }
 
+    // show a success message
+    const toastMessage = isEditMode ? "Item is updated successfully":"Item is created successfully"
     toast({
       title: "Success",
-      description: "Item is created successfully",
+      description: toastMessage,
     });
     navigate("/app/inventory/items");
   };
-  console.log("errors", errors);
   const setFormData = useCallback(
     (data: typeof editPageItemDetails) => {
+      // reset the defaults when update
+      setValue("has_selling_price", false);
+      setValue("has_purchase_price", false);
+
       if (data) {
         setValue("name", data.name!);
         setValue("product_type", data.product_type!);
@@ -269,7 +286,6 @@ export default function ItemAdd() {
   // effects
   useEffect(() => {
     loadEditPage();
-
     return () => {
       itemService.abortGetRequest();
     };
@@ -311,7 +327,7 @@ export default function ItemAdd() {
       <div
         className={"px-5 py-3 shadow-md flex justify-between items-center z-10"}
       >
-        <span className={"text-2xl"}>New Item</span>
+        <span className={"text-2xl capitalize"}>{pageHeaderText}</span>
         <span>
           <Button variant={"ghost"} onClick={handleCloseClick}>
             <X className={"w-4 h-4"} />
@@ -486,7 +502,7 @@ export default function ItemAdd() {
                           <FormControl>
                             <div className={"relative col-span-3"}>
                               <RNumberFormat
-                                  value={field.value}
+                                value={field.value}
                                 id="selling_price"
                                 onValueChange={({ floatValue }) => {
                                   field.onChange(floatValue);
@@ -580,7 +596,7 @@ export default function ItemAdd() {
                               components={{
                                 ...reactSelectComponentOverride,
                               }}
-                              isClearable={true}
+                              isClearable={false}
                             />
                           </FormControl>
                           <span className={"h-4 block"}>
@@ -640,7 +656,6 @@ export default function ItemAdd() {
                             <RNumberFormat
                               id="purchase_price"
                               value={field.value}
-
                               onValueChange={({ floatValue }) => {
                                 field.onChange(floatValue);
                               }}
@@ -724,8 +739,8 @@ export default function ItemAdd() {
         </Form>
       </div>
       <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 bg-accent "}>
-        <Button onClick={handleSubmit(handleFormSubmit)}>Save</Button>
-        <Button variant={"outline"}>Cancel</Button>
+        <Button className={"capitalize"} onClick={handleSubmit(handleFormSubmit)}>{submitButtonText}</Button>
+        <Button className={"capitalize"} variant={"outline"}>cancel</Button>
       </div>
     </div>
   );

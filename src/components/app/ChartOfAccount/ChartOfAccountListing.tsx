@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import React, { useCallback, useMemo } from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
@@ -55,6 +55,8 @@ export function ChartOfAccountListing({
 }: ChartOfAccountListingProps) {
   const navigate = useNavigate();
   const isLoading = isAccountsFetching;
+  const [lastSelectedId, setLastSelectedId] = useState<number>();
+  const onListingPage = useMemo(() => !selectedAccountId, [selectedAccountId]);
 
   const GiveSpace = useCallback(
     (account_depth: number, account_bar: number[], has_children: boolean) => {
@@ -129,14 +131,15 @@ export function ChartOfAccountListing({
     }
   };
   const handleRowClick = (account_id: number) => {
-    navigate(`/app/chart_of_accounts/${account_id}?i=12`);
+    setLastSelectedId(account_id);
+    navigate(`/app/chart_of_accounts/${account_id}`);
   };
   const handleAccountEditOptionClick = (account_id: number) => {
     onAccountEditClick(account_id);
   };
   return (
     <>
-      <main className={"relative flex max-h-screen flex-col"}>
+      <main className={"relative flex max-h-screen flex-col border-r-2"}>
         <section
           className={
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm"
@@ -170,7 +173,10 @@ export function ChartOfAccountListing({
                   <TableRow
                     key={account.account_id}
                     className={classNames(
-                      account.account_id === selectedAccountId && "bg-primary-light",
+                      account.account_id === selectedAccountId && "bg-accent",
+                        account.account_id === lastSelectedId &&
+                        onListingPage &&
+                        "animate-twinkle",
                       "cursor-pointer",
                     )}
                   >

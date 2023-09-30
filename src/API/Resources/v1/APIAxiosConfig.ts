@@ -66,6 +66,29 @@ class APIAxiosConfig {
       this.ResponseErrorHandler(error);
     }
   }
+  async APIPutRequestWrapper<TPayload, TResponse>(
+    path: string,
+    payload: TPayload,
+  ) {
+    try {
+      const url = new URL(path, baseURL);
+      const putURLSearchParams = url.searchParams;
+      this.setAllSearchParameters(this._commonQuery, putURLSearchParams);
+      this.setAllSearchParameters([...this._commonQuery], putURLSearchParams);
+      console.log("PUT: ", url);
+      const putURL = url.pathname + url.search;
+      const axiosResponse = await axiosInstance().put<
+        TResponse,
+        APIResponse<TResponse>,
+        TPayload
+      >(putURL, payload);
+      if (axiosResponse.data.success) {
+        return axiosResponse.data.data;
+      }
+    } catch (error: unknown) {
+      this.ResponseErrorHandler(error);
+    }
+  }
 
   async APIDeleteRequestWrapper<TResponse>(path: string) {
     try {
