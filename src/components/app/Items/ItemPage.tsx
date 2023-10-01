@@ -1,23 +1,20 @@
 import ItemService, { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
-import {Outlet, useNavigate, useParams} from "react-router-dom";
-import {ItemListing} from "@/components/app/Items/ItemListing.tsx";
-import {toast} from "@/components/ui/use-toast.ts";
-type OnItemsDeleteSuccess = (
-    action_type: "delete",
-    item_ids: number[],
-) => void;
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { ItemListing } from "@/components/app/Items/ItemListing.tsx";
+import { toast } from "@/components/ui/use-toast.ts";
+import classNames from "classnames";
+type OnItemsDeleteSuccess = (action_type: "delete", item_ids: number[]) => void;
 type OnItemAddOrEditSuccess = (
-    action_type: "add" | "edit",
-    item_id: number,
+  action_type: "add" | "edit",
+  item_id: number,
 ) => void;
-type OnItemModification = OnItemAddOrEditSuccess &
-    OnItemsDeleteSuccess;
+type OnItemModification = OnItemAddOrEditSuccess & OnItemsDeleteSuccess;
 
 const itemService = new ItemService();
 
 export function ItemPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const { item_id } = useParams();
   const selectedAccountId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
@@ -26,8 +23,9 @@ export function ItemPage() {
       return parseResult;
     }
   }, [item_id]);
-  const isDetailsPageOpen: boolean =
-      !!(selectedAccountId && selectedAccountId > 0);
+  const isDetailsPageOpen: boolean = !!(
+    selectedAccountId && selectedAccountId > 0
+  );
 
   // states
   const [items, setItems] = useState<Item[]>([]);
@@ -52,30 +50,30 @@ export function ItemPage() {
   }, []);
 
   const onItemAddClick = useCallback(() => {
-    navigate("/app/inventory/items/new")
+    navigate("/app/inventory/items/new");
   }, []);
 
   const onItemModificationSuccess = useCallback<OnItemModification>(
-      (action_type) => {
-        if (action_type === "add") {
-          toast({
-            title: "Success",
-            description: "Item is added successfully",
-          });
-        } else if (action_type === "edit") {
-          toast({
-            title: "Success",
-            description: "Item is updated successfully",
-          });
-        } else if (action_type === "delete") {
-          toast({
-            title: "Success",
-            description: "Item is delete successfully",
-          });
-        }
-        loadItems();
-      },
-      [loadItems],
+    (action_type) => {
+      if (action_type === "add") {
+        toast({
+          title: "Success",
+          description: "Item is added successfully",
+        });
+      } else if (action_type === "edit") {
+        toast({
+          title: "Success",
+          description: "Item is updated successfully",
+        });
+      } else if (action_type === "delete") {
+        toast({
+          title: "Success",
+          description: "Item is delete successfully",
+        });
+      }
+      loadItems();
+    },
+    [loadItems],
   );
 
   // get all charts of accounts
@@ -86,29 +84,31 @@ export function ItemPage() {
     };
   }, [loadItems]);
 
-
   return (
-
-      <>
-        <div className={"flex"}>
-          <div className={isDetailsPageOpen ? `w-[300px]` : ""}>
-            <ItemListing
-                shrinkTable={isDetailsPageOpen}
-                selectedItemId={selectedAccountId}
-                items={items}
-                isItemsFetching={isLoading}
-                onItemModificationSuccess={onItemModificationSuccess}
-                onItemEditClick={onItemEditClick}
-                onItemAddClick={onItemAddClick}
-            />
-          </div>
-          { (
-              <div className={"flex-1"}>
-                <Outlet />
-              </div>
+    <>
+      <div className={"grid grid-cols-6"}>
+        <div
+          className={classNames(
+            "col-span-6",
+            isDetailsPageOpen && ` hidden sm:block sm:col-span-2`,
           )}
+        >
+          <ItemListing
+            shrinkTable={isDetailsPageOpen}
+            selectedItemId={selectedAccountId}
+            items={items}
+            isItemsFetching={isLoading}
+            onItemModificationSuccess={onItemModificationSuccess}
+            onItemEditClick={onItemEditClick}
+            onItemAddClick={onItemAddClick}
+          />
         </div>
-
-      </>
+        {
+          <div className={"col-span-6 sm:col-span-4"}>
+            <Outlet />
+          </div>
+        }
+      </div>
+    </>
   );
 }

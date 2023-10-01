@@ -6,6 +6,7 @@ import ChartOfAccountService, {
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import { toast } from "@/components/ui/use-toast.ts";
 import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
+import classNames from "classnames";
 const chartOfAccountService = new ChartOfAccountService();
 type OnAccountEditClick = (account_id: number) => void;
 type OnAccountsDeleteSuccess = (
@@ -103,8 +104,15 @@ export default function ChartOfAccountPage() {
 
   return (
     <>
-      <div className={"grid grid-cols-3"}>
-        <div className={isDetailsPageOpen ? `col-span-1` : "col-span-3"}>
+      <div className={"grid grid-cols-6"}>
+        <div
+             className={classNames(
+                 "col-span-6",
+                 isDetailsPageOpen && ` hidden sm:block sm:col-span-2`,
+             )}
+
+
+        >
           <ChartOfAccountListing
             shrinkTable={isDetailsPageOpen}
             selectedAccountId={selectedAccountId}
@@ -116,7 +124,7 @@ export default function ChartOfAccountPage() {
           />
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-2"}>
+          <div className={"col-span-6 sm:col-span-4"}>
             <Outlet context={{onAccountEditClick}} />
           </div>
         )}
