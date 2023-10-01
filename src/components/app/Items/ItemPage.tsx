@@ -90,7 +90,7 @@ export function ItemPage() {
         <div
           className={classNames(
             "col-span-8",
-            isDetailsPageOpen && ` hidden sm:block sm:col-span-2`,
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-3`,
           )}
         >
           <ItemListing
@@ -103,11 +103,11 @@ export function ItemPage() {
             onItemAddClick={onItemAddClick}
           />
         </div>
-        {isDetailsPageOpen &&
-          <div className={"col-span-8 sm:col-span-6"}>
+        {isDetailsPageOpen && (
+          <div className={"col-span-8 lg:col-span-5"}>
             <Outlet />
           </div>
-        }
+        )}
       </div>
     </>
   );

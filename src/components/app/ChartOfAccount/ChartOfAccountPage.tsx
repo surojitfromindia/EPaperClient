@@ -104,14 +104,12 @@ export default function ChartOfAccountPage() {
 
   return (
     <>
-      <div className={"grid grid-cols-6"}>
+      <div className={"grid grid-cols-8"}>
         <div
-             className={classNames(
-                 "col-span-6",
-                 isDetailsPageOpen && ` hidden sm:block sm:col-span-2`,
-             )}
-
-
+          className={classNames(
+            "col-span-8",
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-3`,
+          )}
         >
           <ChartOfAccountListing
             shrinkTable={isDetailsPageOpen}
@@ -124,8 +122,8 @@ export default function ChartOfAccountPage() {
           />
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-6 sm:col-span-4"}>
-            <Outlet context={{onAccountEditClick}} />
+          <div className={"col-span-8 lg:col-span-5"}>
+            <Outlet context={{ onAccountEditClick }} />
           </div>
         )}
       </div>
@@ -140,4 +138,3 @@ export default function ChartOfAccountPage() {
     </>
   );
 }
-

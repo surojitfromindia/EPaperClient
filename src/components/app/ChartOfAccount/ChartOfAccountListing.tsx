@@ -154,9 +154,9 @@ export function ChartOfAccountListing({
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
           }
         >
-          <h1 className={"text-lg"}>Chart of Accounts</h1>
+          <h1 className={"text-md"}>Chart of Accounts</h1>
           <Button size={"sm"} onClick={onAccountAddClick}>
-            <Plus className="h-4 w-4" /> Add Account
+            <Plus className="h-4 w-4" /> New
           </Button>
         </section>
         <section
