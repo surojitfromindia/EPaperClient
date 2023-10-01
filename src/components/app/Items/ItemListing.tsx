@@ -125,17 +125,15 @@ export function ItemListing({
   );
   if (isLoading) {
     return (
-        <div className={"relative h-screen w-full"}>
-          <LoaderComponent />
-        </div>
+      <div className={"relative h-screen w-full"}>
+        <LoaderComponent />
+      </div>
     );
   }
 
   return (
     <>
-      <main
-        className={" flex max-h-screen flex-col border-r-1 h-screen"}
-      >
+      <main className={" flex max-h-screen flex-col border-r-1 h-screen"}>
         <section
           className={
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
@@ -151,7 +149,7 @@ export function ItemListing({
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isLoading && (
-            <Table className={"h-full"}>
+            <Table className={"h-full "}>
               {!shrinkTable && (
                 <TableHeader
                   className={"bg-background shadow-sm sticky top-0 z-[1]"}
@@ -160,7 +158,11 @@ export function ItemListing({
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
                     <TableHead>name</TableHead>
                     {dynamicHeadersAsArray.map(([col_key, col]) => (
-                      <TableHead key={col_key}>{col.label}</TableHead>
+                      <TableHead key={col_key} className={classNames(
+                          col.type==="numeric" && "text-right"
+                      )}>
+                        <div className={""}>{col.label}</div>
+                      </TableHead>
                     ))}
                     <TableHead>&nbsp;</TableHead>
                   </TableRow>
@@ -204,14 +206,19 @@ export function ItemListing({
                               col_data.type === "numeric" && "text-right",
                             )}
                           >
-                            {col_data.type === "text" && (item[col_key] ?? "")}
-                            {col_data.type === "numeric" && (
-                              <RNumberFormatAsText
-                                prefix={item[col_key] !== 0 ? col_data.prefix : ""}
-                                value={item[col_key] ?? 0}
-                                thousandSeparator={true}
-                              />
-                            )}
+                            <div className={"max-h-24 overflow-hidden"}>
+                              {col_data.type === "text" && (item[col_key] ?? "")}
+                              {col_data.type === "numeric" && (
+                                  <RNumberFormatAsText
+                                      prefix={
+                                        item[col_key] !== 0 ? col_data.prefix : ""
+                                      }
+                                      value={item[col_key] ?? 0}
+                                      thousandSeparator={true}
+                                  />
+                              )}
+                            </div>
+
                           </TableCell>
                         ))}
                     </>
