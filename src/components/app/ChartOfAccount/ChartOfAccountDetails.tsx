@@ -50,10 +50,16 @@ export default function ChartOfAccountDetails() {
       }),
     );
   };
+  if (isLoading) {
+    return (
+        <div className={"relative h-screen"}>
+          <LoaderComponent />
+        </div>
+    );
+  }
 
   return (
-    <div className={"w-full h-full relative"}>
-      {isLoading && <LoaderComponent />}
+    <div className={"w-full h-full"}>
       <section>
         <div className={"p-3 flex items-center justify-between"}>
           <div className={"flex flex-col"}>

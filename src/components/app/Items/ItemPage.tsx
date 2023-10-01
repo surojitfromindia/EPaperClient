@@ -86,10 +86,10 @@ export function ItemPage() {
 
   return (
     <>
-      <div className={"grid grid-cols-6"}>
+      <div className={"grid grid-cols-8"}>
         <div
           className={classNames(
-            "col-span-6",
+            "col-span-8",
             isDetailsPageOpen && ` hidden sm:block sm:col-span-2`,
           )}
         >
@@ -103,8 +103,8 @@ export function ItemPage() {
             onItemAddClick={onItemAddClick}
           />
         </div>
-        {
-          <div className={"col-span-6 sm:col-span-4"}>
+        {isDetailsPageOpen &&
+          <div className={"col-span-8 sm:col-span-6"}>
             <Outlet />
           </div>
         }

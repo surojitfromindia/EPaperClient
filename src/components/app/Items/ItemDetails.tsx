@@ -85,24 +85,22 @@ export default function ItemDetails() {
     };
   }, [loadEditPage]);
 
-  console.log("isl", isLoading);
   if (isLoading) {
-    console.log("loading");
     return (
-      <div className={"relative h-full"}>
+      <div className={"relative h-screen"}>
         <LoaderComponent />
       </div>
     );
   }
   return (
-    <main className={"flex flex-col overflow-hidden h-screen "}>
-      <section className={"px-5 py-3 "}>
+    <main className={"flex flex-col h-screen "}>
+      <section className={"pl-5 pr-2 py-3 "}>
         <div className={"flex items-center justify-between h-10"}>
           <div className={"flex flex-col"}>
             <span className={"font-medium text-xl"}>{itemDetails?.name}</span>
           </div>
           <div>
-            <span className={"text-xs flex space-x-2"}>
+            <span className={"text-xs flex space-x-1"}>
               <Button
                 variant={"outline"}
                 size={"icon"}
