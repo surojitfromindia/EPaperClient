@@ -90,8 +90,8 @@ export function ItemPage() {
   return (
 
       <>
-        <div className={"grid grid-cols-4"}>
-          <div className={isDetailsPageOpen ? `col-span-1` : "col-span-4"}>
+        <div className={"flex"}>
+          <div className={isDetailsPageOpen ? `w-[300px]` : ""}>
             <ItemListing
                 shrinkTable={isDetailsPageOpen}
                 selectedItemId={selectedAccountId}
@@ -103,7 +103,7 @@ export function ItemPage() {
             />
           </div>
           { (
-              <div className={"col-span-3"}>
+              <div className={"flex-1"}>
                 <Outlet />
               </div>
           )}

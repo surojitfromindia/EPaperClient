@@ -491,7 +491,7 @@ export default function ItemAdd() {
                     control={control}
                   />
                 </div>
-                <div className={"flex flex-col space-y-1 mt-5"}>
+                <div className={"flex flex-col space-y-0.5 mt-5"}>
                   <FormField
                     name={"selling_price"}
                     render={({ field }) => (
@@ -644,7 +644,7 @@ export default function ItemAdd() {
                     control={control}
                   />
                 </div>
-                <div className={"flex flex-col space-y-1 mt-5"}>
+                <div className={"flex flex-col space-y-0.5 mt-5"}>
                   <FormField
                     name={"purchase_price"}
                     render={({ field }) => (
@@ -742,7 +742,7 @@ export default function ItemAdd() {
           </form>
         </Form>
       </div>
-      <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 bg-accent "}>
+      <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 border-t-1 "}>
         <Button
           className={"capitalize"}
           onClick={handleSubmit(handleFormSubmit)}

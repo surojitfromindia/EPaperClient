@@ -71,7 +71,7 @@ export default function EPaper() {
                       setOpenSideDrawer(prev=>!prev)
                     }}
                   size={"icon"}
-                  className={"sm:hidden p-3 rounded-3xl fixed right-10 bottom-10"}
+                  className={"sm:hidden p-3 rounded-3xl fixed right-10 bottom-5"}
                 >
                   <MenuIcon />
                 </Button>

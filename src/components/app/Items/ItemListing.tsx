@@ -187,11 +187,9 @@ export function ItemListing({
                       onClick={() => {
                         handleRowClick(item.item_id);
                       }}
-                      className={"py-3 font-medium w-36 align-top "}
+                      className={"py-3 font-medium whitespace-nowrap align-top "}
                     >
-                      <span>
-                        <span>{item.name}</span>
-                      </span>
+                        <span className={"w-36"}>{item.name}</span>
                     </TableCell>
                     <>
                       {!shrinkTable &&
