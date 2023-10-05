@@ -12,6 +12,7 @@ interface ItemGenerated {
   tax_name: string;
   sales_account_name?: string;
   purchase_account_name?: string;
+  unit_id?:number,
 }
 interface Item extends ItemGenerated {
   item_id: number;

@@ -23,6 +23,7 @@ import ItemService, {
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect, { components, OptionProps } from "react-select";
+import ReactSelectCRE from "react-select/creatable";
 import {
   reactSelectComponentOverride,
   reactSelectStyle,
@@ -109,12 +110,12 @@ export default function ItemAdd() {
       name: z.string().trim().nonempty({ message: "enter item name" }),
       product_type: z.enum(["goods", "service"]),
       unit: z.object(
-        { value: z.string().nonempty(), label: z.string() },
+        { value: z.string().nullable().optional(), label: z.string().nullable().optional() },
         {
           invalid_type_error: "select or type a unit",
           required_error: "select or type a unit",
         },
-      ),
+      ).nullable(),
       sku: z.string().trim().optional(),
       has_selling_price: z.boolean().optional(),
       has_purchase_price: z.boolean().optional(),
@@ -124,7 +125,7 @@ export default function ItemAdd() {
           invalid_type_error: "select a tax",
           required_error: "select a tax",
         },
-      ),
+      )
     })
     .refine((data) => data.has_purchase_price || data.has_selling_price, {
       message: "good",
@@ -179,6 +180,7 @@ export default function ItemAdd() {
       has_selling_price: true,
       has_purchase_price: true,
       product_type: "goods",
+      unit:null
     },
   });
   const { register, handleSubmit, watch, control, setValue } = form;
@@ -192,7 +194,7 @@ export default function ItemAdd() {
     const newItem: ItemCreatePayload = {
       name: data.name,
       product_type: data.product_type,
-      unit: data?.unit?.value,
+      unit: data?.unit?.value ?? "",
       item_for: itemFor,
       tax_id: data.tax.value,
     };
@@ -245,7 +247,6 @@ export default function ItemAdd() {
       if (data) {
         setValue("name", data.name!);
         setValue("product_type", data.product_type!);
-        setValue("unit", { label: data.unit!, value: data.unit! });
         setValue("tax", {
           label: `${data.tax_name} [${data.tax_percentage!}%]`,
           value: data.tax_id!,
@@ -253,6 +254,9 @@ export default function ItemAdd() {
         setValue("selling_price", data.selling_price!);
         setValue("purchase_price", data.purchase_price!);
 
+        if(data.unit_id && data.unit){
+          setValue("unit", { label: data.unit!, value: data.unit! });
+        }
         if (
           data?.item_for === "sales_and_purchase" ||
           data?.item_for === "sales"
@@ -433,7 +437,7 @@ export default function ItemAdd() {
                       </FormLabel>
                       <div className="col-span-3 flex-col">
                         <FormControl>
-                          <ReactSelect
+                          <ReactSelectCRE
                             className={"col-span-3"}
                             options={unitsDropDownOptions}
                             {...field}
@@ -443,6 +447,7 @@ export default function ItemAdd() {
                               ...reactSelectComponentOverride,
                               Option,
                             }}
+                            isClearable={true}
                           />
                         </FormControl>
                         <span className={"h-4 block"}>

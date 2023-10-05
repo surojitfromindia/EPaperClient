@@ -9,12 +9,13 @@ import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAcc
 import classNames from "classnames";
 const chartOfAccountService = new ChartOfAccountService();
 type OnAccountEditClick = (account_id: number) => void;
+type ActionType = "delete"|"add"|"edit";
 type OnAccountsDeleteSuccess = (
-  action_type: "delete",
+  action_type: Extract<ActionType,"delete">,
   account_ids: number[],
 ) => void;
 type OnAccountAddOrEditSuccess = (
-  action_type: "add" | "edit",
+  action_type: Extract<ActionType, "add" | "edit">,
   account_id: number,
 ) => void;
 
@@ -43,7 +44,7 @@ export default function ChartOfAccountPage() {
     }
   }, [account_id]);
   const isDetailsPageOpen: boolean =
-    selectedAccountId && selectedAccountId > 0 ? true : false;
+    selectedAccountId && selectedAccountId > 0;
 
   // states
   const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
@@ -51,7 +52,10 @@ export default function ChartOfAccountPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingAccountId, setEditingAccountId] = useState<number>();
 
-  const closeEditModal = () => setIsEditModalOpen(false);
+  const closeEditModal = () => {
+    setEditingAccountId(undefined);
+    setIsEditModalOpen(false);
+  };
   const loadAccounts = useCallback(() => {
     chartOfAccountService.getChartOfAccounts().then((chartOfAccounts) => {
       setChartOfAccounts(chartOfAccounts?.chart_of_accounts ?? []);
@@ -72,7 +76,7 @@ export default function ChartOfAccountPage() {
   }, []);
 
   const onAccountModificationSuccess = useCallback<OnAccountModification>(
-    (action_type) => {
+    (action_type:ActionType) => {
       if (action_type === "add") {
         toast({
           title: "Success",
