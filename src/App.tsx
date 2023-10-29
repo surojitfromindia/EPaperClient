@@ -9,6 +9,7 @@ import ChartOfAccountDetails from "@/components/app/ChartOfAccount/ChartOfAccoun
 import { ItemPage } from "@/components/app/Items/ItemPage.tsx";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import ItemDetails from "@/components/app/Items/ItemDetails.tsx";
+import {InvoicePage} from "@/components/app/Invoices/InvoicePage.tsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -77,6 +78,11 @@ function App() {
               element: <ChartOfAccountDetails />,
             },
           ],
+        },
+        {
+          path: "invoices",
+          errorElement: <Page404 />,
+          element: <InvoicePage/>
         },
         {
           path: "*",

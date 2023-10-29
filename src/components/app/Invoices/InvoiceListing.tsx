@@ -11,7 +11,6 @@ import { Edit, Loader2, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { useNavigate } from "react-router-dom";
-import { Item, ItemTableView } from "@/API/Resources/v1/Item/Item.Service.ts";
 import classNames from "classnames";
 import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
@@ -23,15 +22,30 @@ import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
+import { OnInvoiceModification } from "@/components/app/Invoices/InvoicePage.tsx";
+import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 
-interface ItemListingProps extends React.HTMLAttributes<HTMLDivElement> {
+interface InvoiceTableView
+  extends Pick<
+    Invoice,
+    "issue_date_formatted" | "invoice_number" | "contact_name" | "due_date_formatted" | "order_number" | "total"
+  > {}
+interface FixedTableFields
+  extends Pick<Invoice, "issue_date_formatted" | "invoice_number"> {}
+
+interface InvoiceListingProps extends React.HTMLAttributes<HTMLDivElement> {
   shrinkTable?: boolean;
-  selectedItemId?: number;
-  items: Item[];
-  isItemsFetching: boolean;
-  onItemAddClick: () => void;
+  selectedInvoiceId?: number;
+  invoices: Invoice[];
+  isFetching: boolean;
+  onInvoiceEditClick: (invoice_id: number) => void;
+  onInvoiceAddClick: () => void;
+  onInvoiceModificationSuccess: OnInvoiceModification;
 }
 
+/**
+ *
+ */
 type TableHeaderBody = {
   label: string;
   removable: boolean;
@@ -40,69 +54,58 @@ type TableHeaderBody = {
   suffix?: string;
 };
 
-export function ItemListing({
+export function InvoiceListing({
   shrinkTable = false,
-  selectedItemId,
-  items = [],
-  isItemsFetching = true,
-  onItemAddClick,
-}: ItemListingProps) {
+  selectedInvoiceId,
+  invoices = [],
+  isFetching = true,
+  onInvoiceAddClick,
+}: InvoiceListingProps) {
   const organizationCurrencyCode = useAppSelector(
     ({ organization }) => organization.currency_code,
   );
   const navigate = useNavigate();
-  const isLoading = isItemsFetching;
+  const isLoading = isFetching;
   // highlight row after coming from the details page
   const [lastSelectedId, setLastSelectedId] = useState<number>();
-  const onListingPage = useMemo(() => !selectedItemId, [selectedItemId]);
+  const onListingPage = useMemo(() => !selectedInvoiceId, [selectedInvoiceId]);
 
   const handleAccountDeleteAction = async (selected_account_ids: number[]) => {
     console.log(selected_account_ids);
   };
-  const handleRowClick = (item_id: number) => {
-    setLastSelectedId(item_id);
-    navigate(`/app/inventory/items/${item_id}`);
+  const handleRowClick = (invoice_id: number) => {
+    setLastSelectedId(invoice_id);
+    navigate(`/app/invoices/${invoice_id}`);
   };
-  const handleAccountEditOptionClick = (item_id: number) => {
-    navigate(`/app/inventory/items/${item_id}/edit`);
+  const handleAccountEditOptionClick = (invoice_id: number) => {
+    navigate(`/app/invoices/${invoice_id}/edit`);
   };
 
   const dynamicHeaders: Record<
-    keyof Omit<ItemTableView, "name">,
+    keyof Omit<InvoiceTableView, keyof FixedTableFields>,
     TableHeaderBody
   > = useMemo(
     () => ({
-      unit: {
-        label: "unit",
+     due_date_formatted : {
+        label: "due date",
         removable: true,
         type: "text",
       },
-      product_type_formatted: {
-        label: "product type",
+      contact_name:{
+        label: "customer name",
         removable: true,
         type: "text",
       },
-      selling_price: {
-        label: "rate",
+      order_number: {
+        label: "order number",
+        removable: true,
+        type: "text",
+      },
+      total: {
+        label: "total",
         removable: true,
         type: "numeric",
         prefix: organizationCurrencyCode,
-      },
-      selling_description: {
-        label: "description",
-        removable: true,
-        type: "text",
-      },
-      purchase_price: {
-        label: "purchase price",
-        removable: true,
-        type: "numeric",
-        prefix: organizationCurrencyCode,
-      },
-      purchase_description: {
-        label: "purchase description",
-        removable: true,
-        type: "text",
       },
     }),
     [],
@@ -127,8 +130,8 @@ export function ItemListing({
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
           }
         >
-          <h1 className={"text-md"}>Items</h1>
-          <Button size={"sm"} onClick={onItemAddClick}>
+          <h1 className={"text-md"}>Invoices</h1>
+          <Button size={"sm"} onClick={onInvoiceAddClick}>
             <Plus className="h-4 w-4" /> New
           </Button>
         </section>
@@ -144,11 +147,15 @@ export function ItemListing({
                 >
                   <TableRow className={"uppercase text-xs"}>
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
-                    <TableHead>name</TableHead>
+                    <TableHead>issue date</TableHead>
+                    <TableHead>invoice#</TableHead>
                     {dynamicHeadersAsArray.map(([col_key, col]) => (
-                      <TableHead key={col_key} className={classNames(
-                          col.type==="numeric" && "text-right"
-                      )}>
+                      <TableHead
+                        key={col_key}
+                        className={classNames(
+                          col.type === "numeric" && "text-right",
+                        )}
+                      >
                         <div className={""}>{col.label}</div>
                       </TableHead>
                     ))}
@@ -157,12 +164,12 @@ export function ItemListing({
                 </TableHeader>
               )}
               <TableBody>
-                {items.map((item) => (
+                {invoices.map((invoice) => (
                   <TableRow
-                    key={item.item_id}
+                    key={invoice.invoice_id}
                     className={classNames(
-                      item.item_id === selectedItemId && "bg-accent",
-                      item.item_id === lastSelectedId &&
+                      invoice.invoice_id === selectedInvoiceId && "bg-accent",
+                      invoice.invoice_id === lastSelectedId &&
                         onListingPage &&
                         "animate-twinkle",
                       "cursor-pointer h-10",
@@ -173,11 +180,23 @@ export function ItemListing({
                     </TableCell>
                     <TableCell
                       onClick={() => {
-                        handleRowClick(item.item_id);
+                        handleRowClick(invoice.invoice_id);
                       }}
-                      className={"py-3 font-medium whitespace-nowrap align-top "}
+                      className={
+                        "py-3 font-medium whitespace-nowrap align-top "
+                      }
                     >
-                        <span className={"w-36"}>{item.name}</span>
+                      <span className={"w-36"}>{invoice.issue_date_formatted}</span>
+                    </TableCell>
+                    <TableCell
+                      onClick={() => {
+                        handleRowClick(invoice.invoice_id);
+                      }}
+                      className={
+                        "py-3 font-medium whitespace-nowrap align-top "
+                      }
+                    >
+                      <span className={"w-36"}>{invoice.invoice_number}</span>
                     </TableCell>
                     <>
                       {!shrinkTable &&
@@ -185,7 +204,7 @@ export function ItemListing({
                           <TableCell
                             key={col_key}
                             onClick={() => {
-                              handleRowClick(item.item_id);
+                              handleRowClick(invoice.invoice_id);
                             }}
                             className={classNames(
                               "align-top",
@@ -193,18 +212,20 @@ export function ItemListing({
                             )}
                           >
                             <div className={"max-h-24 overflow-hidden"}>
-                              {col_data.type === "text" && (item[col_key] ?? "")}
+                              {col_data.type === "text" &&
+                                (invoice[col_key] ?? "")}
                               {col_data.type === "numeric" && (
-                                  <RNumberFormatAsText
-                                      prefix={
-                                        item[col_key] !== 0 ? col_data.prefix : ""
-                                      }
-                                      value={item[col_key] ?? 0}
-                                      thousandSeparator={true}
-                                  />
+                                <RNumberFormatAsText
+                                  prefix={
+                                    invoice[col_key] !== 0
+                                      ? col_data.prefix
+                                      : ""
+                                  }
+                                  value={invoice[col_key] ?? 0}
+                                  thousandSeparator={true}
+                                />
                               )}
                             </div>
-
                           </TableCell>
                         ))}
                     </>
@@ -222,7 +243,7 @@ export function ItemListing({
                               className={"menu-item-ok"}
                               role={"button"}
                               onClick={() =>
-                                handleAccountEditOptionClick(item.item_id)
+                                handleAccountEditOptionClick(invoice.invoice_id)
                               }
                             >
                               <Edit className={"h-4 w-4"} />
@@ -232,7 +253,7 @@ export function ItemListing({
                               className={"menu-item-danger"}
                               role={"button"}
                               onClick={() =>
-                                handleAccountDeleteAction([item.item_id])
+                                handleAccountDeleteAction([invoice.invoice_id])
                               }
                             >
                               <span>Delete</span>

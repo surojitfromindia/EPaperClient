@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button.tsx";
 import { useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { BookMarked, ChevronLeft, Gauge, ShoppingCart } from "lucide-react";
+import {BookMarked, ChevronLeft, Gauge, Receipt, ShoppingCart} from "lucide-react";
 import classNames from "classnames";
 
 export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
@@ -51,6 +51,18 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
                 >
                   <ShoppingCart className={"h-4 w-4 mr-2"} />
                   Item
+                </Button>
+              )}
+            </NavLink>
+
+            <NavLink to={"/app/invoices"}>
+              {({ isActive }) => (
+                <Button
+                  variant={isActiveLink(isActive)}
+                  className="w-full  justify-start"
+                >
+                  <Receipt className={"h-4 w-4 mr-2"} />
+                  Invoice
                 </Button>
               )}
             </NavLink>
