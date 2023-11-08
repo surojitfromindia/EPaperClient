@@ -10,6 +10,7 @@ import { ItemPage } from "@/components/app/Items/ItemPage.tsx";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import ItemDetails from "@/components/app/Items/ItemDetails.tsx";
 import {InvoicePage} from "@/components/app/Invoices/InvoicePage.tsx";
+import InvoiceAdd from "@/components/app/Invoices/InvoiceAdd.tsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -82,7 +83,16 @@ function App() {
         {
           path: "invoices",
           errorElement: <Page404 />,
-          element: <InvoicePage/>
+          children:[
+            {
+              path: "",
+              element: <InvoicePage />,
+            },
+            {
+              path: "new",
+              element: <InvoiceAdd />,
+            },
+          ]
         },
         {
           path: "*",
