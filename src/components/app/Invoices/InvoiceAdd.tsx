@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { Trash, X } from "lucide-react";
+import { Settings, Settings2Icon, SettingsIcon, Trash, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -7,14 +7,12 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form.tsx";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
   Item,
   ItemCreatePayload,
@@ -22,17 +20,13 @@ import ItemService, {
   ItemFor,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import ReactSelect, { components, OptionProps } from "react-select";
 import ReactSelectCRE from "react-select/creatable";
 import {
   reactSelectComponentOverride,
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
-import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
-import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
+import { DatePicker } from "@/components/ui/DatePicker.tsx";
 
 const itemService = new ItemService();
 
@@ -105,23 +99,24 @@ export default function InvoiceAdd() {
     navigate("/app/invoices");
   };
 
-  const basicSchema = z
-    .object({
-      contact: z.object(
-        {
-          value: z.number(),
-          label: z.string()
-        },
-        {
-          invalid_type_error: "please select a customer",
-          required_error: "please select a customer",
-        },
-      ),
+  const basicSchema = z.object({
+    contact: z.object(
+      {
+        value: z.number(),
+        label: z.string(),
+      },
+      {
+        invalid_type_error: "please select a customer",
+        required_error: "please select a customer",
+      },
+    ),
 
-      invoice_number: z.string().trim(),
-      order_number: z.string().trim().optional(),
-
-    })
+    invoice_number: z.string().trim(),
+    order_number: z.string().trim().optional(),
+    issue_date: z.string().trim(),
+    due_date: z.string().trim(),
+    payment_term: z.string().trim(),
+  });
   const hasSellingInformationSchema = z.object({
     has_selling_price: z.literal(true),
     selling_price: z.number({ required_error: "enter selling price" }),
@@ -167,9 +162,7 @@ export default function InvoiceAdd() {
     );
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: {
-
-    },
+    defaultValues: {},
   });
   const { register, handleSubmit, watch, control, setValue } = form;
   const has_selling_price = watch("has_selling_price");
@@ -178,95 +171,95 @@ export default function InvoiceAdd() {
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-    let itemFor: ItemFor = "sales";
-    const newItem: ItemCreatePayload = {
-      contact: data.contact,
-      item_for: itemFor,
-    };
-    if (data.has_selling_price) {
-      itemFor = "sales";
-      newItem.selling_price = data.selling_price;
-      newItem.selling_description = data.selling_description;
-      newItem.sales_account_id = data.sales_account.value;
-    }
-    if (data.has_purchase_price) {
-      itemFor = "purchase";
-      newItem.purchase_price = data.purchase_price;
-      newItem.purchase_description = data.purchase_description;
-      newItem.purchase_account_id = data.purchase_account.value;
-    }
-    if (data.has_selling_price && data.has_purchase_price) {
-      itemFor = "sales_and_purchase";
-    }
-    newItem.item_for = itemFor;
-
-    if (isEditMode) {
-      await itemService.updateItem({
-        payload: newItem,
-        params: {
-          item_id: editItemId,
-        },
-      });
-    } else {
-      await itemService.addItem({
-        payload: newItem,
-      });
-    }
-
-    // show a success message
-    const toastMessage = isEditMode
-      ? "Item is updated successfully"
-      : "Item is created successfully";
-    toast({
-      title: "Success",
-      description: toastMessage,
-    });
-    navigate("/app/inventory/items");
+    // let itemFor: ItemFor = "sales";
+    // const newItem: ItemCreatePayload = {
+    //   contact: data.contact,
+    //   item_for: itemFor,
+    // };
+    // if (data.has_selling_price) {
+    //   itemFor = "sales";
+    //   newItem.selling_price = data.selling_price;
+    //   newItem.selling_description = data.selling_description;
+    //   newItem.sales_account_id = data.sales_account.value;
+    // }
+    // if (data.has_purchase_price) {
+    //   itemFor = "purchase";
+    //   newItem.purchase_price = data.purchase_price;
+    //   newItem.purchase_description = data.purchase_description;
+    //   newItem.purchase_account_id = data.purchase_account.value;
+    // }
+    // if (data.has_selling_price && data.has_purchase_price) {
+    //   itemFor = "sales_and_purchase";
+    // }
+    // newItem.item_for = itemFor;
+    //
+    // if (isEditMode) {
+    //   await itemService.updateItem({
+    //     payload: newItem,
+    //     params: {
+    //       item_id: editItemId,
+    //     },
+    //   });
+    // } else {
+    //   await itemService.addItem({
+    //     payload: newItem,
+    //   });
+    // }
+    //
+    // // show a success message
+    // const toastMessage = isEditMode
+    //   ? "Item is updated successfully"
+    //   : "Item is created successfully";
+    // toast({
+    //   title: "Success",
+    //   description: toastMessage,
+    // });
+    // navigate("/app/inventory/items");
   };
   const setFormData = useCallback(
     (data: typeof editPageItemDetails) => {
       // reset the defaults when update
-      setValue("has_selling_price", false);
-      setValue("has_purchase_price", false);
-
-      if (data) {
-        setValue("name", data.name!);
-        setValue("product_type", data.product_type!);
-        setValue("tax", {
-          label: `${data.tax_name} [${data.tax_percentage!}%]`,
-          value: data.tax_id!,
-        });
-        setValue("selling_price", data.selling_price!);
-        setValue("purchase_price", data.purchase_price!);
-
-        if (data.unit_id && data.unit) {
-          setValue("unit", { label: data.unit!, value: data.unit! });
-        }
-        if (
-          data?.item_for === "sales_and_purchase" ||
-          data?.item_for === "sales"
-        ) {
-          setValue("has_selling_price", true);
-          setValue("sales_account", {
-            label: data?.sales_account_name ?? "",
-            value: data.sales_account_id!,
-            account_name: data?.sales_account_name ?? "",
-          });
-          setValue("selling_description", data.selling_description);
-        }
-        if (
-          data?.item_for === "sales_and_purchase" ||
-          data?.item_for === "purchase"
-        ) {
-          setValue("has_purchase_price", true);
-          setValue("purchase_account", {
-            label: data?.purchase_account_name ?? "",
-            value: data.purchase_account_id!,
-            account_name: data?.purchase_account_name ?? "",
-          });
-          setValue("purchase_description", data.purchase_description);
-        }
-      }
+      // setValue("has_selling_price", false);
+      // setValue("has_purchase_price", false);
+      //
+      // if (data) {
+      //   setValue("name", data.name!);
+      //   setValue("product_type", data.product_type!);
+      //   setValue("tax", {
+      //     label: `${data.tax_name} [${data.tax_percentage!}%]`,
+      //     value: data.tax_id!,
+      //   });
+      //   setValue("selling_price", data.selling_price!);
+      //   setValue("purchase_price", data.purchase_price!);
+      //
+      //   if (data.unit_id && data.unit) {
+      //     setValue("unit", { label: data.unit!, value: data.unit! });
+      //   }
+      //   if (
+      //     data?.item_for === "sales_and_purchase" ||
+      //     data?.item_for === "sales"
+      //   ) {
+      //     setValue("has_selling_price", true);
+      //     setValue("sales_account", {
+      //       label: data?.sales_account_name ?? "",
+      //       value: data.sales_account_id!,
+      //       account_name: data?.sales_account_name ?? "",
+      //     });
+      //     setValue("selling_description", data.selling_description);
+      //   }
+      //   if (
+      //     data?.item_for === "sales_and_purchase" ||
+      //     data?.item_for === "purchase"
+      //   ) {
+      //     setValue("has_purchase_price", true);
+      //     setValue("purchase_account", {
+      //       label: data?.purchase_account_name ?? "",
+      //       value: data.purchase_account_id!,
+      //       account_name: data?.purchase_account_name ?? "",
+      //     });
+      //     setValue("purchase_description", data.purchase_description);
+      //   }
+      // }
     },
     [setValue],
   );
@@ -284,29 +277,6 @@ export default function InvoiceAdd() {
     }
   }, [editPageItemDetails, setFormData]);
 
-  const Option = (props: OptionProps<(typeof unitsDropDownOptions)[0]>) => {
-    return (
-      <components.Option {...props}>
-        <div className={"flex items-center justify-between"}>
-          <div>{props.children}</div>
-          <div>
-            <Button
-              size={"icon"}
-              variant={"ghost"}
-              className={"p-1 h-5 w-5"}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                console.log("Edit clicked: ", props.data.unit_id);
-              }}
-            >
-              <Trash className={"w-3 h-3"} />
-            </Button>
-          </div>
-        </div>
-      </components.Option>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -334,54 +304,142 @@ export default function InvoiceAdd() {
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
               <div className={"md:grid-cols-4 col-span-5 space-y-2.5"}>
-
                 <FormField
-                    name={"contact"}
-                    render={({ field }) => (
-                        <FormItem className={"grid grid-cols-4 items-center "}>
-                          <FormLabel htmlFor={"contact"} className=" capitalize">
-                            Customer
-                          </FormLabel>
-                          <div className="col-span-3 flex-col">
-                            <FormControl>
-                              <ReactSelectCRE
-                                  className={"col-span-3"}
-                                  options={unitsDropDownOptions}
-                                  {...field}
-                                  inputId={"contact"}
-                                  classNames={reactSelectStyle}
-                                  components={{
-                                    ...reactSelectComponentOverride,
-                                  }}
-                                  isClearable={true}
-                              />
-                            </FormControl>
-
-                          </div>
-                        </FormItem>
-                    )}
-                    control={control}
+                  name={"contact"}
+                  render={({ field }) => (
+                    <FormItem className={"grid grid-cols-4 items-center "}>
+                      <FormLabel htmlFor={"contact"} className=" capitalize">
+                        Customer
+                      </FormLabel>
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <ReactSelectCRE
+                            className={"col-span-3"}
+                            options={unitsDropDownOptions}
+                            {...field}
+                            inputId={"contact"}
+                            classNames={reactSelectStyle}
+                            components={{
+                              ...reactSelectComponentOverride,
+                            }}
+                            isClearable={true}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
+                  control={control}
                 />
+
                 <FormField
                   name={"invoice_number"}
                   render={() => (
                     <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel htmlFor={"invoice_number"} className={"capitalize"}>
+                      <FormLabel
+                        htmlFor={"invoice_number"}
+                        className={"capitalize"}
+                      >
                         Invoice#
                       </FormLabel>
                       <div className="col-span-3 flex-col">
                         <FormControl>
-                          <Input
-                            id="invoice_number"
-                            className="col-span-3"
-                            {...register("invoice_number")}
-                          />
+                          <div className="relative w-full max-w-sm">
+                            <Input
+                              className="pr-10 col-span-3"
+                              placeholder="Invoice number"
+                              type="text"
+                              id="invoice_number"
+                              {...register("invoice_number")}
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                              <Settings2Icon
+                                className={"w-4 h-4 text-primary"}
+                              />
+                            </div>
+                          </div>
                         </FormControl>
-
                       </div>
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div
+                className={"grid grid-cols-12 col-span-12 space-x-5 mt-2.5 "}
+              >
+                <div className={"col-span-5"}>
+                  <FormField
+                    name={"issue_date"}
+                    render={({ field }) => (
+                      <FormItem className={"grid grid-cols-4 items-center "}>
+                        <FormLabel
+                          htmlFor={"issue_date"}
+                          className=" capitalize"
+                        >
+                          Issue Date
+                        </FormLabel>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <DatePicker initialDate={Date.now()} {...field} />
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
+                    control={control}
+                  />
+                </div>
+                <div className={"col-span-3"}>
+
+                  <FormField
+                      name={"payment_term"}
+                      render={({ field }) => (
+                          <FormItem className={"grid grid-cols-3 items-center "}>
+                            <FormLabel htmlFor={"payment_term"} className=" capitalize">
+                               Terms
+                            </FormLabel>
+                            <div className="col-span-2 flex-col">
+                              <FormControl>
+                                <ReactSelectCRE
+                                    className={"col-span-2"}
+                                    options={unitsDropDownOptions}
+                                    {...field}
+                                    inputId={"payment_term"}
+                                    classNames={reactSelectStyle}
+                                    components={{
+                                      ...reactSelectComponentOverride,
+                                    }}
+                                />
+                              </FormControl>
+                            </div>
+                          </FormItem>
+                      )}
+                      control={control}
+                  />
+
+
+                </div>
+                <div className={"col-span-4"}>
+                  <FormField
+                      name={"due_date"}
+                      render={({ field }) => (
+                          <FormItem className={"grid grid-cols-4 items-center "}>
+                            <FormLabel
+                                htmlFor={"due_date"}
+                                className=" capitalize"
+                            >
+                              Due Date
+                            </FormLabel>
+                            <div className="col-span-3 flex-col">
+                              <FormControl>
+                                <DatePicker initialDate={Date.now()} {...field} />
+                              </FormControl>
+                            </div>
+                          </FormItem>
+                      )}
+                      control={control}
+                  />
+
+                </div>
               </div>
             </div>
 
