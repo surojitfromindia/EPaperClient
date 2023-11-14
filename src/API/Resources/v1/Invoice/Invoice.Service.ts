@@ -1,5 +1,9 @@
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
+import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import {TaxRate} from "@/API/Resources/v1/TaxRate.ts";
+import {ItemUnit} from "@/API/Resources/v1/ItemUnit.ts";
+import {PaymentTerm} from "@/API/Resources/v1/PaymentTerm.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -49,6 +53,12 @@ type InvoiceEditPageServiceParams = {
   invoice_id?: number;
 };
 
+type InvoiceEditPageContent = {
+  taxes: TaxRate[];
+  units: ItemUnit[];
+  line_item_accounts_list: ChartOfAccount[];
+  payment_terms: PaymentTerm[];
+};
 
 class InvoiceService implements APIService {
   readonly urlFragment: string = "/invoices";
@@ -71,7 +81,7 @@ class InvoiceService implements APIService {
   }
   getInvoiceEditPage({ invoice_id }: InvoiceEditPageServiceParams = {}) {
     const url = this.urlFragment + "/edit_page";
-    return this.#axiosConfig.APIGetRequestWrapper<any>(url, {
+    return this.#axiosConfig.APIGetRequestWrapper<InvoiceEditPageContent>(url, {
       searchParameters: [
         {
           key: "invoice_id",
@@ -87,4 +97,4 @@ class InvoiceService implements APIService {
   }
 }
 export default InvoiceService;
-export type { Invoice };
+export type { Invoice,InvoiceEditPageContent };

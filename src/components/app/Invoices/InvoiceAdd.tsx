@@ -27,45 +27,50 @@ import {
 } from "@/util/style/reactSelectStyle.ts";
 import { toast } from "@/components/ui/use-toast.ts";
 import { DatePicker } from "@/components/ui/DatePicker.tsx";
+import InvoiceService, {
+  Invoice,
+  InvoiceEditPageContent,
+} from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
+import { DateUtil } from "@/util/dateUtil.ts";
 
-const itemService = new ItemService();
+const invoiceService = new InvoiceService();
 
 export default function InvoiceAdd() {
-  const { item_id } = useParams();
-  const editItemId = useMemo(() => {
+  const { invoice_id } = useParams();
+  const editInvoiceId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
-    const parseResult = Number.parseInt(item_id ?? "");
+    const parseResult = Number.parseInt(invoice_id ?? "");
     if (!Number.isNaN(parseResult)) {
       return parseResult;
     }
-  }, [item_id]);
-  const isEditMode = useMemo(() => !!editItemId, [editItemId]);
+  }, [invoice_id]);
+  const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
 
   const navigate = useNavigate();
-  const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
-  const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
-    inventory_accounts_list: [],
-    purchase_accounts_list: [],
-    taxes: [],
-    units: [],
-    income_accounts_list: [],
-  });
+  const [editPageItemDetails, setEditPageItemDetails] = useState<Invoice>();
+  const [editPageContent, setEditPageContent] =
+    useState<InvoiceEditPageContent>({
+      taxes: [],
+      units: [],
+      payment_terms: [],
+      line_item_accounts_list: [],
+    });
   const [isLoading, setIsLoading] = useState(true);
 
   const loadEditPage = useCallback(() => {
-    itemService
-      .getItemEditPage({
-        item_id: editItemId,
+    invoiceService
+      .getInvoiceEditPage({
+        invoice_id: editInvoiceId,
       })
       .then((data) => {
         setEditPageContent(data!);
-        setEditPageItemDetails(data?.item);
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
-  }, [editItemId]);
+  }, [editInvoiceId]);
 
   const unitsDropDownOptions = useMemo(() => {
     const units = editPageContent.units;
@@ -75,26 +80,35 @@ export default function InvoiceAdd() {
       unit_id: unit.unit_id,
     }));
   }, [editPageContent]);
-  const incomeAccountsDropDown = useMemo(() => {
-    return editPageContent.income_accounts_list.map((acc) => ({
+  const lineItemAccountsDropDown = useMemo(() => {
+    return editPageContent.line_item_accounts_list.map((acc) => ({
       label: acc.account_name,
       value: acc.account_id,
       ...acc,
     }));
-  }, [editPageContent.income_accounts_list]);
-  const purchaseAccountsDropDown = useMemo(() => {
-    return editPageContent.purchase_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
-  }, [editPageContent.purchase_accounts_list]);
+  }, [editPageContent.line_item_accounts_list]);
+
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
       label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
       value: acc.tax_id,
     }));
   }, [editPageContent.taxes]);
+
+  const paymentTermsDropDown = useMemo(() => {
+    return editPageContent.payment_terms.map((acc) => ({
+      label: `${acc.name}`,
+      value: acc.payment_term_id,
+      is_default: acc.is_default,
+      payment_term: acc.payment_term,
+      interval: acc.interval,
+    }));
+  }, [editPageContent.payment_terms]);
+  const defaultPaymentTerm = useMemo(
+    () => paymentTermsDropDown.find((term) => term.is_default),
+    [paymentTermsDropDown],
+  );
+
   const handleCloseClick = () => {
     navigate("/app/invoices");
   };
@@ -113,60 +127,28 @@ export default function InvoiceAdd() {
 
     invoice_number: z.string().trim(),
     order_number: z.string().trim().optional(),
-    issue_date: z.string().trim(),
-    due_date: z.string().trim(),
-    payment_term: z.string().trim(),
+    issue_date: z.date(),
+    payment_term: z.object({
+      value: z.number(),
+      label: z.string(),
+    }),
+    due_date: z.date(),
   });
-  const hasSellingInformationSchema = z.object({
-    has_selling_price: z.literal(true),
-    selling_price: z.number({ required_error: "enter selling price" }),
-    sales_account: z.object(
-      { value: z.number(), label: z.string(), account_name: z.string() },
-      {
-        invalid_type_error: "select an account",
-        required_error: "select an account",
-      },
-    ),
-    selling_description: z.string().optional(),
-  });
-  const hasNoSellingInformationSchema = z.object({
-    has_selling_price: z.literal(false),
-  });
-  const hasPurchaseInformation = z.object({
-    has_purchase_price: z.literal(true),
-    purchase_price: z.number({ required_error: "enter purchase price" }),
-    purchase_account: z.object(
-      { value: z.number(), label: z.string(), account_name: z.string() },
-      {
-        invalid_type_error: "select an account",
-        required_error: "select an account",
-      },
-    ),
-    purchase_description: z.string().optional(),
-  });
-  const hasNoPurchaseInformation = z.object({
-    has_purchase_price: z.literal(false),
-  });
-  const schema = basicSchema
-    .and(
-      z.discriminatedUnion("has_selling_price", [
-        hasSellingInformationSchema,
-        hasNoSellingInformationSchema,
-      ]),
-    )
-    .and(
-      z.discriminatedUnion("has_purchase_price", [
-        hasPurchaseInformation,
-        hasNoPurchaseInformation,
-      ]),
-    );
+
+  const schema = basicSchema;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {},
   });
   const { register, handleSubmit, watch, control, setValue } = form;
-  const has_selling_price = watch("has_selling_price");
-  const has_purchase_price = watch("has_purchase_price");
+  const issue_date = watch("issue_date");
+
+  const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
+    // depending on the payment term, set the due date
+    const paymentTerm = selectedOption;
+    const newDate = calculateDueDate({ issue_date, paymentTerm }).due_date;
+    setValue("due_date", newDate);
+  };
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
@@ -194,14 +176,14 @@ export default function InvoiceAdd() {
     // newItem.item_for = itemFor;
     //
     // if (isEditMode) {
-    //   await itemService.updateItem({
+    //   await invoiceService.updateItem({
     //     payload: newItem,
     //     params: {
-    //       item_id: editItemId,
+    //       item_id: editInvoiceId,
     //     },
     //   });
     // } else {
-    //   await itemService.addItem({
+    //   await invoiceService.addItem({
     //     payload: newItem,
     //   });
     // }
@@ -268,7 +250,7 @@ export default function InvoiceAdd() {
   useEffect(() => {
     loadEditPage();
     return () => {
-      itemService.abortGetRequest();
+      invoiceService.abortGetRequest();
     };
   }, [loadEditPage]);
   useEffect(() => {
@@ -276,7 +258,6 @@ export default function InvoiceAdd() {
       setFormData(editPageItemDetails);
     }
   }, [editPageItemDetails, setFormData]);
-
 
   if (isLoading) {
     return (
@@ -362,6 +343,27 @@ export default function InvoiceAdd() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  name={"issue_date"}
+                  render={({ field }) => (
+                    <FormItem className={"grid grid-cols-4 items-center "}>
+                      <FormLabel htmlFor={"issue_date"} className=" capitalize">
+                        Issue Date
+                      </FormLabel>
+                      <div className="col-span-3 flex-col">
+                        <FormControl>
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            id={"issue_date"}
+                          />
+                        </FormControl>
+                      </div>
+                    </FormItem>
+                  )}
+                  control={control}
+                />
               </div>
 
               <div
@@ -369,18 +371,33 @@ export default function InvoiceAdd() {
               >
                 <div className={"col-span-5"}>
                   <FormField
-                    name={"issue_date"}
+                    name={"payment_term"}
                     render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel
-                          htmlFor={"issue_date"}
+                          htmlFor={"payment_term"}
                           className=" capitalize"
                         >
-                          Issue Date
+                          Terms
                         </FormLabel>
                         <div className="col-span-3 flex-col">
                           <FormControl>
-                            <DatePicker initialDate={Date.now()} {...field} />
+                            <ReactSelectCRE
+                              className={"col-span-3"}
+                              options={paymentTermsDropDown}
+                              {...field}
+                              inputId={"payment_term"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              defaultValue={defaultPaymentTerm}
+                              value={field.value}
+                              onChange={(value: PaymentTerm) => {
+                                handlePaymentTermChange(value);
+                                field.onChange(value);
+                              }}
+                            />
                           </FormControl>
                         </div>
                       </FormItem>
@@ -388,57 +405,27 @@ export default function InvoiceAdd() {
                     control={control}
                   />
                 </div>
-                <div className={"col-span-3"}>
-
-                  <FormField
-                      name={"payment_term"}
-                      render={({ field }) => (
-                          <FormItem className={"grid grid-cols-3 items-center "}>
-                            <FormLabel htmlFor={"payment_term"} className=" capitalize">
-                               Terms
-                            </FormLabel>
-                            <div className="col-span-2 flex-col">
-                              <FormControl>
-                                <ReactSelectCRE
-                                    className={"col-span-2"}
-                                    options={unitsDropDownOptions}
-                                    {...field}
-                                    inputId={"payment_term"}
-                                    classNames={reactSelectStyle}
-                                    components={{
-                                      ...reactSelectComponentOverride,
-                                    }}
-                                />
-                              </FormControl>
-                            </div>
-                          </FormItem>
-                      )}
-                      control={control}
-                  />
-
-
-                </div>
                 <div className={"col-span-4"}>
                   <FormField
-                      name={"due_date"}
-                      render={({ field }) => (
-                          <FormItem className={"grid grid-cols-4 items-center "}>
-                            <FormLabel
-                                htmlFor={"due_date"}
-                                className=" capitalize"
-                            >
-                              Due Date
-                            </FormLabel>
-                            <div className="col-span-3 flex-col">
-                              <FormControl>
-                                <DatePicker initialDate={Date.now()} {...field} />
-                              </FormControl>
-                            </div>
-                          </FormItem>
-                      )}
-                      control={control}
+                    name={"due_date"}
+                    render={({ field }) => (
+                      <FormItem className={"grid grid-cols-4 items-center "}>
+                        <FormLabel htmlFor={"due_date"} className=" capitalize">
+                          Due Date
+                        </FormLabel>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <DatePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              id={"due_date"}
+                            />
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
+                    control={control}
                   />
-
                 </div>
               </div>
             </div>
@@ -464,4 +451,27 @@ export default function InvoiceAdd() {
       </div>
     </div>
   );
+}
+
+function calculateDueDate({ issue_date, paymentTerm }) {
+  // depending to "interval" type if regular just use regular calculation
+  const interval = paymentTerm.interval;
+  const pt = paymentTerm.payment_term;
+  const dateCalculator = DateUtil.Calculator(issue_date);
+  let date: Date;
+  switch (interval) {
+    case "regular": {
+      date = dateCalculator.addDays(pt).getDate();
+      break;
+    }
+    case "end_of_month": {
+      date = dateCalculator.endOfFewMonths(pt).getDate();
+      break;
+    }
+    case "end_of_day": {
+      date = dateCalculator.endOfCurrentDay().getDate();
+      break;
+    }
+  }
+  return { due_date: date };
 }

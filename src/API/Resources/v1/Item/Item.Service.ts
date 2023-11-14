@@ -1,6 +1,8 @@
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import {TaxRate} from "@/API/Resources/v1/TaxRate.ts";
+import {ItemUnit} from "@/API/Resources/v1/ItemUnit.ts";
 
 type ItemFor = "sales" | "purchase" | "sales_and_purchase";
 
@@ -42,18 +44,7 @@ interface ItemTableView
   > {}
 interface ItemCreatePayload extends Omit<Item, keyof ItemGenerated> {}
 
-type ItemUnit = {
-  unit_id: number;
-  unit: string;
-  unit_name?: string;
-};
 
-type TaxRate = {
-  tax_id: number;
-  tax_name: string;
-  tax_percentage: number;
-  tax_percentage_formatted: string;
-};
 
 type ItemEditPageContent = {
   taxes: TaxRate[];
