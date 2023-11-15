@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { Settings, Settings2Icon, SettingsIcon, Trash, X } from "lucide-react";
+import { Settings2Icon, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -13,19 +13,12 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ItemService, {
-  Item,
-  ItemCreatePayload,
-  ItemEditPageContent,
-  ItemFor,
-} from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import ReactSelectCRE from "react-select/creatable";
+import ReactSelect from "react-select";
 import {
   reactSelectComponentOverride,
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
-import { toast } from "@/components/ui/use-toast.ts";
 import { DatePicker } from "@/components/ui/DatePicker.tsx";
 import InvoiceService, {
   Invoice,
@@ -60,60 +53,11 @@ export default function InvoiceAdd() {
     });
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadEditPage = useCallback(() => {
-    invoiceService
-      .getInvoiceEditPage({
-        invoice_id: editInvoiceId,
-      })
-      .then((data) => {
-        setEditPageContent(data!);
-      })
-      .catch((error) => console.log(error))
-      .finally(() => setIsLoading(false));
-  }, [editInvoiceId]);
-
-  const unitsDropDownOptions = useMemo(() => {
-    const units = editPageContent.units;
-    return units.map((unit) => ({
-      label: unit.unit,
-      value: unit.unit,
-      unit_id: unit.unit_id,
-    }));
-  }, [editPageContent]);
-  const lineItemAccountsDropDown = useMemo(() => {
-    return editPageContent.line_item_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
-  }, [editPageContent.line_item_accounts_list]);
-
-  const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
-      value: acc.tax_id,
-    }));
-  }, [editPageContent.taxes]);
-
-  const paymentTermsDropDown = useMemo(() => {
-    return editPageContent.payment_terms.map((acc) => ({
-      label: `${acc.name}`,
-      value: acc.payment_term_id,
-      is_default: acc.is_default,
-      payment_term: acc.payment_term,
-      interval: acc.interval,
-    }));
-  }, [editPageContent.payment_terms]);
-  const defaultPaymentTerm = useMemo(
-    () => paymentTermsDropDown.find((term) => term.is_default),
-    [paymentTermsDropDown],
-  );
-
   const handleCloseClick = () => {
     navigate("/app/invoices");
   };
 
-  const basicSchema = z.object({
+  const schema = z.object({
     contact: z.object(
       {
         value: z.number(),
@@ -129,75 +73,102 @@ export default function InvoiceAdd() {
     order_number: z.string().trim().optional(),
     issue_date: z.date(),
     payment_term: z.object({
-      value: z.number(),
+      value: z.number().optional(),
       label: z.string(),
+      is_custom: z.boolean().optional(),
     }),
     due_date: z.date(),
   });
-
-  const schema = basicSchema;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {},
   });
   const { register, handleSubmit, watch, control, setValue } = form;
-  const issue_date = watch("issue_date");
+  const issue_date_watch_value = watch("issue_date");
+  const payment_term_watch_value = watch("payment_term");
+
+  const handleEditPageDetailsLoad = useCallback(
+    (data: InvoiceEditPageContent) => {
+      const paymentTerms = data.payment_terms;
+      const defaultIssueDate = new Date();
+      const defaultPaymentTerm = paymentTerms.find((term) => term.is_default);
+      const defaultPaymentTermRSelect = {
+        label: `${defaultPaymentTerm?.name}`,
+        value: defaultPaymentTerm?.payment_term_id,
+        is_default: defaultPaymentTerm?.is_default,
+        payment_term: defaultPaymentTerm?.payment_term,
+        interval: defaultPaymentTerm?.interval,
+      };
+      const defaultDueDate = calculateDueDate({
+        issue_date: defaultIssueDate,
+        paymentTerm: defaultPaymentTerm!,
+      }).due_date;
+      setValue("issue_date", defaultIssueDate);
+      setValue("due_date", defaultDueDate);
+      setValue("payment_term", defaultPaymentTermRSelect);
+    },
+    [setValue],
+  );
+  const loadEditPage = useCallback(() => {
+    invoiceService
+      .getInvoiceEditPage({
+        invoice_id: editInvoiceId,
+      })
+      .then((data) => {
+        setEditPageContent(data!);
+        handleEditPageDetailsLoad(data);
+      })
+      .catch((error) => console.log(error))
+      .finally(() => setIsLoading(false));
+  }, [editInvoiceId, handleEditPageDetailsLoad]);
+  const unitsDropDownOptions = useMemo(() => {
+    const units = editPageContent.units;
+    return units.map((unit) => ({
+      label: unit.unit,
+      value: unit.unit,
+      unit_id: unit.unit_id,
+    }));
+  }, [editPageContent]);
+  const paymentTermsDropDown = useMemo(() => {
+    const cratedPaymentTerms = editPageContent.payment_terms.map((acc) => ({
+      label: `${acc.name}`,
+      value: acc.payment_term_id,
+      is_default: acc.is_default,
+      payment_term: acc.payment_term,
+      interval: acc.interval,
+    }));
+    const customPaymentTerms = {
+      label: "Custom",
+      is_custom: true,
+      value: ''
+    };
+    return [...cratedPaymentTerms, customPaymentTerms];
+  }, [editPageContent.payment_terms]);
 
   const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
+    if(selectedOption.is_custom) return;
     // depending on the payment term, set the due date
     const paymentTerm = selectedOption;
-    const newDate = calculateDueDate({ issue_date, paymentTerm }).due_date;
+    const newDate = calculateDueDate({
+      issue_date: issue_date_watch_value,
+      paymentTerm,
+    }).due_date;
+    setValue("due_date", newDate);
+  };
+  const handleIssueDateChange = (date: Date) => {
+    if(payment_term_watch_value.is_custom) return;
+
+    // depending on the payment term, set the due date
+    const newDate = calculateDueDate({
+      issue_date: date,
+      paymentTerm: payment_term_watch_value,
+    }).due_date;
     setValue("due_date", newDate);
   };
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
-  ) => {
-    // let itemFor: ItemFor = "sales";
-    // const newItem: ItemCreatePayload = {
-    //   contact: data.contact,
-    //   item_for: itemFor,
-    // };
-    // if (data.has_selling_price) {
-    //   itemFor = "sales";
-    //   newItem.selling_price = data.selling_price;
-    //   newItem.selling_description = data.selling_description;
-    //   newItem.sales_account_id = data.sales_account.value;
-    // }
-    // if (data.has_purchase_price) {
-    //   itemFor = "purchase";
-    //   newItem.purchase_price = data.purchase_price;
-    //   newItem.purchase_description = data.purchase_description;
-    //   newItem.purchase_account_id = data.purchase_account.value;
-    // }
-    // if (data.has_selling_price && data.has_purchase_price) {
-    //   itemFor = "sales_and_purchase";
-    // }
-    // newItem.item_for = itemFor;
-    //
-    // if (isEditMode) {
-    //   await invoiceService.updateItem({
-    //     payload: newItem,
-    //     params: {
-    //       item_id: editInvoiceId,
-    //     },
-    //   });
-    // } else {
-    //   await invoiceService.addItem({
-    //     payload: newItem,
-    //   });
-    // }
-    //
-    // // show a success message
-    // const toastMessage = isEditMode
-    //   ? "Item is updated successfully"
-    //   : "Item is created successfully";
-    // toast({
-    //   title: "Success",
-    //   description: toastMessage,
-    // });
-    // navigate("/app/inventory/items");
-  };
+  ) => {};
   const setFormData = useCallback(
     (data: typeof editPageItemDetails) => {
       // reset the defaults when update
@@ -294,7 +265,7 @@ export default function InvoiceAdd() {
                       </FormLabel>
                       <div className="col-span-3 flex-col">
                         <FormControl>
-                          <ReactSelectCRE
+                          <ReactSelect
                             className={"col-span-3"}
                             options={unitsDropDownOptions}
                             {...field}
@@ -355,8 +326,10 @@ export default function InvoiceAdd() {
                         <FormControl>
                           <DatePicker
                             value={field.value}
-                            onChange={field.onChange}
-                            id={"issue_date"}
+                            onChange={(value: Date) => {
+                              handleIssueDateChange(value);
+                              field.onChange(value);
+                            }}
                           />
                         </FormControl>
                       </div>
@@ -382,7 +355,7 @@ export default function InvoiceAdd() {
                         </FormLabel>
                         <div className="col-span-3 flex-col">
                           <FormControl>
-                            <ReactSelectCRE
+                            <ReactSelect
                               className={"col-span-3"}
                               options={paymentTermsDropDown}
                               {...field}
@@ -391,7 +364,6 @@ export default function InvoiceAdd() {
                               components={{
                                 ...reactSelectComponentOverride,
                               }}
-                              defaultValue={defaultPaymentTerm}
                               value={field.value}
                               onChange={(value: PaymentTerm) => {
                                 handlePaymentTermChange(value);
@@ -418,7 +390,6 @@ export default function InvoiceAdd() {
                             <DatePicker
                               value={field.value}
                               onChange={field.onChange}
-                              id={"due_date"}
                             />
                           </FormControl>
                         </div>
