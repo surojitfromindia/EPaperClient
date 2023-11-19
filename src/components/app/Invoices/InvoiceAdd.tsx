@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect from "react-select";
+import ReactAsyncSelect from "react-select/async";
 import {
   reactSelectComponentOverride,
   reactSelectStyle,
@@ -26,8 +27,11 @@ import InvoiceService, {
 } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { DateUtil } from "@/util/dateUtil.ts";
+import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
+import { debounce } from "lodash";
 
 const invoiceService = new InvoiceService();
+const autoCompleteService = new AutoCompleteService();
 
 export default function InvoiceAdd() {
   const { invoice_id } = useParams();
@@ -52,7 +56,11 @@ export default function InvoiceAdd() {
       line_item_accounts_list: [],
     });
   const [isLoading, setIsLoading] = useState(true);
-
+  const [isInitialContactLoadingDone, setIsInitialContactLoadingDone] =
+    useState(false);
+  const [contactDefaultList, setContactDefaultList] = useState<
+    { label: string; value: number }[]
+  >([]);
   const handleCloseClick = () => {
     navigate("/app/invoices");
   };
@@ -121,14 +129,6 @@ export default function InvoiceAdd() {
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
   }, [editInvoiceId, handleEditPageDetailsLoad]);
-  const unitsDropDownOptions = useMemo(() => {
-    const units = editPageContent.units;
-    return units.map((unit) => ({
-      label: unit.unit,
-      value: unit.unit,
-      unit_id: unit.unit_id,
-    }));
-  }, [editPageContent]);
   const paymentTermsDropDown = useMemo(() => {
     const cratedPaymentTerms = editPageContent.payment_terms.map((acc) => ({
       label: `${acc.name}`,
@@ -140,13 +140,13 @@ export default function InvoiceAdd() {
     const customPaymentTerms = {
       label: "Custom",
       is_custom: true,
-      value: ''
+      value: "",
     };
     return [...cratedPaymentTerms, customPaymentTerms];
   }, [editPageContent.payment_terms]);
 
   const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
-    if(selectedOption.is_custom) return;
+    if (selectedOption.is_custom) return;
     // depending on the payment term, set the due date
     const paymentTerm = selectedOption;
     const newDate = calculateDueDate({
@@ -156,7 +156,7 @@ export default function InvoiceAdd() {
     setValue("due_date", newDate);
   };
   const handleIssueDateChange = (date: Date) => {
-    if(payment_term_watch_value.is_custom) return;
+    if (payment_term_watch_value.is_custom) return;
 
     // depending on the payment term, set the due date
     const newDate = calculateDueDate({
@@ -166,56 +166,81 @@ export default function InvoiceAdd() {
     setValue("due_date", newDate);
   };
 
+  const contactAutoCompleteFetch = useCallback(async (search_text: string) => {
+    const auto_complete_data = await autoCompleteService.getContacts({
+      search_text: search_text,
+      contact_type: "customer",
+    });
+    const { results } = auto_complete_data;
+    return results.map((entry) => ({ label: entry.text, value: entry.id }));
+  }, []);
+  const handleContactAutoCompleteInitialFocus = useCallback(() => {
+    if (isInitialContactLoadingDone) return;
+    else {
+      setIsInitialContactLoadingDone(true);
+      contactAutoCompleteFetch("")
+        .then((data) => {
+          setContactDefaultList(data);
+        })
+        .catch((error) => console.log(error));
+    }
+  }, [contactAutoCompleteFetch, isInitialContactLoadingDone]);
+
+
+  const handleContactAutoCompleteChange = useCallback(
+    (search_text: string, callback) => {
+      contactAutoCompleteFetch(search_text).then((data) => callback(data));
+    },
+    [contactAutoCompleteFetch],
+  );
+
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {};
-  const setFormData = useCallback(
-    (data: typeof editPageItemDetails) => {
-      // reset the defaults when update
-      // setValue("has_selling_price", false);
-      // setValue("has_purchase_price", false);
-      //
-      // if (data) {
-      //   setValue("name", data.name!);
-      //   setValue("product_type", data.product_type!);
-      //   setValue("tax", {
-      //     label: `${data.tax_name} [${data.tax_percentage!}%]`,
-      //     value: data.tax_id!,
-      //   });
-      //   setValue("selling_price", data.selling_price!);
-      //   setValue("purchase_price", data.purchase_price!);
-      //
-      //   if (data.unit_id && data.unit) {
-      //     setValue("unit", { label: data.unit!, value: data.unit! });
-      //   }
-      //   if (
-      //     data?.item_for === "sales_and_purchase" ||
-      //     data?.item_for === "sales"
-      //   ) {
-      //     setValue("has_selling_price", true);
-      //     setValue("sales_account", {
-      //       label: data?.sales_account_name ?? "",
-      //       value: data.sales_account_id!,
-      //       account_name: data?.sales_account_name ?? "",
-      //     });
-      //     setValue("selling_description", data.selling_description);
-      //   }
-      //   if (
-      //     data?.item_for === "sales_and_purchase" ||
-      //     data?.item_for === "purchase"
-      //   ) {
-      //     setValue("has_purchase_price", true);
-      //     setValue("purchase_account", {
-      //       label: data?.purchase_account_name ?? "",
-      //       value: data.purchase_account_id!,
-      //       account_name: data?.purchase_account_name ?? "",
-      //     });
-      //     setValue("purchase_description", data.purchase_description);
-      //   }
-      // }
-    },
-    [setValue],
-  );
+  const setFormData = useCallback((data: typeof editPageItemDetails) => {
+    // reset the defaults when update
+    // setValue("has_selling_price", false);
+    // setValue("has_purchase_price", false);
+    //
+    // if (data) {
+    //   setValue("name", data.name!);
+    //   setValue("product_type", data.product_type!);
+    //   setValue("tax", {
+    //     label: `${data.tax_name} [${data.tax_percentage!}%]`,
+    //     value: data.tax_id!,
+    //   });
+    //   setValue("selling_price", data.selling_price!);
+    //   setValue("purchase_price", data.purchase_price!);
+    //
+    //   if (data.unit_id && data.unit) {
+    //     setValue("unit", { label: data.unit!, value: data.unit! });
+    //   }
+    //   if (
+    //     data?.item_for === "sales_and_purchase" ||
+    //     data?.item_for === "sales"
+    //   ) {
+    //     setValue("has_selling_price", true);
+    //     setValue("sales_account", {
+    //       label: data?.sales_account_name ?? "",
+    //       value: data.sales_account_id!,
+    //       account_name: data?.sales_account_name ?? "",
+    //     });
+    //     setValue("selling_description", data.selling_description);
+    //   }
+    //   if (
+    //     data?.item_for === "sales_and_purchase" ||
+    //     data?.item_for === "purchase"
+    //   ) {
+    //     setValue("has_purchase_price", true);
+    //     setValue("purchase_account", {
+    //       label: data?.purchase_account_name ?? "",
+    //       value: data.purchase_account_id!,
+    //       account_name: data?.purchase_account_name ?? "",
+    //     });
+    //     setValue("purchase_description", data.purchase_description);
+    //   }
+    // }
+  }, []);
 
   // effects
   useEffect(() => {
@@ -265,16 +290,18 @@ export default function InvoiceAdd() {
                       </FormLabel>
                       <div className="col-span-3 flex-col">
                         <FormControl>
-                          <ReactSelect
+                          <ReactAsyncSelect
+                            onFocus={handleContactAutoCompleteInitialFocus}
                             className={"col-span-3"}
-                            options={unitsDropDownOptions}
+                            loadOptions={debounce(handleContactAutoCompleteChange,600)}
+                            defaultOptions={contactDefaultList}
                             {...field}
                             inputId={"contact"}
                             classNames={reactSelectStyle}
                             components={{
                               ...reactSelectComponentOverride,
                             }}
-                            isClearable={true}
+                            cacheOptions={true}
                           />
                         </FormControl>
                       </div>
