@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import ReactSelect from "react-select";
+import ReactSelect, { DropdownIndicatorProps, components } from "react-select";
 import ReactAsyncSelect from "react-select/async";
 import {
   reactSelectComponentOverride,
@@ -29,6 +29,7 @@ import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { DateUtil } from "@/util/dateUtil.ts";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import { debounce } from "lodash";
+import { Separator } from "@/components/ui/separator.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -144,7 +145,12 @@ export default function InvoiceAdd() {
     };
     return [...cratedPaymentTerms, customPaymentTerms];
   }, [editPageContent.payment_terms]);
-
+  const taxesDropDown = useMemo(() => {
+    return editPageContent.taxes.map((acc) => ({
+      label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
+      value: acc.tax_id,
+    }));
+  }, [editPageContent.taxes]);
   const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
     if (selectedOption.is_custom) return;
     // depending on the payment term, set the due date
@@ -185,7 +191,6 @@ export default function InvoiceAdd() {
         .catch((error) => console.log(error));
     }
   }, [contactAutoCompleteFetch, isInitialContactLoadingDone]);
-
 
   const handleContactAutoCompleteChange = useCallback(
     (search_text: string, callback) => {
@@ -293,7 +298,10 @@ export default function InvoiceAdd() {
                           <ReactAsyncSelect
                             onFocus={handleContactAutoCompleteInitialFocus}
                             className={"col-span-3"}
-                            loadOptions={debounce(handleContactAutoCompleteChange,600)}
+                            loadOptions={debounce(
+                              handleContactAutoCompleteChange,
+                              600,
+                            )}
                             defaultOptions={contactDefaultList}
                             {...field}
                             inputId={"contact"}
@@ -426,6 +434,14 @@ export default function InvoiceAdd() {
                   />
                 </div>
               </div>
+
+              <Separator className={"col-span-12 my-5"} />
+              <div className={"mt-5 flex flex-col space-y-6 col-span-12"}>
+                <LineItemInputTable
+                  taxesDropDown={taxesDropDown}
+                  itemFor={"sales"}
+                />
+              </div>
             </div>
 
             <div className={"h-32"}></div>
@@ -472,4 +488,238 @@ function calculateDueDate({ issue_date, paymentTerm }) {
     }
   }
   return { due_date: date };
+}
+
+import {
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableCell,
+  TableBody,
+  Table,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea.tsx";
+import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
+const itemService = new ItemService();
+
+function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
+  const BLANK_ROW = {
+    item: null,
+    unit: "",
+    description: "",
+    quantity: 1,
+    price: 0,
+    discount: 0,
+    tax: null,
+    total: 0,
+  };
+  const [lineItems, setLineItems] = useState([BLANK_ROW]);
+
+  useEffect(() => {
+    if (line_items.length > 0) setLineItems(line_items);
+  }, [line_items]);
+
+  const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =
+    useState(false);
+  const [itemDefaultList, setItemDefaultList] = useState<
+    { label: string; value: number }[]
+  >([]);
+
+  const itemAutoCompleteFetch = useCallback(async (search_text: string) => {
+    const auto_complete_data = await autoCompleteService.getItems({
+      search_text: search_text,
+      item_for: itemFor,
+    });
+    const { results } = auto_complete_data;
+    return results.map((entry) => ({ label: entry.text, value: entry.id }));
+  }, [itemFor]);
+  const handleItemAutoCompleteInitialFocus = useCallback(() => {
+    if (isInitialItemLoadingDone) return;
+    else {
+      setIsInitialItemLoadingDone(true);
+      itemAutoCompleteFetch("")
+        .then((data) => {
+          setItemDefaultList(data);
+        })
+        .catch((error) => console.log(error));
+    }
+  }, [itemAutoCompleteFetch, isInitialItemLoadingDone]);
+  const handleItemAutoCompleteChange = useCallback(
+    (search_text: string, callback) => {
+      itemAutoCompleteFetch(search_text).then((data) => callback(data));
+    },
+    [itemAutoCompleteFetch],
+  );
+
+  const handleItemSelect = (item_id: number, index: number) => {
+    console.log("item id", item_id);
+    const temp_line_item = [...lineItems];
+    if (!item_id) {
+      temp_line_item[index] = BLANK_ROW;
+      setLineItems([...temp_line_item]);
+      return;
+    }
+    // do an item api call.
+    itemService
+      .getItem({
+        item_id,
+      })
+      .then((data) => {
+        const fetched_item = data.item;
+        setLineItems((items) =>
+          items.map((item, item_index) => {
+            if (item_index === index) {
+              item.price =
+                itemFor === "sales"
+                  ? fetched_item.selling_price
+                  : fetched_item.purchase_price;
+              item.description =
+                itemFor === "sales"
+                  ? fetched_item.selling_description
+                  : fetched_item.purchase_description;
+              item.tax = {
+                label: fetched_item.tax_name,
+                value: fetched_item.tax_id,
+                tax_percentage: fetched_item.tax_percentage,
+              };
+              item.item = {
+                label: fetched_item.name,
+                value: fetched_item.item_id,
+              };
+              return item;
+            }
+            return item;
+          }),
+        );
+      })
+      .catch((error) => console.log(error));
+  };
+  return (
+    <div className={"flex flex-col space-y-3 col-span-12"}>
+      <ReactSelect
+        className={"w-[150px]"}
+        classNames={reactSelectStyle}
+        components={{
+          ...reactSelectComponentOverride,
+        }}
+        placeholder={"Tax treatment"}
+        options={[
+          { label: "Tax Inclusive", value: "true" },
+          { label: "Tax Exclusive", value: "false" },
+        ]}
+        isSearchable={false}
+      />
+      <Table className="divide-y  divide-gray-200 border-y border-gray-300">
+        <TableHeader>
+          <TableRow className="divide-x divide-gray-200  ">
+            <TableHead className="w-[380px] px-4 py-1 text-xs">item</TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text-xs">
+              quantity
+            </TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text-xs">rate</TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text-xs">
+              discount
+            </TableHead>
+            <TableHead className="w-[170px] px-4 py-1 text-xs">
+              tax (%)
+            </TableHead>
+            <TableHead className="text-right px-4 py-1 text-xs">
+              amount
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {lineItems.map((lineItem, index) => (
+            <TableRow
+              key={index}
+              className="divide-x divide-gray-200 hover:bg-none!impotant"
+            >
+              <TableCell className="px-1 py-1">
+                <div className="w-full flex flex-col space-y-2" id="item-1">
+                  <ReactAsyncSelect
+                    className={"w-full"}
+                    defaultOptions={itemDefaultList}
+                    inputId={"item"}
+                    loadOptions={handleItemAutoCompleteChange}
+                    onFocus={handleItemAutoCompleteInitialFocus}
+                    placeholder="Type or select an item"
+                    classNames={reactSelectStyle}
+                    components={{
+                      ...reactSelectComponentOverride,
+                    }}
+                    menuPortalTarget={document.body}
+                    isClearable={true}
+                    value={lineItem.item}
+                    onChange={(e_value) => {
+                      handleItemSelect(e_value ? e_value.value : null, index);
+                    }}
+                  />
+                  {lineItem.item && (
+                    <Textarea
+                      className="w-full min-h-[50px]"
+                      placeholder="Item Description"
+                      value={lineItem.description}
+                    />
+                  )}
+                </div>
+              </TableCell>
+              <TableCell className="px-1 py-1 align-top">
+                <div>
+                  <Input
+                    className="w-full border-0 text-right"
+                    id="quantity-1"
+                    value={1.0}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className="px-1 py-1 align-top">
+                <div>
+                  <Input
+                    className="w-full border-0 text-right"
+                    id="price-1"
+                    value={lineItem.price}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className="px-1 py-1 align-top">
+                <div>
+                  <Input
+                    className="w-full border-0 text-right"
+                    id="price-1"
+                    value={0.0}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className="px-1 py-1 align-top">
+                <div>
+                  <ReactSelect
+                    className={"w-full z-100"}
+                    options={taxesDropDown}
+                    inputId={"tax"}
+                    placeholder={"Select tax"}
+                    classNames={reactSelectStyle}
+                    components={{
+                      ...reactSelectComponentOverride,
+                      DropdownIndicator: (props: DropdownIndicatorProps) => {
+                        if (props.selectProps.value) {
+                          return null; // Return null to not display anything when a value is selected
+                        }
+                        return <components.DropdownIndicator {...props} />;
+                      },
+                    }}
+                    menuPortalTarget={document.body}
+                    isClearable={true}
+                    value={lineItem.tax}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className="text-right px-1 py-1 align-top">
+                <div>0</div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }

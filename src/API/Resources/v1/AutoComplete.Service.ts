@@ -17,6 +17,11 @@ type AutoCompleteServiceReturnType<R> = {
 type ContactAutoCompleteType = {
   contact_name: string;
 };
+type ItemAutoCompleteType = {
+  name: string;
+  selling_price: number,
+  purchase_price: number,
+};
 
 class AutoCompleteService implements APIService {
   readonly urlFragment: string = "/auto_complete";
@@ -41,6 +46,24 @@ class AutoCompleteService implements APIService {
         {
           key: "contact_type",
           value: contact_type,
+        },
+      ],
+      abortController: this.abortController,
+    });
+  }
+  getItems({ search_text, item_for }) {
+    const url = this.urlFragment+"/item";
+    return this.#axiosConfig.APIGetRequestWrapper<
+      AutoCompleteServiceReturnType<ItemAutoCompleteType>
+    >(url, {
+      searchParameters: [
+        {
+          key: "search_text",
+          value: search_text,
+        },
+        {
+          key: "item_for",
+          value: item_for,
         },
       ],
       abortController: this.abortController,

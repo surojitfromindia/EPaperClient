@@ -1,4 +1,4 @@
-import { ClassNamesConfig } from "react-select";
+import {ClassNamesConfig} from "react-select";
 import classNames from "classnames";
 
 const reactSelectStyle: ClassNamesConfig = {
@@ -29,5 +29,6 @@ const reactSelectStyle: ClassNamesConfig = {
 };
 const reactSelectComponentOverride = {
   IndicatorSeparator: () => null,
+
 };
 export { reactSelectStyle, reactSelectComponentOverride };
