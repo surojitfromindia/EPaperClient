@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { ChevronDown, Settings2Icon, X } from "lucide-react";
+import {ChevronDown, CircleEllipsis, Settings2Icon, X} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -438,10 +438,11 @@ export default function InvoiceAdd() {
               <Separator className={"col-span-12 my-5"} />
               <div className={"mt-5 flex flex-col space-y-6 col-span-12"}>
                 <LineItemInputTable
-                  taxesDropDown={taxesDropDown}
-                  itemFor={"sales"}
+                    taxesDropDown={taxesDropDown}
+                    itemFor={"sales"}
                 />
               </div>
+
             </div>
 
             <div className={"h-32"}></div>
@@ -514,15 +515,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import {
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@radix-ui/react-dropdown-menu";
 const itemService = new ItemService();
 
 function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
@@ -634,7 +626,7 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
     setLineItems([...temp_line_item]);
   }
   return (
-    <div className={"flex flex-col space-y-3 col-span-12"}>
+    <div className={"flex flex-col space-y-3"}>
       <ReactSelect
         className={"w-[150px]"}
         classNames={reactSelectStyle}
@@ -648,26 +640,30 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
         ]}
         isSearchable={false}
       />
-      <Table className="divide-y  divide-gray-200 border-y border-gray-300">
+      <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
         <TableHeader>
           <TableRow className="divide-x divide-gray-200  ">
-            <TableHead className="w-[380px] px-4 py-1 text-xs">item</TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text-xs">
+            <TableHead className="w-[380px] px-4 py-1 text_thead">item</TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text_thead">
               quantity
             </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text-xs">rate</TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text-xs">
+            <TableHead className="w-[100px] px-4 py-1 text_thead">rate</TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text_thead">
               discount
             </TableHead>
-            <TableHead className="w-[170px] px-4 py-1 text-xs">
+            <TableHead className="w-[170px] px-4 py-1 text_thead">
               tax (%)
             </TableHead>
-            <TableHead className="text-right px-4 py-1 text-xs">
+            <TableHead className="!text-right px-4 py-1 text_thead">
               amount
+              <div className={"relative break-words"}>
+                <div className={"absolute -top-[17px] -right-[32px] "}>
+                  <CircleEllipsis className={"w-4 h-4 text-red-600"} />
+
+                </div>
+              </div>
             </TableHead>
-            <TableHead className={"!border-0"}>
-              &nbsp;
-            </TableHead>
+
           </TableRow>
         </TableHeader>
         <TableBody>

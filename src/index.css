@@ -109,4 +109,8 @@
   .label-required{
     @apply text-destructive decoration-destructive after:content-['*']
   }
+
+  .text_thead {
+    font-size: 0.67rem;
+  }
 }
