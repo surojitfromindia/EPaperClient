@@ -97,4 +97,4 @@ class InvoiceService implements APIService {
   }
 }
 export default InvoiceService;
-export type { Invoice,InvoiceEditPageContent };
+export type { Invoice,InvoiceEditPageContent, InvoiceLineItem, InvoiceLineItemGenerated };

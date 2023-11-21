@@ -10,17 +10,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import {useEffect} from "react";
+import { useEffect } from "react";
 
-export function DatePicker({ value, className="", onChange}) {
+export function DatePicker({
+  value,
+  className = "",
+  onChange,
+  dashedBorder = false,
+}) {
   const [date, setDate] = React.useState<Date>(value);
-    const handleChanges = (date:Date) => {
-        setDate(date)
-        onChange?.(date)
-    }
-    useEffect(() => {
-        setDate(value)
-    }, [value]);
+  const handleChanges = (date: Date) => {
+    setDate(date);
+    onChange?.(date);
+  };
+  useEffect(() => {
+    setDate(value);
+  }, [value]);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -29,7 +34,8 @@ export function DatePicker({ value, className="", onChange}) {
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
-            className
+            className,
+            dashedBorder && "border-dashed",
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />

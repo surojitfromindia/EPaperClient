@@ -1,11 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import {
-  ChevronDown,
-  CircleEllipsis,
-  Settings2Icon,
-  X,
-  XCircle,
-} from "lucide-react";
+import { Settings2Icon, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -14,13 +8,13 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import { SubmitHandler, useForm } from "react-hook-form";
+import {SubmitHandler, useFieldArray, useForm} from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import ReactSelect, { DropdownIndicatorProps, components } from "react-select";
+import ReactSelect from "react-select";
 import ReactAsyncSelect from "react-select/async";
 import {
   reactSelectComponentOverride,
@@ -36,6 +30,8 @@ import { DateUtil } from "@/util/dateUtil.ts";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import { debounce } from "lodash";
 import { Separator } from "@/components/ui/separator.tsx";
+import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
+import {LineItemInputTable, lineItemSchema} from "@/components/app/Invoices/LineItemInputTable.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -72,6 +68,8 @@ export default function InvoiceAdd() {
     navigate("/app/invoices");
   };
 
+
+
   const schema = z.object({
     contact: z.object(
       {
@@ -93,12 +91,20 @@ export default function InvoiceAdd() {
       is_custom: z.boolean().optional(),
     }),
     due_date: z.date(),
+    line_items: z.array(lineItemSchema),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {},
   });
-  const { register, handleSubmit, watch, control, setValue } = form;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    formState: { errors },
+  } = form;
   const issue_date_watch_value = watch("issue_date");
   const payment_term_watch_value = watch("payment_term");
 
@@ -118,6 +124,8 @@ export default function InvoiceAdd() {
         issue_date: defaultIssueDate,
         paymentTerm: defaultPaymentTerm!,
       }).due_date;
+      console.log("defaultDueDate", defaultDueDate);
+      console.log("defaultIssueDate", defaultIssueDate);
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
@@ -147,7 +155,7 @@ export default function InvoiceAdd() {
     const customPaymentTerms = {
       label: "Custom",
       is_custom: true,
-      value: "",
+      value: -1,
     };
     return [...cratedPaymentTerms, customPaymentTerms];
   }, [editPageContent.payment_terms]);
@@ -176,6 +184,15 @@ export default function InvoiceAdd() {
       paymentTerm: payment_term_watch_value,
     }).due_date;
     setValue("due_date", newDate);
+  };
+
+  const handleDueDateChange = (date: Date) => {
+    // on due date manual change, set the payment term to custom
+    setValue("payment_term", {
+      label: "Custom",
+      is_custom: true,
+      value: -1,
+    });
   };
 
   const contactAutoCompleteFetch = useCallback(async (search_text: string) => {
@@ -207,50 +224,11 @@ export default function InvoiceAdd() {
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
-  ) => {};
+  ) => {
+    console.log("data", data);
+  };
   const setFormData = useCallback((data: typeof editPageItemDetails) => {
-    // reset the defaults when update
-    // setValue("has_selling_price", false);
-    // setValue("has_purchase_price", false);
-    //
-    // if (data) {
-    //   setValue("name", data.name!);
-    //   setValue("product_type", data.product_type!);
-    //   setValue("tax", {
-    //     label: `${data.tax_name} [${data.tax_percentage!}%]`,
-    //     value: data.tax_id!,
-    //   });
-    //   setValue("selling_price", data.selling_price!);
-    //   setValue("purchase_price", data.purchase_price!);
-    //
-    //   if (data.unit_id && data.unit) {
-    //     setValue("unit", { label: data.unit!, value: data.unit! });
-    //   }
-    //   if (
-    //     data?.item_for === "sales_and_purchase" ||
-    //     data?.item_for === "sales"
-    //   ) {
-    //     setValue("has_selling_price", true);
-    //     setValue("sales_account", {
-    //       label: data?.sales_account_name ?? "",
-    //       value: data.sales_account_id!,
-    //       account_name: data?.sales_account_name ?? "",
-    //     });
-    //     setValue("selling_description", data.selling_description);
-    //   }
-    //   if (
-    //     data?.item_for === "sales_and_purchase" ||
-    //     data?.item_for === "purchase"
-    //   ) {
-    //     setValue("has_purchase_price", true);
-    //     setValue("purchase_account", {
-    //       label: data?.purchase_account_name ?? "",
-    //       value: data.purchase_account_id!,
-    //       account_name: data?.purchase_account_name ?? "",
-    //     });
-    //     setValue("purchase_description", data.purchase_description);
-    //   }
-    // }
+    console.log("data", data);
   }, []);
 
   // effects
@@ -265,6 +243,14 @@ export default function InvoiceAdd() {
       setFormData(editPageItemDetails);
     }
   }, [editPageItemDetails, setFormData]);
+
+  console.log("errros", errors);
+
+  const rHFUseField = useFieldArray({
+    control,
+    name: "line_items",
+  })
+
 
   if (isLoading) {
     return (
@@ -287,6 +273,11 @@ export default function InvoiceAdd() {
               <X className={"w-4 h-4"} />
             </Button>
           </span>
+        </div>
+        <div>
+          {Object.keys(errors).map((key, index) => (
+            <div key={index}>{errors[key].message}</div>
+          ))}
         </div>
         <Form {...form}>
           <form>
@@ -429,9 +420,12 @@ export default function InvoiceAdd() {
                         <div className="col-span-3 flex-col">
                           <FormControl>
                             <DatePicker
+                                dashedBorder={true}
                               value={field.value}
-                              onChange={field.onChange}
-                            />
+                              onChange={(value: Date) => {
+                                handleDueDateChange(value);
+                                field.onChange(value);
+                              }}                            />
                           </FormControl>
                         </div>
                       </FormItem>
@@ -446,6 +440,7 @@ export default function InvoiceAdd() {
                 <LineItemInputTable
                   taxesDropDown={taxesDropDown}
                   itemFor={"sales"}
+                  rHFUseField={rHFUseField}
                 />
               </div>
             </div>
@@ -496,350 +491,4 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   return { due_date: date };
 }
 
-import {
-  TableHead,
-  TableRow,
-  TableHeader,
-  TableCell,
-  TableBody,
-  Table,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea.tsx";
-import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select.tsx";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu.tsx";
-const itemService = new ItemService();
 
-function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
-  const BLANK_ROW = {
-    item: null,
-    unit: "",
-    description: "",
-    quantity: 1,
-    price: 0,
-    discount: 0,
-    tax: null,
-    total: 0,
-    is_loading: false,
-  };
-  const [lineItems, setLineItems] = useState([BLANK_ROW]);
-
-  useEffect(() => {
-    if (line_items.length > 0) setLineItems(line_items);
-  }, [line_items]);
-
-  const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =
-    useState(false);
-  const [itemDefaultList, setItemDefaultList] = useState<
-    { label: string; value: number }[]
-  >([]);
-
-  const itemAutoCompleteFetch = useCallback(
-    async (search_text: string) => {
-      const auto_complete_data = await autoCompleteService.getItems({
-        search_text: search_text,
-        item_for: itemFor,
-      });
-      const { results } = auto_complete_data;
-      return results.map((entry) => ({ label: entry.text, value: entry.id }));
-    },
-    [itemFor],
-  );
-  const handleItemAutoCompleteInitialFocus = useCallback(() => {
-    if (isInitialItemLoadingDone) return;
-    else {
-      setIsInitialItemLoadingDone(true);
-      itemAutoCompleteFetch("")
-        .then((data) => {
-          setItemDefaultList(data);
-        })
-        .catch((error) => console.log(error));
-    }
-  }, [itemAutoCompleteFetch, isInitialItemLoadingDone]);
-  const handleItemAutoCompleteChange = useCallback(
-    (search_text: string, callback) => {
-      itemAutoCompleteFetch(search_text).then((data) => callback(data));
-    },
-    [itemAutoCompleteFetch],
-  );
-
-  const handleItemSelect = (item_id: number, index: number) => {
-    const temp_line_item = [...lineItems];
-    if (!item_id) {
-      temp_line_item[index] = BLANK_ROW;
-      setLineItems([...temp_line_item]);
-      return;
-    } else {
-      temp_line_item[index] = {
-        ...temp_line_item[index],
-        is_loading: true,
-      };
-      setLineItems([...temp_line_item]);
-    }
-    // do an item api call.
-    itemService
-      .getItem({
-        item_id,
-      })
-      .then((data) => {
-        const fetched_item = data.item;
-        setLineItems((items) =>
-          items.map((item, item_index) => {
-            if (item_index === index) {
-              item.price =
-                itemFor === "sales"
-                  ? fetched_item.selling_price
-                  : fetched_item.purchase_price;
-              item.description =
-                itemFor === "sales"
-                  ? fetched_item.selling_description
-                  : fetched_item.purchase_description;
-              item.tax = {
-                label: fetched_item.tax_name,
-                value: fetched_item.tax_id,
-                tax_percentage: fetched_item.tax_percentage,
-              };
-              item.item = {
-                label: fetched_item.name,
-                value: fetched_item.item_id,
-              };
-              item.is_loading = false;
-              return item;
-            }
-            return item;
-          }),
-        );
-      })
-      .catch((error) => console.log(error));
-  };
-
-  const handleNewRowAt = (index: number) => {
-    const temp_line_item = [...lineItems];
-    temp_line_item.splice(index + 1, 0, BLANK_ROW);
-    setLineItems([...temp_line_item]);
-  };
-
-  const handleRowRemoveAt = (index: number) => {
-    if(lineItems.length === 1) return;
-    const temp_line_item = [...lineItems];
-    temp_line_item.splice(index, 1);
-    setLineItems([...temp_line_item]);
-  };
-  return (
-    <div className={"flex flex-col space-y-3"}>
-      <ReactSelect
-        className={"w-[150px]"}
-        classNames={reactSelectStyle}
-        components={{
-          ...reactSelectComponentOverride,
-        }}
-        placeholder={"Tax treatment"}
-        options={[
-          { label: "Tax Inclusive", value: "true" },
-          { label: "Tax Exclusive", value: "false" },
-        ]}
-        isSearchable={false}
-      />
-      <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
-        <TableHeader>
-          <TableRow className="divide-x divide-gray-200  ">
-            <TableHead className="w-[380px] px-4 py-1 text_thead">
-              item
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead">
-              quantity
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead">
-              rate
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead">
-              discount
-            </TableHead>
-            <TableHead className="w-[170px] px-4 py-1 text_thead">
-              tax (%)
-            </TableHead>
-            <TableHead className="!text-right px-4 py-1 text_thead">
-              amount
-              <div className={"relative break-words"}>
-                <div className={"absolute -top-[17px] -right-[32px] "}>
-                  <CircleEllipsis className={"w-4 h-4 text-primary"} />
-                </div>
-              </div>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {lineItems.map((lineItem, index) => (
-            <TableRow
-              key={index}
-              className="divide-x divide-gray-200 hover:bg-none!impotant"
-            >
-              {lineItem.is_loading && (
-                <TableCell colSpan={6}>
-                  <div className={"relative h-10 w-full"}>
-                    <LoaderComponent mText={""} />
-                  </div>
-                </TableCell>
-              )}
-              {!lineItem.is_loading && (
-                <>
-                  <TableCell className="px-1 py-1">
-                    <div className="w-full flex flex-col space-y-1" id="item-1">
-                      <ReactAsyncSelect
-                        className={"w-full"}
-                        defaultOptions={itemDefaultList}
-                        inputId={"item"}
-                        loadOptions={handleItemAutoCompleteChange}
-                        onFocus={handleItemAutoCompleteInitialFocus}
-                        placeholder="Type or select an item"
-                        classNames={reactSelectStyle}
-                        components={{
-                          ...reactSelectComponentOverride,
-                        }}
-                        menuPortalTarget={document.body}
-                        isClearable={true}
-                        value={lineItem.item}
-                        onChange={(e_value) => {
-                          handleItemSelect(
-                            e_value ? e_value.value : null,
-                            index,
-                          );
-                        }}
-                      />
-                      {lineItem.item && (
-                        <Textarea
-                          className="w-full min-h-[40px] border-0 max"
-                          placeholder="Item Description"
-                          value={lineItem.description}
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <Input
-                        className="w-full border-0 text-right"
-                        id="quantity-1"
-                        value={1.0}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <Input
-                        className="w-full border-0 text-right"
-                        id="price-1"
-                        value={lineItem.price}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <Input
-                        className="w-full border-0 text-right"
-                        id="price-1"
-                        value={0.0}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <ReactSelect
-                        className={"w-full z-100"}
-                        options={taxesDropDown}
-                        inputId={"tax"}
-                        placeholder={"Select tax"}
-                        classNames={reactSelectStyle}
-                        components={{
-                          ...reactSelectComponentOverride,
-                          DropdownIndicator: (
-                            props: DropdownIndicatorProps,
-                          ) => {
-                            if (props.selectProps.value) {
-                              return null; // Return null to not display anything when a value is selected
-                            }
-                            return <components.DropdownIndicator {...props} />;
-                          },
-                        }}
-                        menuPortalTarget={document.body}
-                        isClearable={true}
-                        value={lineItem.tax}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right px-1 py-1 align-top">
-                    <div>0</div>
-                    <div className={"relative break-words"}>
-                      <div className={"absolute -top-[17px] -right-[32px] "}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <CircleEllipsis
-                              type={"button"}
-                              className={"w-4 h-4 text-primary cursor-pointer"}
-                            />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-36">
-                            <DropdownMenuItem>Clone</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      {
-                        <div className={"absolute -top-[17px] -right-[50px] "}>
-                          <XCircle
-                            type={"button"}
-                            className={
-                              "w-4 h-4 text-destructive cursor-pointer"
-                            }
-                            onClick={() => handleRowRemoveAt(index)}
-                          />
-                        </div>
-                      }
-                    </div>
-                  </TableCell>
-                </>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="flex mt-2.5">
-        <Button
-          variant="default"
-          className={"border-r-0 rounded-r-none p-2"}
-          type={"button"}
-          onClick={() => handleNewRowAt(lineItems.length - 1)}
-        >
-          Add New Row
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="default"
-              size={"icon"}
-              className={"ml-[1px] border-l-0 rounded-l-none"}
-              type={"button"}
-            >
-              <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-36">
-            <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
-            <DropdownMenuItem>Insert Header</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>{" "}
-    </div>
-  );
-}
