@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button.tsx";
-import {ChevronDown, CircleEllipsis, Settings2Icon, X} from "lucide-react";
+import {
+  ChevronDown,
+  CircleEllipsis,
+  Settings2Icon,
+  X,
+  XCircle,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -438,11 +444,10 @@ export default function InvoiceAdd() {
               <Separator className={"col-span-12 my-5"} />
               <div className={"mt-5 flex flex-col space-y-6 col-span-12"}>
                 <LineItemInputTable
-                    taxesDropDown={taxesDropDown}
-                    itemFor={"sales"}
+                  taxesDropDown={taxesDropDown}
+                  itemFor={"sales"}
                 />
               </div>
-
             </div>
 
             <div className={"h-32"}></div>
@@ -620,11 +625,18 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
       .catch((error) => console.log(error));
   };
 
-  const handleNewRowAt= (index: number) => {
+  const handleNewRowAt = (index: number) => {
     const temp_line_item = [...lineItems];
     temp_line_item.splice(index + 1, 0, BLANK_ROW);
     setLineItems([...temp_line_item]);
-  }
+  };
+
+  const handleRowRemoveAt = (index: number) => {
+    if(lineItems.length === 1) return;
+    const temp_line_item = [...lineItems];
+    temp_line_item.splice(index, 1);
+    setLineItems([...temp_line_item]);
+  };
   return (
     <div className={"flex flex-col space-y-3"}>
       <ReactSelect
@@ -643,11 +655,15 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
       <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
         <TableHeader>
           <TableRow className="divide-x divide-gray-200  ">
-            <TableHead className="w-[380px] px-4 py-1 text_thead">item</TableHead>
+            <TableHead className="w-[380px] px-4 py-1 text_thead">
+              item
+            </TableHead>
             <TableHead className="w-[100px] px-4 py-1 text_thead">
               quantity
             </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead">rate</TableHead>
+            <TableHead className="w-[100px] px-4 py-1 text_thead">
+              rate
+            </TableHead>
             <TableHead className="w-[100px] px-4 py-1 text_thead">
               discount
             </TableHead>
@@ -658,12 +674,10 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
               amount
               <div className={"relative break-words"}>
                 <div className={"absolute -top-[17px] -right-[32px] "}>
-                  <CircleEllipsis className={"w-4 h-4 text-red-600"} />
-
+                  <CircleEllipsis className={"w-4 h-4 text-primary"} />
                 </div>
               </div>
             </TableHead>
-
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -706,7 +720,7 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
                       />
                       {lineItem.item && (
                         <Textarea
-                          className="w-full min-h-[40px] border-0"
+                          className="w-full min-h-[40px] border-0 max"
                           placeholder="Item Description"
                           value={lineItem.description}
                         />
@@ -767,6 +781,32 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
                   </TableCell>
                   <TableCell className="text-right px-1 py-1 align-top">
                     <div>0</div>
+                    <div className={"relative break-words"}>
+                      <div className={"absolute -top-[17px] -right-[32px] "}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <CircleEllipsis
+                              type={"button"}
+                              className={"w-4 h-4 text-primary cursor-pointer"}
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-36">
+                            <DropdownMenuItem>Clone</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      {
+                        <div className={"absolute -top-[17px] -right-[50px] "}>
+                          <XCircle
+                            type={"button"}
+                            className={
+                              "w-4 h-4 text-destructive cursor-pointer"
+                            }
+                            onClick={() => handleRowRemoveAt(index)}
+                          />
+                        </div>
+                      }
+                    </div>
                   </TableCell>
                 </>
               )}
@@ -775,8 +815,11 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
         </TableBody>
       </Table>
       <div className="flex mt-2.5">
-        <Button variant="default" className={"border-r-0 rounded-r-none"} type={"button"}
-        onClick={()=>handleNewRowAt(lineItems.length-1)}
+        <Button
+          variant="default"
+          className={"border-r-0 rounded-r-none p-2"}
+          type={"button"}
+          onClick={() => handleNewRowAt(lineItems.length - 1)}
         >
           Add New Row
         </Button>
@@ -785,7 +828,7 @@ function LineItemInputTable({ taxesDropDown, itemFor, line_items = [] }) {
             <Button
               variant="default"
               size={"icon"}
-              className={"ml-0.5 border-l-0 rounded-l-none"}
+              className={"ml-[1px] border-l-0 rounded-l-none"}
               type={"button"}
             >
               <ChevronDown />
