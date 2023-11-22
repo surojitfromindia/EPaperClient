@@ -1,4 +1,4 @@
-import {ClassNamesConfig} from "react-select";
+import { ClassNamesConfig } from "react-select";
 import classNames from "classnames";
 
 const reactSelectStyle: ClassNamesConfig = {
@@ -13,22 +13,21 @@ const reactSelectStyle: ClassNamesConfig = {
 
   control: (state) =>
     classNames(
-        "!border-input",
+      "!border-input",
 
       state.isFocused && "!border-ring !shadow-none",
       "!text-sm",
-        state.isDisabled && "!cursor-not-allowed",
-
+      state.isDisabled && "!cursor-not-allowed",
     ),
-  container:(state)=> classNames(
+  container: (state) =>
+    classNames(
       "!border-input",
       state.isDisabled && "!cursor-not-allowed !pointer-events-auto",
-  ),
+    ),
 
-  menuList: () => classNames("!p-2 !max-h-40 overflow-y-scroll"),
+  menuList: () => classNames("!p-2 !max-h-52 overflow-y-scroll"),
 };
 const reactSelectComponentOverride = {
   IndicatorSeparator: () => null,
-
 };
 export { reactSelectStyle, reactSelectComponentOverride };
