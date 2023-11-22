@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactSelect, { components, DropdownIndicatorProps } from "react-select";
 import {
   reactSelectComponentOverride,
@@ -57,13 +57,11 @@ type LineItemInputTableProps = {
   taxesDropDown: {label:string, value:number}[]; // Replace 'any' with the actual type
   itemFor: "sales" | "purchase";
   line_items?: (InvoiceLineItem | InvoiceLineItemGenerated) [];
-  rHFUseField:any;
 };
 export function LineItemInputTable({
   taxesDropDown,
   itemFor,
   line_items = [],
-  rHFUseField,
 }: LineItemInputTableProps) {
   const BLANK_ROW = useMemo(
     () => ({
@@ -84,14 +82,12 @@ export function LineItemInputTable({
   useEffect(() => {
     // at the time of creation, if line_items is empty, then add a blank row.
     if (line_items.length === 0) {
-      rHFUseField?.append(BLANK_ROW);
       setLineItems([BLANK_ROW]);
     }
   }, [BLANK_ROW, line_items.length]);
 
   useEffect(() => {
     if (line_items.length > 0) {
-      rHFUseField?.append([...line_items])
       setLineItems([...line_items]);
     }
   }, [line_items]);
@@ -188,7 +184,6 @@ export function LineItemInputTable({
   const handleNewRowAt = (index: number) => {
     const temp_line_item = [...lineItems];
     temp_line_item.splice(index + 1, 0, BLANK_ROW);
-    rHFUseField.insert(index + 1, BLANK_ROW)
     setLineItems([...temp_line_item]);
   };
 
@@ -196,7 +191,6 @@ export function LineItemInputTable({
     if (lineItems.length === 1) return;
     const temp_line_item = [...lineItems];
     temp_line_item.splice(index, 1);
-    rHFUseField.remove(index)
     setLineItems([...temp_line_item]);
   };
 
@@ -207,9 +201,30 @@ export function LineItemInputTable({
     Reflect.deleteProperty(cloned_item, "line_item_id");
     // insert the cloned item at the index + 1
     temp_line_item.splice(index + 1, 0, cloned_item);
-    rHFUseField.insert(index + 1, cloned_item)
     setLineItems([...temp_line_item]);
   };
+
+  const handleQuantityChange = (ev: React.FocusEvent<HTMLInputElement>, index: number) => {
+    const raw_value = ev.target.value;
+    const value =  Number.isNaN(Number(raw_value)) ? 1 : Number(raw_value);
+    const temp_line_item = [...lineItems];
+    temp_line_item[index] = {
+      ...temp_line_item[index],
+      quantity: value,
+    };
+    setLineItems([...temp_line_item]);
+  }
+
+  const handlePriceChange = (ev: React.FocusEvent<HTMLInputElement>, index: number) => {
+    const raw_value = ev.target.value;
+    const value =  Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
+    const temp_line_item = [...lineItems];
+    temp_line_item[index] = {
+      ...temp_line_item[index],
+      price: value,
+    };
+    setLineItems([...temp_line_item]);
+  }
 
   return (
     <div className={"flex flex-col space-y-3"}>
@@ -307,7 +322,8 @@ export function LineItemInputTable({
                       <Input
                         className="w-full border-0 text-right"
                         id="quantity-1"
-                        value={1.0}
+                        defaultValue={lineItem.quantity}
+                        onBlur={(e) => handleQuantityChange(e, index)}
                       />
                     </div>
                   </TableCell>
@@ -317,6 +333,8 @@ export function LineItemInputTable({
                         className="w-full border-0 text-right"
                         id="price-1"
                         value={lineItem.price}
+                        onBlur={(e) => handlePriceChange(e, index)}
+
                       />
                     </div>
                   </TableCell>

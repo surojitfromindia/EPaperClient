@@ -8,7 +8,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import {SubmitHandler, useFieldArray, useForm} from "react-hook-form";
+import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
@@ -31,7 +31,11 @@ import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import { debounce } from "lodash";
 import { Separator } from "@/components/ui/separator.tsx";
 import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
-import {LineItemInputTable, lineItemSchema} from "@/components/app/Invoices/LineItemInputTable.tsx";
+import {
+  LineItemInputTable,
+  lineItemSchema,
+} from "@/components/app/Invoices/LineItemInputTable.tsx";
+import { FormValidationErrorAlert } from "@/components/app/Invoices/FormValidationErrorAlert.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -68,8 +72,6 @@ export default function InvoiceAdd() {
     navigate("/app/invoices");
   };
 
-
-
   const schema = z.object({
     contact: z.object(
       {
@@ -91,7 +93,6 @@ export default function InvoiceAdd() {
       is_custom: z.boolean().optional(),
     }),
     due_date: z.date(),
-    line_items: z.array(lineItemSchema),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -244,13 +245,6 @@ export default function InvoiceAdd() {
     }
   }, [editPageItemDetails, setFormData]);
 
-  console.log("errros", errors);
-
-  const rHFUseField = useFieldArray({
-    control,
-    name: "line_items",
-  })
-
 
   if (isLoading) {
     return (
@@ -274,10 +268,11 @@ export default function InvoiceAdd() {
             </Button>
           </span>
         </div>
-        <div>
-          {Object.keys(errors).map((key, index) => (
-            <div key={index}>{errors[key].message}</div>
-          ))}
+        <div className={"px-5"}>
+
+          <FormValidationErrorAlert
+            messages={deepFlatReactHookFormErrorOnlyMessage(errors)}
+          />
         </div>
         <Form {...form}>
           <form>
@@ -420,12 +415,13 @@ export default function InvoiceAdd() {
                         <div className="col-span-3 flex-col">
                           <FormControl>
                             <DatePicker
-                                dashedBorder={true}
+                              dashedBorder={true}
                               value={field.value}
                               onChange={(value: Date) => {
                                 handleDueDateChange(value);
                                 field.onChange(value);
-                              }}                            />
+                              }}
+                            />
                           </FormControl>
                         </div>
                       </FormItem>
@@ -440,11 +436,9 @@ export default function InvoiceAdd() {
                 <LineItemInputTable
                   taxesDropDown={taxesDropDown}
                   itemFor={"sales"}
-                  rHFUseField={rHFUseField}
                 />
               </div>
             </div>
-
             <div className={"h-32"}></div>
           </form>
         </Form>
@@ -490,5 +484,28 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   }
   return { due_date: date };
 }
+function deepFlatReactHookFormErrorOnlyMessage(errors) {
+  const flattenedErrors = {};
+  const flattenErrors = (errorObject, parentKey = "") => {
+    for (const key in errorObject) {
+      const newKey = parentKey ? `${parentKey}.${key}` : key;
+       if (
+        typeof errorObject[key] === "object" &&
+        errorObject[key] !== null
+      ) {
+        if (errorObject[key].hasOwnProperty("message")) {
+          flattenedErrors[newKey] = errorObject[key].message;
+        } else {
+          flattenErrors(errorObject[key], newKey);
+        }
+      } else {
+        flattenedErrors[newKey] = errorObject[key];
+      }
+    }
+  };
 
-
+  flattenErrors(errors);
+  console.log("flattenedErrors", flattenedErrors);
+  console.log("rawErrors", errors)
+  return Object.values(flattenedErrors);
+}
