@@ -46,7 +46,7 @@ import {
 } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
-import {Badge} from "@/components/ui/badge.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -100,10 +100,7 @@ export function LineItemInputTable({
     [],
   );
   const [lineItems, setLineItems] = useState([]);
-  const lineItemRefs = useRef([]);
-  lineItemRefs.current = lineItems.map(
-    (_, i) => lineItemRefs.current[i] ?? createRef(),
-  );
+  const [isTaxInclusive, setIsTaxInclusive] = useState(false);
 
   useEffect(() => {
     // at the time of creation, if line_items is empty, then add a blank row.
@@ -161,6 +158,67 @@ export function LineItemInputTable({
     [itemAutoCompleteFetch],
   );
 
+  const singleLineItemCalculation = useCallback(
+    (line_item, is_tax_inclusive: boolean) => {
+      // calculate sub total
+      const published_price = line_item.quantity * line_item.price;
+      let discount_amount = 0;
+      let item_total = 0;
+      let tax_amount = 0;
+      let item_total_tax_included = 0;
+      const tax_percentage = line_item.tax ? line_item.tax.tax_percentage : 0.0;
+
+      console.log("is_tax_inclusive", is_tax_inclusive);
+
+      if (is_tax_inclusive === false) {
+        discount_amount =
+          published_price * (line_item.discount_percentage ?? 0 / 100);
+        item_total = published_price - discount_amount;
+        // calculate tax
+        tax_amount = item_total * (tax_percentage / 100);
+        // calculate total
+        item_total_tax_included = item_total + tax_amount;
+      } else {
+        const sub_total_without_tax =
+          published_price / (1 + tax_percentage / 100);
+        console.log("sub_total_without_tax", sub_total_without_tax,"tax_percentage",tax_percentage);
+        discount_amount =
+          sub_total_without_tax * (line_item.discount_percentage ?? 0 / 100);
+        item_total = sub_total_without_tax - discount_amount;
+        tax_amount = item_total - item_total / (1 + tax_percentage / 100);
+        item_total_tax_included = item_total + tax_amount;
+      }
+
+      console.log("itm calc", {
+        discount_amount,
+        item_total,
+        tax_amount,
+        item_total_tax_included,
+      });
+      return {
+        ...line_item,
+        discount_amount,
+        item_total,
+        tax_amount,
+        item_total_tax_included,
+      };
+    },
+    [],
+  );
+  const calculateLineItems = useCallback(
+    (line_items, is_tax_inclusive: boolean) => {
+      return line_items.map((line_item) =>
+        singleLineItemCalculation(line_item, is_tax_inclusive),
+      );
+    },
+    [singleLineItemCalculation],
+  );
+
+  const handleTaxInclusiveExclusiveChange = (ev) => {
+    const value = ev.value;
+    calculateLineItems(lineItems, value);
+    setIsTaxInclusive(value);
+  };
   const handleItemSelect = (item_id: number, index: number) => {
     const temp_line_item = [...lineItems];
     if (!item_id) {
@@ -182,32 +240,35 @@ export function LineItemInputTable({
       .then((data) => {
         const fetched_item = data.item;
         setLineItems((items) =>
-          items.map((item, item_index) => {
-            if (item_index === index) {
-              item.price =
-                itemFor === "sales"
-                  ? fetched_item.selling_price
-                  : fetched_item.purchase_price;
+          calculateLineItems(
+            items.map((item, item_index) => {
+              if (item_index === index) {
+                item.price =
+                  itemFor === "sales"
+                    ? fetched_item.selling_price
+                    : fetched_item.purchase_price;
                 item.unit = fetched_item.unit;
                 item.unit_id = fetched_item.unit_id;
-              item.description =
-                itemFor === "sales"
-                  ? fetched_item.selling_description
-                  : fetched_item.purchase_description;
-              item.tax = {
-                label: fetched_item.tax_name,
-                value: fetched_item.tax_id,
-                tax_percentage: fetched_item.tax_percentage,
-              };
-              item.item = {
-                label: fetched_item.name,
-                value: fetched_item.item_id,
-              };
-              item.is_loading = false;
+                item.description =
+                  itemFor === "sales"
+                    ? fetched_item.selling_description
+                    : fetched_item.purchase_description;
+                item.tax = {
+                  label: fetched_item.tax_name,
+                  value: fetched_item.tax_id,
+                  tax_percentage: fetched_item.tax_percentage,
+                };
+                item.item = {
+                  label: fetched_item.name,
+                  value: fetched_item.item_id,
+                };
+                item.is_loading = false;
+                return item;
+              }
               return item;
-            }
-            return item;
-          }),
+            }),
+            false,
+          ),
         );
       })
       .catch((error) => console.log(error));
@@ -263,19 +324,6 @@ export function LineItemInputTable({
     };
     setLineItems([...temp_line_item]);
   };
-
-  const ITEM_OPTIONS_COMPONENT: React.FC<
-    OptionProps<LINE_ITEM_OPTION_TYPE, false>
-  > = (props) => (
-    <components.Option {...props}>
-      <div className="flex flex-col">
-        <div className="text-sm">{props.data.label}</div>
-        <div className="text-xs text-gray-500">Rate : ${props.data.price}</div>
-      </div>
-    </components.Option>
-  );
-
-  const ccp = useRef(null);
   const handleSelectItemRemove = (index: number) => {
     const temp_line_item = [...lineItems];
     temp_line_item[index] = BLANK_ROW;
@@ -290,10 +338,12 @@ export function LineItemInputTable({
         components={{
           ...reactSelectComponentOverride,
         }}
+        onChange={handleTaxInclusiveExclusiveChange}
         placeholder={"Tax treatment"}
+        value={{ label: isTaxInclusive ? "Tax Inclusive" : "Tax Exclusive", value: isTaxInclusive }}
         options={[
-          { label: "Tax Inclusive", value: "true" },
-          { label: "Tax Exclusive", value: "false" },
+          { label: "Tax Inclusive", value: true },
+          { label: "Tax Exclusive", value: false },
         ]}
         isSearchable={false}
       />
@@ -310,7 +360,7 @@ export function LineItemInputTable({
               rate
             </TableHead>
             <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-              discount
+              discount (%)
             </TableHead>
             <TableHead className="w-[170px] px-4 py-1 text_thead">
               tax (%)
@@ -431,14 +481,17 @@ export function LineItemInputTable({
                         defaultValue={lineItem.quantity}
                         onBlur={(e) => handleQuantityChange(e, index)}
                       />
-                      <div className={'w-auto'}>
-                        {lineItem.unit &&
-                            <Badge className={"text-[10px] px-1 py-0.5 rounded-sm capitalize"}>
-                              {lineItem.unit}
-                            </Badge>
-                        }
+                      <div className={"w-auto"}>
+                        {lineItem.unit && (
+                          <Badge
+                            className={
+                              "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                            }
+                          >
+                            {lineItem.unit}
+                          </Badge>
+                        )}
                       </div>
-
                     </div>
                   </TableCell>
                   <TableCell className="px-1 py-1 align-top">
@@ -486,7 +539,7 @@ export function LineItemInputTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-right px-1 py-1 align-top">
-                    <div>0</div>
+                    <div>{lineItem.item_total ?? 0.0}</div>
                     <div className={"relative break-words"}>
                       <div className={"absolute -top-[17px] -right-[32px] "}>
                         <DropdownMenu>
@@ -564,4 +617,15 @@ export function LineItemInputTable({
     </div>
   );
 }
+const ITEM_OPTIONS_COMPONENT: React.FC<
+  OptionProps<LINE_ITEM_OPTION_TYPE, false>
+> = (props) => (
+  <components.Option {...props}>
+    <div className="flex flex-col">
+      <div className="text-sm">{props.data.label}</div>
+      <div className="text-xs text-gray-500">Rate : ${props.data.price}</div>
+    </div>
+  </components.Option>
+);
+
 export { lineItemSchema };
