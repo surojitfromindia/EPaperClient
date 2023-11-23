@@ -1,11 +1,4 @@
-import React, {
-  createRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactSelect, {
   components,
   DropdownIndicatorProps,
@@ -26,6 +19,7 @@ import {
 import { ChevronDown, CircleEllipsis, XCircle } from "lucide-react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactAsyncSelect from "react-select/async";
+import { OnChangeValue } from "react-select";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import {
@@ -38,8 +32,6 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
-import * as z from "zod";
-import { UseFieldArrayReturn } from "react-hook-form";
 import {
   InvoiceLineItem,
   InvoiceLineItemGenerated,
@@ -48,29 +40,16 @@ import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
+import { MathLib } from "@/util/MathLib/mathLib.ts";
+import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
+import {
+  DialogTrigger,
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
-
-const lineItemSchema = z.object({
-  item: z.object({
-    label: z.string(),
-    value: z.number(),
-  }),
-  unit: z.string().optional(),
-  description: z.string().optional(),
-  quantity: z.number(),
-  price: z.number(),
-  discount: z.number(),
-  tax: z
-    .object({
-      label: z.string().optional(),
-      value: z.number().optional(),
-    })
-    .nullable(),
-  tax_percentage: z.number().optional(),
-  total: z.number(),
-});
 
 type LineItemInputTableProps = {
   taxesDropDown: { label: string; value: number }[]; // Replace 'any' with the actual type
@@ -82,6 +61,7 @@ type LINE_ITEM_OPTION_TYPE = {
   value: number;
   price: number;
 };
+const mathLib = new MathLib({ precision: 2 });
 
 export function LineItemInputTable({
   taxesDropDown,
@@ -98,6 +78,7 @@ export function LineItemInputTable({
       discount: 0,
       tax: null,
       tax_percentage: 0,
+      discount_percentage: 0,
       total: 0,
       is_loading: false,
     }),
@@ -105,6 +86,7 @@ export function LineItemInputTable({
   );
   const [lineItems, setLineItems] = useState([]);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+  const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
 
   useEffect(() => {
     // at the time of creation, if line_items is empty, then add a blank row.
@@ -166,35 +148,37 @@ export function LineItemInputTable({
     (line_item, is_tax_inclusive: boolean) => {
       // calculate sub total
       const published_price = line_item.quantity * line_item.price;
-      let discount_amount = 0;
-      let item_total = 0;
-      let tax_amount = 0;
-      let item_total_tax_included = 0;
+      let discount_amount: number;
+      let item_total: number;
+      let tax_amount: number;
+      let item_total_tax_included: number;
       const tax_percentage = line_item.tax_percentage;
+      const tax_decimal = mathLib.getDecimalFromPercentage(tax_percentage);
 
       if (is_tax_inclusive === false) {
         discount_amount =
-          published_price * (line_item.discount_percentage ?? 0 / 100);
+          published_price * (line_item.discount_percentage / 100);
         item_total = published_price - discount_amount;
         // calculate tax
-        tax_amount = item_total * (tax_percentage / 100);
+        tax_amount = item_total * tax_decimal;
         // calculate total
         item_total_tax_included = item_total + tax_amount;
       } else {
-        const sub_total_without_tax =
-          published_price / (1 + tax_percentage / 100);
+        const sub_total_without_tax = published_price / (1 + tax_decimal);
         discount_amount =
-          sub_total_without_tax * (line_item.discount_percentage ?? 0 / 100);
+          sub_total_without_tax * (line_item.discount_percentage / 100);
         item_total = sub_total_without_tax - discount_amount;
-        tax_amount = item_total * (tax_percentage / 100);
+        tax_amount = item_total * tax_decimal;
         item_total_tax_included = item_total + tax_amount;
       }
       return {
         ...line_item,
-        discount_amount,
-        item_total,
-        tax_amount,
-        item_total_tax_included,
+        discount_amount: mathLib.getWithPrecision(discount_amount),
+        item_total: mathLib.getWithPrecision(item_total),
+        tax_amount: mathLib.getWithPrecision(tax_amount),
+        item_total_tax_included: mathLib.getWithPrecision(
+          item_total_tax_included,
+        ),
       };
     },
     [],
@@ -208,8 +192,10 @@ export function LineItemInputTable({
     [singleLineItemCalculation],
   );
 
-  const handleTaxInclusiveExclusiveChange = (ev) => {
-    const value = ev.value;
+  const handleTaxInclusiveExclusiveChange = (
+    selected: OnChangeValue<{ label: string; value: boolean }, false>,
+  ) => {
+    const value = selected.value;
     calculateLineItems(lineItems, value);
     setIsTaxInclusive(value);
   };
@@ -291,63 +277,88 @@ export function LineItemInputTable({
     setLineItems([...temp_line_item]);
   };
 
-  const handleQuantityChange = (
-    ev: React.FocusEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    const raw_value = ev.target.value;
-    const value = Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
-    const temp_line_item = [...lineItems];
-    temp_line_item[index] = {
-      ...temp_line_item[index],
-      quantity: value,
-    };
-    setLineItems((line_items) =>
-      calculateLineItems([...temp_line_item], isTaxInclusive),
-    );
+  const setLineItemsAndCalculate = (line_items) => {
+    console.log("new line items", line_items);
+    setLineItems(() => calculateLineItems([...line_items], isTaxInclusive));
   };
 
-  const handlePriceChange = (
-    ev: React.FocusEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    const raw_value = ev.target.value;
-    const value = Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
-    const temp_line_item = [...lineItems];
-    temp_line_item[index] = {
-      ...temp_line_item[index],
-      price: value,
-    };
-    setLineItems((line_items) =>
-      calculateLineItems([...temp_line_item], isTaxInclusive),
-    );
+  const handleInputFocusChange = () => {
+    setLineItemsAndCalculate(lineItems);
   };
 
+  const handleDiscountChange = (value: number, index: number) => {
+    value = value > 100 || value < 0 ? 0 : value;
+    const temp_line_item = [...lineItems].map((item, item_index) => {
+      if (item_index === index) {
+        return {
+          ...item,
+          discount_percentage: value,
+        };
+      }
+      return item;
+    });
+    setLineItems(temp_line_item);
+  };
+  // similar to quantity change
+  const handleQuantityChange = (value: number, index: number) => {
+    const temp_line_item = [...lineItems].map((item, item_index) => {
+      if (item_index === index) {
+        return {
+          ...item,
+          quantity: value,
+        };
+      }
+      return item;
+    });
+    setLineItems(temp_line_item);
+  };
 
-  const handleDiscountChange = (  ev: React.FocusEvent<HTMLInputElement>, index: number,) => {
-    const raw_value = ev.target.value;
-    const value = Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
-    const temp_line_item = [...lineItems];
-    temp_line_item[index] = {
-      ...temp_line_item[index],
-      discount: value,
-    };
-    setLineItems((line_items) =>
-      calculateLineItems([...temp_line_item], isTaxInclusive),
-    );
-  }
+  // similar to price change
+  const handlePriceChange = (value: number, index: number) => {
+    const temp_line_item = [...lineItems].map((item, item_index) => {
+      if (item_index === index) {
+        return {
+          ...item,
+          price: value,
+        };
+      }
+      return item;
+    });
+    setLineItems(temp_line_item);
+  };
 
   const handleTaxChange = (selected_tax: TaxRate | null, index: number) => {
     const tax = selected_tax ? selected_tax : "";
-    const temp_line_item = [...lineItems];
-    temp_line_item[index] = {
-      ...temp_line_item[index],
-      tax,
-      tax_percentage: tax ? tax.tax_percentage : 0,
-    };
-    setLineItems((line_items) =>
-      calculateLineItems([...temp_line_item], isTaxInclusive),
+    const temp_line_item = [...lineItems].map(
+      (item, item_index): InvoiceLineItem => {
+        if (item_index === index) {
+          return {
+            ...item,
+            tax: tax,
+            tax_percentage: tax ? tax.tax_percentage : 0,
+          };
+        }
+        return item;
+      },
     );
+    setLineItemsAndCalculate(temp_line_item);
+  };
+
+  const handleDescriptionChange = (
+    ev: React.FocusEvent<HTMLTextAreaElement>,
+    index: number,
+  ) => {
+    const raw_value = ev.target.value;
+    const temp_line_item = [...lineItems].map((item, item_index) => {
+      if (item_index === index) {
+        return {
+          ...item,
+          description: raw_value,
+        };
+      }
+      return item;
+    });
+    setLineItemsAndCalculate(temp_line_item);
   };
 
   const handleSelectItemRemove = (index: number) => {
@@ -356,311 +367,336 @@ export function LineItemInputTable({
     setLineItems([...temp_line_item]);
   };
 
+  const handleIteEditClick = (item_id: number) => {
+    setItemEditingModalOpenFor(item_id);
+  }
+  const handleItemAddModalClose = () => {
+    setItemEditingModalOpenFor(null);
+  }
+
   return (
-    <div className={"flex flex-col space-y-3"}>
-      <ReactSelect
-        className={"w-[150px]"}
-        classNames={reactSelectStyle}
-        components={{
-          ...reactSelectComponentOverride,
-        }}
-        onChange={handleTaxInclusiveExclusiveChange}
-        placeholder={"Tax treatment"}
-        value={{
-          label: isTaxInclusive ? "Tax Inclusive" : "Tax Exclusive",
-          value: isTaxInclusive,
-        }}
-        options={[
-          { label: "Tax Inclusive", value: true },
-          { label: "Tax Exclusive", value: false },
-        ]}
-        isSearchable={false}
-      />
-      <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
-        <TableHeader>
-          <TableRow className="divide-x divide-gray-200 hover:bg-transparent  ">
-            <TableHead className="w-[380px] px-4 py-1 text_thead">
-              item
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-              quantity
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-              rate
-            </TableHead>
-            <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-              discount (%)
-            </TableHead>
-            <TableHead className="w-[170px] px-4 py-1 text_thead">
-              tax (%)
-            </TableHead>
-            <TableHead className="text-right px-4 pr-1 text_thead">
-              <div>amount</div>
-              <div className={"relative break-words"}>
-                <div className={"absolute -top-[17px] -right-[32px] "}>
-                  <CircleEllipsis className={"w-4 h-4 text-primary"} />
-                </div>
-              </div>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {lineItems.map((lineItem, index) => (
-            <TableRow
-              key={index}
-              className="divide-x divide-gray-200 hover:bg-none!impotant"
-            >
-              {lineItem.is_loading && (
-                <TableCell colSpan={6}>
-                  <div className={"relative h-10 w-full"}>
-                    <LoaderComponent mText={""} />
+    <>
+      <div className={"flex flex-col space-y-3"}>
+        <ReactSelect
+          className={"w-[150px]"}
+          classNames={reactSelectStyle}
+          components={{
+            ...reactSelectComponentOverride,
+          }}
+          onChange={handleTaxInclusiveExclusiveChange}
+          placeholder={"Tax treatment"}
+          value={{
+            label: isTaxInclusive ? "Tax Inclusive" : "Tax Exclusive",
+            value: isTaxInclusive,
+          }}
+          options={[
+            { label: "Tax Inclusive", value: true },
+            { label: "Tax Exclusive", value: false },
+          ]}
+          isSearchable={false}
+        />
+        <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
+          <TableHeader>
+            <TableRow className="divide-x divide-gray-200 hover:bg-transparent  ">
+              <TableHead className="w-[380px] px-4 py-1 text_thead">
+                item
+              </TableHead>
+              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+                quantity
+              </TableHead>
+              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+                rate
+              </TableHead>
+              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+                discount (%)
+              </TableHead>
+              <TableHead className="w-[170px] px-4 py-1 text_thead">
+                tax (%)
+              </TableHead>
+              <TableHead className="text-right px-4 pr-1 text_thead">
+                <div>amount</div>
+                <div className={"relative break-words"}>
+                  <div className={"absolute -top-[17px] -right-[32px] "}>
+                    <CircleEllipsis className={"w-4 h-4 text-primary"} />
                   </div>
-                </TableCell>
-              )}
-              {!lineItem.is_loading && (
-                <>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div className="w-full flex flex-col space-y-1">
-                      {lineItem.item && (
-                        <div
-                          className={
-                            "pl-3 pr-2 flex justify-between w-full py-2"
-                          }
-                        >
-                          <div className="text-sm">{lineItem.item.label}</div>
-                          <div className="text-xs text-gray-500">
-                            <div className={"flex space-x-1"}>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <CircleEllipsis
-                                    type={"button"}
-                                    className={
-                                      "w-4 h-4 text-gray-400 cursor-pointer"
-                                    }
-                                  />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  side={"bottom"}
-                                  align={"end"}
-                                  className="w-36"
-                                >
-                                  <DropdownMenuItem onClick={() => {}}>
-                                    View Details{" "}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => {}}>
-                                    Edit Item{" "}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <XCircle
-                                type={"button"}
-                                className={
-                                  "w-4 h-4 text-gray-400 cursor-pointer"
-                                }
-                                onClick={() => handleSelectItemRemove(index)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className={cn(!lineItem.item ? "" : "hidden")}>
-                        <ReactAsyncSelect
-                          openMenuOnFocus={true}
-                          id={`line_item-${index}`}
-                          className={"w-full"}
-                          defaultOptions={itemDefaultList}
-                          inputId={"item"}
-                          loadOptions={handleItemAutoCompleteChange}
-                          onFocus={handleItemAutoCompleteInitialFocus}
-                          placeholder="Type or select an item"
-                          classNames={reactSelectStyle}
-                          components={{
-                            ...reactSelectComponentOverride,
-                            DropdownIndicator: () => null,
-                            Option: ITEM_OPTIONS_COMPONENT,
-                          }}
-                          menuPortalTarget={document.body}
-                          isClearable={false}
-                          value={lineItem.item}
-                          onChange={(e_value) => {
-                            handleItemSelect(
-                              e_value ? e_value.value : null,
-                              index,
-                            );
-                          }}
-                          isLoading={isInitialLoadingInProgress}
-                          hideSelectedOptions={true}
-                        />
-                      </div>
-
-                      {lineItem.item && (
-                        <Textarea
-                          className="w-full min-h-[40px] border-0 max bg-gray-50/80 text-gray-500"
-                          placeholder="Item Description"
-                          value={lineItem.description}
-
-                        />
-                      )}
+                </div>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lineItems.map((lineItem, index) => (
+              <TableRow
+                key={index}
+                className="divide-x divide-gray-200 hover:bg-none!impotant"
+              >
+                {lineItem.is_loading && (
+                  <TableCell colSpan={6}>
+                    <div className={"relative h-10 w-full"}>
+                      <LoaderComponent mText={""} />
                     </div>
                   </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div className={"flex flex-col items-end space-y-2"}>
-                      <RNumberFormat
-                        value={lineItem.quantity}
-                        onBlur={(ev) => {
-                          handleQuantityChange(ev, index);
-                        }}
-                        customInput={Input}
-                        className="w-full border-0 text-right"
-                        allowNegative={false}
-                        onChange={() => {}}
-                      />
-                      <div className={"w-auto"}>
-                        {lineItem.unit && (
-                          <Badge
+                )}
+                {!lineItem.is_loading && (
+                  <>
+                    <TableCell className="px-1 py-1 align-top">
+                      <div className="w-full flex flex-col space-y-1">
+                        {lineItem.item && (
+                          <div
                             className={
-                              "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                              "pl-3 pr-2 flex justify-between w-full py-2"
                             }
                           >
-                            {lineItem.unit}
-                          </Badge>
+                            <div className="text-sm">{lineItem.item.label}</div>
+                            <div className="text-xs text-gray-500">
+                              <div className={"flex space-x-1"}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <CircleEllipsis
+                                      type={"button"}
+                                      className={
+                                        "w-4 h-4 text-gray-400 cursor-pointer"
+                                      }
+                                    />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    side={"bottom"}
+                                    align={"end"}
+                                    className="w-36"
+                                  >
+                                    <DropdownMenuItem onClick={() => {}}>
+                                      View Details{" "}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {handleIteEditClick(lineItem.item.value)}}>
+                                      Edit Item{" "}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <XCircle
+                                  type={"button"}
+                                  className={
+                                    "w-4 h-4 text-gray-400 cursor-pointer"
+                                  }
+                                  onClick={() => handleSelectItemRemove(index)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div className={cn(!lineItem.item ? "" : "hidden")}>
+                          <ReactAsyncSelect
+                            openMenuOnFocus={true}
+                            id={`line_item-${index}`}
+                            className={"w-full"}
+                            defaultOptions={itemDefaultList}
+                            inputId={"item"}
+                            loadOptions={handleItemAutoCompleteChange}
+                            onFocus={handleItemAutoCompleteInitialFocus}
+                            placeholder="Type or select an item"
+                            classNames={reactSelectStyle}
+                            components={{
+                              ...reactSelectComponentOverride,
+                              DropdownIndicator: () => null,
+                              Option: ITEM_OPTIONS_COMPONENT,
+                            }}
+                            menuPortalTarget={document.body}
+                            isClearable={false}
+                            value={lineItem.item}
+                            onChange={(e_value) => {
+                              handleItemSelect(
+                                e_value ? e_value.value : null,
+                                index,
+                              );
+                            }}
+                            isLoading={isInitialLoadingInProgress}
+                            hideSelectedOptions={true}
+                          />
+                        </div>
+
+                        {lineItem.item && (
+                          <Textarea
+                            className="w-full min-h-[40px] border-0 max bg-gray-50/80 text-gray-500"
+                            placeholder="Item Description"
+                            defaultValue={lineItem.description}
+                            onBlur={(ev) => {
+                              handleDescriptionChange(ev, index);
+                            }}
+                          />
                         )}
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <RNumberFormat
-                        value={lineItem.price}
-                        onBlur={(ev) => {
-                          handlePriceChange(ev, index);
-                        }}
-                        customInput={Input}
-                        className="w-full border-0 text-right"
-                        allowNegative={false}
-                        onChange={() => {}}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <RNumberFormat
-                          value={lineItem.price}
-                          onBlur={(ev) => {
-                            handleDiscountChange(ev, index);
-                          }}
+                    </TableCell>
+                    <TableCell className="px-1 py-1 align-top">
+                      <div className={"flex flex-col items-end space-y-2"}>
+                        <RNumberFormat
+                          value={lineItem.quantity}
                           customInput={Input}
                           className="w-full border-0 text-right"
                           allowNegative={false}
-                          onChange={() => {}}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-1 align-top">
-                    <div>
-                      <ReactSelect
-                        className={"w-full z-100"}
-                        options={taxesDropDown}
-                        inputId={"tax"}
-                        placeholder={"Select tax"}
-                        classNames={reactSelectStyle}
-                        components={{
-                          ...reactSelectComponentOverride,
-                          DropdownIndicator: (
-                            props: DropdownIndicatorProps,
-                          ) => {
-                            if (props.selectProps.value) {
-                              return null; // Return null to not display anything when a value is selected
-                            }
-                            return <components.DropdownIndicator {...props} />;
-                          },
-                        }}
-                        menuPortalTarget={document.body}
-                        isClearable={true}
-                        value={lineItem.tax}
-                        onChange={(selected_tax) => {
-                          handleTaxChange(selected_tax, index);
-                        }}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right px-1 py-1 align-top">
-                    <div>{lineItem.item_total ?? 0.0}</div>
-                    <div className={"relative break-words"}>
-                      <div className={"absolute -top-[17px] -right-[32px] "}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <CircleEllipsis
-                              type={"button"}
-                              className={"w-4 h-4 text-primary cursor-pointer"}
-                            />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-36">
-                            <DropdownMenuItem
-                              onClick={() => handleNewRowAt(index + 1)}
+                          decimalScale={6}
+                          onBlur={() => {
+                            handleInputFocusChange();
+                          }}
+                          onValueChange={({ floatValue }) => {
+                            handleQuantityChange(floatValue, index);
+                          }}
+                        />
+                        <div className={"w-auto"}>
+                          {lineItem.unit && (
+                            <Badge
+                              className={
+                                "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                              }
                             >
-                              New Row Below
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleNewRowAt(index - 1)}
-                            >
-                              New Row Above
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleRowCloneAt(index)}
-                            >
-                              Clone
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      {
-                        <div className={"absolute -top-[17px] -right-[55px] "}>
-                          <XCircle
-                            type={"button"}
-                            className={
-                              "w-4 h-4 text-destructive cursor-pointer"
-                            }
-                            onClick={() => handleRowRemoveAt(index)}
-                          />
+                              {lineItem.unit}
+                            </Badge>
+                          )}
                         </div>
-                      }
-                    </div>
-                  </TableCell>
-                </>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="flex mt-2.5">
-        <Button
-          variant="default"
-          className={"border-r-0 rounded-r-none p-2"}
-          type={"button"}
-          onClick={() => handleNewRowAt(lineItems.length - 1)}
-        >
-          Add New Row
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="default"
-              size={"icon"}
-              className={"ml-[1px] border-l-0 rounded-l-none"}
-              type={"button"}
-            >
-              <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-36">
-            <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
-            <DropdownMenuItem>Insert Header</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>{" "}
-    </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-1 align-top">
+                      <div>
+                        <RNumberFormat
+                          value={lineItem.price}
+                          customInput={Input}
+                          className="w-full border-0 text-right"
+                          allowNegative={false}
+                          onBlur={() => {
+                            handleInputFocusChange();
+                          }}
+                          onValueChange={({ floatValue }) => {
+                            handlePriceChange(floatValue, index);
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-1 align-top">
+                      <div>
+                        <RNumberFormat
+                          value={lineItem.discount_percentage}
+                          customInput={Input}
+                          className="w-full border-0 text-right"
+                          allowNegative={false}
+                          onBlur={() => {
+                            handleInputFocusChange();
+                          }}
+                          onValueChange={({ floatValue }) => {
+                            handleDiscountChange(floatValue, index);
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-1 align-top">
+                      <div>
+                        <ReactSelect
+                          className={"w-full z-100"}
+                          options={taxesDropDown}
+                          inputId={"tax"}
+                          placeholder={"Select tax"}
+                          classNames={reactSelectStyle}
+                          components={{
+                            ...reactSelectComponentOverride,
+                            DropdownIndicator: (
+                              props: DropdownIndicatorProps,
+                            ) => {
+                              if (props.selectProps.value) {
+                                return null; // Return null to not display anything when a value is selected
+                              }
+                              return (
+                                <components.DropdownIndicator {...props} />
+                              );
+                            },
+                          }}
+                          menuPortalTarget={document.body}
+                          isClearable={true}
+                          value={lineItem.tax}
+                          onChange={(selected_tax) => {
+                            handleTaxChange(selected_tax, index);
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right px-1 py-1 align-top">
+                      <div>{lineItem.item_total ?? 0.0}</div>
+                      <div className={"relative break-words"}>
+                        <div className={"absolute -top-[17px] -right-[32px] "}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <CircleEllipsis
+                                type={"button"}
+                                className={
+                                  "w-4 h-4 text-primary cursor-pointer"
+                                }
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-36">
+                              <DropdownMenuItem
+                                onClick={() => handleNewRowAt(index + 1)}
+                              >
+                                New Row Below
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleNewRowAt(index - 1)}
+                              >
+                                New Row Above
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleRowCloneAt(index)}
+                              >
+                                Clone
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        {
+                          <div
+                            className={"absolute -top-[17px] -right-[55px] "}
+                          >
+                            <XCircle
+                              type={"button"}
+                              className={
+                                "w-4 h-4 text-destructive cursor-pointer"
+                              }
+                              onClick={() => handleRowRemoveAt(index)}
+                            />
+                          </div>
+                        }
+                      </div>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex mt-2.5">
+          <Button
+            variant="default"
+            className={"border-r-0 rounded-r-none p-2"}
+            type={"button"}
+            onClick={() => handleNewRowAt(lineItems.length - 1)}
+          >
+            Add New Row
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="default"
+                size={"icon"}
+                className={"ml-[1px] border-l-0 rounded-l-none"}
+                type={"button"}
+              >
+                <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-36">
+              <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
+              <DropdownMenuItem>Insert Header</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>{" "}
+      </div>
+      <ItemAddModal openModal={!!itemEditingModalOpenFor} itemId={itemEditingModalOpenFor} onClose={handleItemAddModalClose}/>
+    </>
   );
 }
 const ITEM_OPTIONS_COMPONENT: React.FC<
@@ -674,4 +710,12 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
   </components.Option>
 );
 
-export { lineItemSchema };
+const ItemAddModal = ({openModal, itemId, onClose}) => {
+  return (
+    <Dialog open={openModal} onOpenChange={onClose}>
+      <DialogContent className="max-w-[900px] p-0 bg-background">
+        <ItemAdd isModal={true} view_item_id={itemId} />
+      </DialogContent>
+    </Dialog>
+  );
+};

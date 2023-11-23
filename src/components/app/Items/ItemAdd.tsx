@@ -13,7 +13,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
-import  { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
   Item,
@@ -36,7 +36,7 @@ import { toast } from "@/components/ui/use-toast.ts";
 
 const itemService = new ItemService();
 
-export default function ItemAdd() {
+export default function ItemAdd({ view_item_id, isModal=false }: { view_item_id?: number, isModal?:boolean }) {
   const { item_id } = useParams();
   const editItemId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
@@ -44,10 +44,14 @@ export default function ItemAdd() {
     if (!Number.isNaN(parseResult)) {
       return parseResult;
     }
-  }, [item_id]);
+    if (view_item_id) {
+      return view_item_id;
+    }
+  }, [item_id, view_item_id]);
   const isEditMode = useMemo(() => !!editItemId, [editItemId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update item" : "new item";
+  const showCloseButton = !isModal;
 
   const navigate = useNavigate();
   const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
@@ -109,13 +113,18 @@ export default function ItemAdd() {
     .object({
       name: z.string().trim().nonempty({ message: "enter item name" }),
       product_type: z.enum(["goods", "service"]),
-      unit: z.object(
-        { value: z.string().nullable().optional(), label: z.string().nullable().optional() },
-        {
-          invalid_type_error: "select or type a unit",
-          required_error: "select or type a unit",
-        },
-      ).nullable(),
+      unit: z
+        .object(
+          {
+            value: z.string().nullable().optional(),
+            label: z.string().nullable().optional(),
+          },
+          {
+            invalid_type_error: "select or type a unit",
+            required_error: "select or type a unit",
+          },
+        )
+        .nullable(),
       sku: z.string().trim().optional(),
       has_selling_price: z.boolean().optional(),
       has_purchase_price: z.boolean().optional(),
@@ -125,7 +134,7 @@ export default function ItemAdd() {
           invalid_type_error: "select a tax",
           required_error: "select a tax",
         },
-      )
+      ),
     })
     .refine((data) => data.has_purchase_price || data.has_selling_price, {
       message: "good",
@@ -180,7 +189,7 @@ export default function ItemAdd() {
       has_selling_price: true,
       has_purchase_price: true,
       product_type: "goods",
-      unit:null
+      unit: null,
     },
   });
   const { register, handleSubmit, watch, control, setValue } = form;
@@ -254,7 +263,7 @@ export default function ItemAdd() {
         setValue("selling_price", data.selling_price!);
         setValue("purchase_price", data.purchase_price!);
 
-        if(data.unit_id && data.unit){
+        if (data.unit_id && data.unit) {
           setValue("unit", { label: data.unit!, value: data.unit! });
         }
         if (
@@ -325,22 +334,27 @@ export default function ItemAdd() {
 
   if (isLoading) {
     return (
-        <div className={"relative h-screen w-full"}>
-          <LoaderComponent />
-        </div>
+      <div className={"relative h-screen w-full"}>
+        <LoaderComponent />
+      </div>
     );
   }
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div
-        className={"px-5 pl-3 pr-2 py-3 shadow-md flex justify-between items-center z-10"}
+        className={
+          "px-5 pl-3 pr-2 py-3 shadow-md flex justify-between items-center z-10"
+        }
       >
         <span className={"text-2xl capitalize"}>{pageHeaderText}</span>
-        <span>
-          <Button variant={"ghost"} onClick={handleCloseClick}>
-            <X className={"w-4 h-4"} />
-          </Button>
-        </span>
+        {
+            showCloseButton &&
+          <span>
+            <Button variant={"ghost"} onClick={handleCloseClick}>
+              <X className={"w-4 h-4"} />
+            </Button>
+          </span>
+        }
       </div>
       <div className={"flex-grow overflow-y-auto"}>
         <Form {...form}>
@@ -747,14 +761,22 @@ export default function ItemAdd() {
           </form>
         </Form>
       </div>
-      <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 border-t-1 "}>
+      <div
+        className={
+          "fixed bottom-0 bg-background w-full py-2 px-5 flex space-x-2 border-t-1 "
+        }
+      >
         <Button
           className={"capitalize"}
           onClick={handleSubmit(handleFormSubmit)}
         >
           {submitButtonText}
         </Button>
-        <Button className={"capitalize"} variant={"outline"} onClick={handleCloseClick}>
+        <Button
+          className={"capitalize"}
+          variant={"outline"}
+          onClick={handleCloseClick}
+        >
           cancel
         </Button>
       </div>

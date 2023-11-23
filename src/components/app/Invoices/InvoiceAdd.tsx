@@ -33,9 +33,10 @@ import { Separator } from "@/components/ui/separator.tsx";
 import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
 import {
   LineItemInputTable,
-  lineItemSchema,
+
 } from "@/components/app/Invoices/LineItemInputTable.tsx";
 import { FormValidationErrorAlert } from "@/components/app/Invoices/FormValidationErrorAlert.tsx";
+import {lineItemSchema} from "@/components/app/Invoices/LineItemSchema.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -505,7 +506,5 @@ function deepFlatReactHookFormErrorOnlyMessage(errors) {
   };
 
   flattenErrors(errors);
-  console.log("flattenedErrors", flattenedErrors);
-  console.log("rawErrors", errors)
   return Object.values(flattenedErrors);
 }
