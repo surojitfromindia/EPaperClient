@@ -47,6 +47,7 @@ import {
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
 import { Badge } from "@/components/ui/badge.tsx";
+import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -61,11 +62,13 @@ const lineItemSchema = z.object({
   quantity: z.number(),
   price: z.number(),
   discount: z.number(),
-  tax: z.object({
-    label: z.string(),
-    value: z.number(),
-    tax_percentage: z.number(),
-  }),
+  tax: z
+    .object({
+      label: z.string().optional(),
+      value: z.number().optional(),
+    })
+    .nullable(),
+  tax_percentage: z.number().optional(),
   total: z.number(),
 });
 
@@ -94,6 +97,7 @@ export function LineItemInputTable({
       price: 0,
       discount: 0,
       tax: null,
+      tax_percentage: 0,
       total: 0,
       is_loading: false,
     }),
@@ -166,9 +170,7 @@ export function LineItemInputTable({
       let item_total = 0;
       let tax_amount = 0;
       let item_total_tax_included = 0;
-      const tax_percentage = line_item.tax ? line_item.tax.tax_percentage : 0.0;
-
-      console.log("is_tax_inclusive", is_tax_inclusive);
+      const tax_percentage = line_item.tax_percentage;
 
       if (is_tax_inclusive === false) {
         discount_amount =
@@ -181,20 +183,12 @@ export function LineItemInputTable({
       } else {
         const sub_total_without_tax =
           published_price / (1 + tax_percentage / 100);
-        console.log("sub_total_without_tax", sub_total_without_tax,"tax_percentage",tax_percentage);
         discount_amount =
           sub_total_without_tax * (line_item.discount_percentage ?? 0 / 100);
         item_total = sub_total_without_tax - discount_amount;
-        tax_amount = item_total - item_total / (1 + tax_percentage / 100);
+        tax_amount = item_total * (tax_percentage / 100);
         item_total_tax_included = item_total + tax_amount;
       }
-
-      console.log("itm calc", {
-        discount_amount,
-        item_total,
-        tax_amount,
-        item_total_tax_included,
-      });
       return {
         ...line_item,
         discount_amount,
@@ -302,13 +296,15 @@ export function LineItemInputTable({
     index: number,
   ) => {
     const raw_value = ev.target.value;
-    const value = Number.isNaN(Number(raw_value)) ? 1 : Number(raw_value);
+    const value = Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
     const temp_line_item = [...lineItems];
     temp_line_item[index] = {
       ...temp_line_item[index],
       quantity: value,
     };
-    setLineItems([...temp_line_item]);
+    setLineItems((line_items) =>
+      calculateLineItems([...temp_line_item], isTaxInclusive),
+    );
   };
 
   const handlePriceChange = (
@@ -322,8 +318,38 @@ export function LineItemInputTable({
       ...temp_line_item[index],
       price: value,
     };
-    setLineItems([...temp_line_item]);
+    setLineItems((line_items) =>
+      calculateLineItems([...temp_line_item], isTaxInclusive),
+    );
   };
+
+
+  const handleDiscountChange = (  ev: React.FocusEvent<HTMLInputElement>, index: number,) => {
+    const raw_value = ev.target.value;
+    const value = Number.isNaN(Number(raw_value)) ? 0 : Number(raw_value);
+    const temp_line_item = [...lineItems];
+    temp_line_item[index] = {
+      ...temp_line_item[index],
+      discount: value,
+    };
+    setLineItems((line_items) =>
+      calculateLineItems([...temp_line_item], isTaxInclusive),
+    );
+  }
+
+  const handleTaxChange = (selected_tax: TaxRate | null, index: number) => {
+    const tax = selected_tax ? selected_tax : "";
+    const temp_line_item = [...lineItems];
+    temp_line_item[index] = {
+      ...temp_line_item[index],
+      tax,
+      tax_percentage: tax ? tax.tax_percentage : 0,
+    };
+    setLineItems((line_items) =>
+      calculateLineItems([...temp_line_item], isTaxInclusive),
+    );
+  };
+
   const handleSelectItemRemove = (index: number) => {
     const temp_line_item = [...lineItems];
     temp_line_item[index] = BLANK_ROW;
@@ -340,7 +366,10 @@ export function LineItemInputTable({
         }}
         onChange={handleTaxInclusiveExclusiveChange}
         placeholder={"Tax treatment"}
-        value={{ label: isTaxInclusive ? "Tax Inclusive" : "Tax Exclusive", value: isTaxInclusive }}
+        value={{
+          label: isTaxInclusive ? "Tax Inclusive" : "Tax Exclusive",
+          value: isTaxInclusive,
+        }}
         options={[
           { label: "Tax Inclusive", value: true },
           { label: "Tax Exclusive", value: false },
@@ -469,17 +498,22 @@ export function LineItemInputTable({
                           className="w-full min-h-[40px] border-0 max bg-gray-50/80 text-gray-500"
                           placeholder="Item Description"
                           value={lineItem.description}
+
                         />
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="px-1 py-1 align-top">
                     <div className={"flex flex-col items-end space-y-2"}>
-                      <Input
+                      <RNumberFormat
+                        value={lineItem.quantity}
+                        onBlur={(ev) => {
+                          handleQuantityChange(ev, index);
+                        }}
+                        customInput={Input}
                         className="w-full border-0 text-right"
-                        id="quantity-1"
-                        defaultValue={lineItem.quantity}
-                        onBlur={(e) => handleQuantityChange(e, index)}
+                        allowNegative={false}
+                        onChange={() => {}}
                       />
                       <div className={"w-auto"}>
                         {lineItem.unit && (
@@ -496,20 +530,29 @@ export function LineItemInputTable({
                   </TableCell>
                   <TableCell className="px-1 py-1 align-top">
                     <div>
-                      <Input
-                        className="w-full border-0 text-right"
-                        id="price-1"
+                      <RNumberFormat
                         value={lineItem.price}
-                        onBlur={(e) => handlePriceChange(e, index)}
+                        onBlur={(ev) => {
+                          handlePriceChange(ev, index);
+                        }}
+                        customInput={Input}
+                        className="w-full border-0 text-right"
+                        allowNegative={false}
+                        onChange={() => {}}
                       />
                     </div>
                   </TableCell>
                   <TableCell className="px-1 py-1 align-top">
                     <div>
-                      <Input
-                        className="w-full border-0 text-right"
-                        id="price-1"
-                        value={0.0}
+                      <RNumberFormat
+                          value={lineItem.price}
+                          onBlur={(ev) => {
+                            handleDiscountChange(ev, index);
+                          }}
+                          customInput={Input}
+                          className="w-full border-0 text-right"
+                          allowNegative={false}
+                          onChange={() => {}}
                       />
                     </div>
                   </TableCell>
@@ -535,6 +578,9 @@ export function LineItemInputTable({
                         menuPortalTarget={document.body}
                         isClearable={true}
                         value={lineItem.tax}
+                        onChange={(selected_tax) => {
+                          handleTaxChange(selected_tax, index);
+                        }}
                       />
                     </div>
                   </TableCell>
