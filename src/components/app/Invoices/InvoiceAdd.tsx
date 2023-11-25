@@ -8,7 +8,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
@@ -30,13 +30,8 @@ import { DateUtil } from "@/util/dateUtil.ts";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import { debounce } from "lodash";
 import { Separator } from "@/components/ui/separator.tsx";
-import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
-import {
-  LineItemInputTable,
-
-} from "@/components/app/Invoices/LineItemInputTable.tsx";
+import { LineItemInputTable } from "@/components/app/Invoices/LineItemInputTable.tsx";
 import { FormValidationErrorAlert } from "@/components/app/Invoices/FormValidationErrorAlert.tsx";
-import {lineItemSchema} from "@/components/app/Invoices/LineItemSchema.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -246,7 +241,6 @@ export default function InvoiceAdd() {
     }
   }, [editPageItemDetails, setFormData]);
 
-
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -270,7 +264,6 @@ export default function InvoiceAdd() {
           </span>
         </div>
         <div className={"px-5"}>
-
           <FormValidationErrorAlert
             messages={deepFlatReactHookFormErrorOnlyMessage(errors)}
           />
@@ -490,11 +483,8 @@ function deepFlatReactHookFormErrorOnlyMessage(errors) {
   const flattenErrors = (errorObject, parentKey = "") => {
     for (const key in errorObject) {
       const newKey = parentKey ? `${parentKey}.${key}` : key;
-       if (
-        typeof errorObject[key] === "object" &&
-        errorObject[key] !== null
-      ) {
-        if (errorObject[key].hasOwnProperty("message")) {
+      if (typeof errorObject[key] === "object" && errorObject[key] !== null) {
+        if ("message" in errorObject[key]) {
           flattenedErrors[newKey] = errorObject[key].message;
         } else {
           flattenErrors(errorObject[key], newKey);

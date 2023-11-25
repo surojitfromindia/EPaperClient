@@ -25,7 +25,7 @@ const itemService = new ItemService();
 export default function ItemDetails() {
   const navigate = useNavigate();
   const { search, pathname } = useLocation();
-  const { item_id } = useParams();
+  const { item_id_param } = useParams();
   const currentActiveTab = useMemo(() => {
     const lastPath = pathname.split("/").pop();
     switch (lastPath) {
@@ -41,11 +41,11 @@ export default function ItemDetails() {
   const [itemDetails, setItemDetails] = useState<Item>();
   const editItemId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
-    const parseResult = Number.parseInt(item_id ?? "");
+    const parseResult = Number.parseInt(item_id_param ?? "");
     if (!Number.isNaN(parseResult)) {
       return parseResult;
     }
-  }, [item_id]);
+  }, [item_id_param]);
   const loadEditPage = useCallback(() => {
     setIsLoading(true);
     itemService
@@ -68,13 +68,13 @@ export default function ItemDetails() {
     );
   };
   const handleEditClick = useCallback(() => {
-    navigate(`/app/inventory/items/${item_id}/edit`);
-  }, [item_id, navigate]);
+    navigate(`/app/inventory/items/${editItemId}/edit`);
+  }, [editItemId, navigate]);
   const handleTransactionTabClick = () => {
-    navigate(`/app/inventory/items/${item_id}/transactions`);
+    navigate(`/app/inventory/items/${editItemId}/transactions`);
   };
   const handleOverViewTabClick = () => {
-    navigate(`/app/inventory/items/${item_id}`);
+    navigate(`/app/inventory/items/${editItemId}`);
   };
 
   // effects

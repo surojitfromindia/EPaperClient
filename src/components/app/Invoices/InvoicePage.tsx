@@ -13,7 +13,7 @@ type OnInvoiceModification = OnInvoiceAddOrEditSuccess & OnInvoiceDeleteSuccess;
 
 const invoiceService = new InvoiceService();
 
-export function InvoicePage() {
+export default function InvoicePage() {
   const navigate = useNavigate();
   const { invoice_id } = useParams();
   const selectedInvoiceId = useMemo(() => {

@@ -38,17 +38,18 @@ const itemService = new ItemService();
 
 type ItemAddPropBasic = {
   view_item_id?: number;
+  isModal?: false;
 };
 type ItemAddConditionalProp = {
-  isModal: true;
+  view_item_id?: number;
+  isModal?: true;
   closeModal: () => void;
 };
 
-type ItemAddProp = ItemAddPropBasic & ItemAddConditionalProp;
+type ItemAddProp = ItemAddPropBasic | ItemAddConditionalProp;
 
 export default function ItemAdd(props: ItemAddProp) {
   const { view_item_id, isModal } = props;
-  const asModal = isModal ?? false;
 
   const { item_id_param } = useParams();
   const editItemId = useMemo(() => {
@@ -122,7 +123,7 @@ export default function ItemAdd(props: ItemAddProp) {
     }));
   }, [editPageContent.taxes]);
   const handleCloseClick = () => {
-    if (asModal) {
+    if (props.isModal===true) {
       props.closeModal();
       return;
     }

@@ -1,16 +1,30 @@
+import React, { Suspense } from "react";
 import LoginPage from "@/pages/public/LoginPage.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { default as PubicErrorPage } from "@/pages/public/ErrorPages/Page404.tsx";
 import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
 import EPaper from "@/components/app/EPaper.tsx";
 import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
-import ChartOfAccountPage from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
-import ChartOfAccountDetails from "@/components/app/ChartOfAccount/ChartOfAccountDetails.tsx";
-import { ItemPage } from "@/components/app/Items/ItemPage.tsx";
-import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
-import ItemDetails from "@/components/app/Items/ItemDetails.tsx";
-import {InvoicePage} from "@/components/app/Invoices/InvoicePage.tsx";
-import InvoiceAdd from "@/components/app/Invoices/InvoiceAdd.tsx";
+import InvoicePage  from "@/components/app/Invoices/InvoicePage.tsx";
+import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
+import ItemPage from "@/components/app/Items/ItemPage.tsx";
+// make InvoiceAdd lazy
+const InvoiceAdd = React.lazy(
+  () => import("@/components/app/Invoices/InvoiceAdd.tsx"),
+);
+
+//make ChartOfAccountDetails & ChartOfAccountPage lazy
+const ChartOfAccountDetails = React.lazy(
+  () => import("@/components/app/ChartOfAccount/ChartOfAccountDetails.tsx"),
+);
+const ChartOfAccountPage = React.lazy(
+  () => import("@/components/app/ChartOfAccount/ChartOfAccountPage.tsx"),
+);
+// make ItemAdd & ItemDetails lazy
+const ItemAdd = React.lazy(() => import("@/components/app/Items/ItemAdd.tsx"));
+const ItemDetails = React.lazy(
+  () => import("@/components/app/Items/ItemDetails.tsx"),
+);
 
 function App() {
   const router = createBrowserRouter([
@@ -20,8 +34,8 @@ function App() {
       errorElement: <PubicErrorPage />,
     },
     {
-      path:"/404",
-      element:<PubicErrorPage/>
+      path: "/404",
+      element: <PubicErrorPage />,
     },
     {
       path: "app",
@@ -45,11 +59,11 @@ function App() {
           children: [
             {
               path: "items/new",
-              element: <ItemAdd />,
+              element:<LazyWrapper><ItemAdd /></LazyWrapper>,
             },
             {
-              path: "items/:item_id/edit",
-              element: <ItemAdd />,
+              path: "items/:item_id_param/edit",
+              element: <LazyWrapper><ItemAdd /></LazyWrapper>,
             },
             {
               path: "items",
@@ -57,13 +71,13 @@ function App() {
               children: [
                 {
                   path: ":item_id_param",
-                  element: <ItemDetails/>,
-                  children:[
+                  element: <LazyWrapper><ItemDetails /></LazyWrapper>,
+                  children: [
                     {
-                      path:"transactions",
-                      element : <div className={"px-5"}>all transactions</div>
-                    }
-                  ]
+                      path: "transactions",
+                      element: <div className={"px-5"}>all transactions</div>,
+                    },
+                  ],
                 },
               ],
             },
@@ -71,28 +85,44 @@ function App() {
         },
         {
           path: "chart_of_accounts",
-          element: <ChartOfAccountPage />,
+          element: (
+            <LazyWrapper>
+              <ChartOfAccountPage />
+            </LazyWrapper>
+          ),
           errorElement: <Page404 />,
           children: [
             {
               path: ":account_id",
-              element: <ChartOfAccountDetails />,
+              element: (
+                <LazyWrapper>
+                  <ChartOfAccountDetails />
+                </LazyWrapper>
+              ),
             },
           ],
         },
         {
           path: "invoices",
           errorElement: <Page404 />,
-          children:[
+          children: [
             {
               path: "",
-              element: <InvoicePage />,
+              element: (
+                <LazyWrapper>
+                  <InvoicePage />
+                </LazyWrapper>
+              ),
             },
             {
               path: "new",
-              element: <InvoiceAdd />,
+              element: (
+                <LazyWrapper>
+                  <InvoiceAdd />
+                </LazyWrapper>
+              ),
             },
-          ]
+          ],
         },
         {
           path: "*",
@@ -109,3 +139,17 @@ function App() {
 }
 
 export default App;
+
+const LazyWrapper = ({ children }) => {
+  return (
+    <Suspense
+      fallback={
+        <div className={"relative"}>
+          <LoaderComponent />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+};

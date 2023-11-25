@@ -13,16 +13,16 @@ type OnItemModification = OnItemAddOrEditSuccess & OnItemsDeleteSuccess;
 
 const itemService = new ItemService();
 
-export function ItemPage() {
+export default function ItemPage() {
   const navigate = useNavigate();
-  const { item_id } = useParams();
+  const { item_id_param } = useParams();
   const selectedItemId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
-    const parseResult = Number.parseInt(item_id ?? "");
+    const parseResult = Number.parseInt(item_id_param ?? "");
     if (!Number.isNaN(parseResult)) {
       return parseResult;
     }
-  }, [item_id]);
+  }, [item_id_param]);
   const isDetailsPageOpen: boolean = !!(
     selectedItemId && selectedItemId > 0
   );
