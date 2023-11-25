@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table.tsx";
-import { ChevronDown, CircleEllipsis, XCircle } from "lucide-react";
+import {ChevronDown, CircleEllipsis, Divide, XCircle} from "lucide-react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactAsyncSelect from "react-select/async";
 import { OnChangeValue } from "react-select";
@@ -42,17 +42,14 @@ import { Badge } from "@/components/ui/badge.tsx";
 import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { MathLib } from "@/util/MathLib/mathLib.ts";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
-import {
-  DialogTrigger,
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog.tsx";
+import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
+import {Separator} from "@/components/ui/separator.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
 
 type LineItemInputTableProps = {
-  taxesDropDown: { label: string; value: number }[]; // Replace 'any' with the actual type
+  taxesDropDown: { label: string; value: number; tax_percentage: number }[]; // Replace 'any' with the actual type
   itemFor: "sales" | "purchase";
   line_items?: (InvoiceLineItem | InvoiceLineItemGenerated)[];
 };
@@ -63,12 +60,32 @@ type LINE_ITEM_OPTION_TYPE = {
 };
 const mathLib = new MathLib({ precision: 2 });
 
+type LineItemTaxRowType = {
+  label: string;
+  value: number;
+  tax_percentage: number;
+} | null;
+type LineItemRowType = {
+  item: LINE_ITEM_OPTION_TYPE | null;
+  unit: string;
+  description: string;
+  quantity: number;
+  price: number;
+  discount: number;
+  tax: LineItemTaxRowType;
+  tax_percentage: number;
+  tax_amount: number;
+  discount_percentage: number;
+  item_total: number;
+  item_total_tax_included: number;
+  is_loading: boolean;
+};
 export function LineItemInputTable({
   taxesDropDown,
   itemFor,
   line_items = [],
 }: LineItemInputTableProps) {
-  const BLANK_ROW = useMemo(
+  const BLANK_ROW: LineItemRowType = useMemo(
     () => ({
       item: null,
       unit: "",
@@ -78,8 +95,10 @@ export function LineItemInputTable({
       discount: 0,
       tax: null,
       tax_percentage: 0,
+      tax_amount: 0,
       discount_percentage: 0,
-      total: 0,
+      item_total: 0,
+      item_total_tax_included: 0,
       is_loading: false,
     }),
     [],
@@ -153,6 +172,7 @@ export function LineItemInputTable({
       let tax_amount: number;
       let item_total_tax_included: number;
       const tax_percentage = line_item.tax_percentage;
+      console.log("tax_percentage", tax_percentage);
       const tax_decimal = mathLib.getDecimalFromPercentage(tax_percentage);
 
       if (is_tax_inclusive === false) {
@@ -234,10 +254,11 @@ export function LineItemInputTable({
                     ? fetched_item.selling_description
                     : fetched_item.purchase_description;
                 item.tax = {
-                  label: fetched_item.tax_name,
+                  label: `${fetched_item.tax_name} [${fetched_item.tax_percentage}%]`,
                   value: fetched_item.tax_id,
                   tax_percentage: fetched_item.tax_percentage,
                 };
+                item.tax_percentage = fetched_item.tax_percentage;
                 item.item = {
                   label: fetched_item.name,
                   value: fetched_item.item_id,
@@ -278,7 +299,6 @@ export function LineItemInputTable({
   };
 
   const setLineItemsAndCalculate = (line_items) => {
-    console.log("new line items", line_items);
     setLineItems(() => calculateLineItems([...line_items], isTaxInclusive));
   };
 
@@ -672,31 +692,39 @@ export function LineItemInputTable({
             ))}
           </TableBody>
         </Table>
-        <div className="flex mt-2.5">
-          <Button
-            variant="default"
-            className={"border-r-0 rounded-r-none p-2"}
-            type={"button"}
-            onClick={() => handleNewRowAt(lineItems.length - 1)}
-          >
-            Add New Row
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="default"
-                size={"icon"}
-                className={"ml-[1px] border-l-0 rounded-l-none"}
-                type={"button"}
-              >
-                <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-36">
-              <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
-              <DropdownMenuItem>Insert Header</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex mt-2.5 justify-between w-[900px]">
+          <div className={"flex"}>
+            <Button
+              variant="default"
+              className={"border-r-0 rounded-r-none px-2 py-1"}
+              type={"button"}
+              onClick={() => handleNewRowAt(lineItems.length - 1)}
+            >
+              Add New Row
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="default"
+                  size={"icon"}
+                  className={"ml-[1px] border-l-0 rounded-l-none"}
+                  type={"button"}
+                >
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-36">
+                <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
+                <DropdownMenuItem>Insert Header</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className={"w-[400px]"}>
+            <LineItemOverviewComponent
+              line_items={lineItems}
+              is_tax_inclusive={isTaxInclusive}
+            />
+          </div>
         </div>{" "}
       </div>
       <ItemAddModal
@@ -717,6 +745,116 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
     </div>
   </components.Option>
 );
+
+const LineItemOverviewComponent = ({
+  line_items,
+  is_tax_inclusive,
+}: {
+  line_items: LineItemRowType[];
+  is_tax_inclusive: boolean;
+}) => {
+  const sum_of_item_total =
+    line_items.length > 0
+      ? line_items.reduce(
+          (acc, item) => mathLib.getWithPrecision(acc + item.item_total),
+          0,
+        )
+      : 0;
+  const sum_of_item_total_tax_included =
+    line_items.length > 0
+      ? line_items.reduce(
+          (acc, item) =>
+            mathLib.getWithPrecision(acc + item.item_total_tax_included),
+          0,
+        )
+      : 0;
+  const tax_groups = useMemo(() => {
+    const tax_groups: {
+      [key: number]: LineItemRowType[];
+    } = {};
+    line_items
+      .filter((item) => item.tax_percentage > 0)
+      .forEach((item) => {
+        const tax_percentage = item.tax_percentage;
+        if (tax_groups[tax_percentage]) {
+          tax_groups[tax_percentage].push(item);
+        } else {
+          tax_groups[tax_percentage] = [item];
+        }
+      });
+    return Object.entries(tax_groups).map(([, value]) => {
+      const tax_total = value.reduce((acc, item) => acc + item.tax_amount, 0);
+      const first_item = value[0];
+      const tax_label = first_item.tax.label;
+      return {
+        tax_label,
+        tax_total,
+      };
+    });
+  }, [line_items]);
+
+  return (
+    <div className={"p-5 bg-secondary rounded"}>
+      <div className={"grid grid-cols-10 justify-between mb-2"}>
+        <div className={"col-span-7"}>
+          <div className={"text-sm font-medium"}>
+            Sub Total
+            {is_tax_inclusive && (
+              <>
+                <br />
+                <span className={"text-xs"}>
+                  {is_tax_inclusive ? "(Tax inclusive)" : ""}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        <div className={"col-span-3 text-right"}>
+          <RNumberFormat
+            value={sum_of_item_total}
+            className={" text-sm font-medium"}
+            displayType={"text"}
+          />
+        </div>
+      </div>
+      {
+        // if tax_groups is empty, then don't show the tax row.
+        tax_groups.length > 0 && (
+          <div className={"my-5 flex-col"}>
+            {tax_groups.map((tax_group, index) => (
+              <div
+                key={index}
+                className={"grid grid-cols-10 justify-between border-l-2 py-1.5"}
+              >
+                <div className={"col-span-7 pl-3"}>
+                  <div className={"text-sm"}>{tax_group.tax_label}</div>
+                </div>
+                <div className={"col-span-3 text-right"}>
+                  <RNumberFormat
+                    value={tax_group.tax_total}
+                    className={" text-sm "}
+                    displayType={"text"}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+      <Separator className={"my-2"}/>
+      <div className={"grid grid-cols-10 justify-between"}>
+          <div className={"text-sm col-span-7 font-medium"}>Total</div>
+          <div className={"col-span-3 text-right"}>
+            <RNumberFormat
+              value={sum_of_item_total_tax_included}
+              className={" text-sm font-medium"}
+              displayType={"text"}
+            />
+          </div>
+      </div>
+    </div>
+  );
+};
 
 const ItemAddModal = ({ openModal, itemId, onClose }) => {
   return (

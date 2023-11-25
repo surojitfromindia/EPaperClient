@@ -117,7 +117,7 @@ export default function ItemAdd(props: ItemAddProp) {
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
+      label: `${acc.tax_name} [${acc.tax_percentage}%]`,
       value: acc.tax_id,
     }));
   }, [editPageContent.taxes]);

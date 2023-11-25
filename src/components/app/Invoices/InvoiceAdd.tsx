@@ -126,8 +126,7 @@ export default function InvoiceAdd() {
         issue_date: defaultIssueDate,
         paymentTerm: defaultPaymentTerm!,
       }).due_date;
-      console.log("defaultDueDate", defaultDueDate);
-      console.log("defaultIssueDate", defaultIssueDate);
+
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
@@ -163,8 +162,9 @@ export default function InvoiceAdd() {
   }, [editPageContent.payment_terms]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage_formatted}%]`,
+      label: `${acc.tax_name} [${acc.tax_percentage}%]`,
       value: acc.tax_id,
+      tax_percentage: acc.tax_percentage,
     }));
   }, [editPageContent.taxes]);
   const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
