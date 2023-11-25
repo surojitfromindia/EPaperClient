@@ -56,7 +56,7 @@ function App() {
               element: <ItemPage />,
               children: [
                 {
-                  path: ":item_id",
+                  path: ":item_id_param",
                   element: <ItemDetails/>,
                   children:[
                     {

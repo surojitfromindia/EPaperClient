@@ -369,10 +369,10 @@ export function LineItemInputTable({
 
   const handleIteEditClick = (item_id: number) => {
     setItemEditingModalOpenFor(item_id);
-  }
+  };
   const handleItemAddModalClose = () => {
     setItemEditingModalOpenFor(null);
-  }
+  };
 
   return (
     <>
@@ -466,7 +466,11 @@ export function LineItemInputTable({
                                     <DropdownMenuItem onClick={() => {}}>
                                       View Details{" "}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => {handleIteEditClick(lineItem.item.value)}}>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        handleIteEditClick(lineItem.item.value);
+                                      }}
+                                    >
                                       Edit Item{" "}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -695,7 +699,11 @@ export function LineItemInputTable({
           </DropdownMenu>
         </div>{" "}
       </div>
-      <ItemAddModal openModal={!!itemEditingModalOpenFor} itemId={itemEditingModalOpenFor} onClose={handleItemAddModalClose}/>
+      <ItemAddModal
+        openModal={!!itemEditingModalOpenFor}
+        itemId={itemEditingModalOpenFor}
+        onClose={handleItemAddModalClose}
+      />
     </>
   );
 }
@@ -710,11 +718,11 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
   </components.Option>
 );
 
-const ItemAddModal = ({openModal, itemId, onClose}) => {
+const ItemAddModal = ({ openModal, itemId, onClose }) => {
   return (
     <Dialog open={openModal} onOpenChange={onClose}>
       <DialogContent className="max-w-[900px] p-0 bg-background">
-        <ItemAdd isModal={true} view_item_id={itemId} />
+        <ItemAdd isModal={true} view_item_id={itemId} closeModal={onClose} />
       </DialogContent>
     </Dialog>
   );

@@ -36,18 +36,34 @@ import { toast } from "@/components/ui/use-toast.ts";
 
 const itemService = new ItemService();
 
-export default function ItemAdd({ view_item_id, isModal=false }: { view_item_id?: number, isModal?:boolean }) {
-  const { item_id } = useParams();
+type ItemAddPropBasic = {
+  view_item_id?: number;
+};
+type ItemAddConditionalProp = {
+  isModal: true;
+  closeModal: () => void;
+};
+
+type ItemAddProp = ItemAddPropBasic & ItemAddConditionalProp;
+
+export default function ItemAdd(props: ItemAddProp) {
+  const { view_item_id, isModal } = props;
+  const asModal = isModal ?? false;
+
+  const { item_id_param } = useParams();
   const editItemId = useMemo(() => {
-    //try to parse the number, check the return if NaN then return nothing from this memo
-    const parseResult = Number.parseInt(item_id ?? "");
-    if (!Number.isNaN(parseResult)) {
-      return parseResult;
+    if (item_id_param) {
+      //try to parse the number, check the return if NaN then return nothing from this memo
+      const parseResult = Number.parseInt(item_id_param ?? "");
+      if (!Number.isNaN(parseResult)) {
+        return parseResult;
+      }
     }
     if (view_item_id) {
       return view_item_id;
     }
-  }, [item_id, view_item_id]);
+    return null;
+  }, [item_id_param, view_item_id]);
   const isEditMode = useMemo(() => !!editItemId, [editItemId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update item" : "new item";
@@ -106,6 +122,10 @@ export default function ItemAdd({ view_item_id, isModal=false }: { view_item_id?
     }));
   }, [editPageContent.taxes]);
   const handleCloseClick = () => {
+    if (asModal) {
+      props.closeModal();
+      return;
+    }
     navigate("/app/inventory/items");
   };
 
@@ -347,14 +367,13 @@ export default function ItemAdd({ view_item_id, isModal=false }: { view_item_id?
         }
       >
         <span className={"text-2xl capitalize"}>{pageHeaderText}</span>
-        {
-            showCloseButton &&
+        {showCloseButton && (
           <span>
             <Button variant={"ghost"} onClick={handleCloseClick}>
               <X className={"w-4 h-4"} />
             </Button>
           </span>
-        }
+        )}
       </div>
       <div className={"flex-grow overflow-y-auto"}>
         <Form {...form}>
