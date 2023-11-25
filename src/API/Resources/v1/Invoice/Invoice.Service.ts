@@ -4,6 +4,7 @@ import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.S
 import {TaxRate} from "@/API/Resources/v1/TaxRate.ts";
 import {ItemUnit} from "@/API/Resources/v1/ItemUnit.ts";
 import {PaymentTerm} from "@/API/Resources/v1/PaymentTerm.ts";
+import {Item, ItemCreatePayload} from "@/API/Resources/v1/Item/Item.Service.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -90,6 +91,16 @@ class InvoiceService implements APIService {
       ],
       abortController: this.abortController,
     });
+  }
+
+  addInvoice<T>({ payload }: { payload: T }) {
+    const url = this.urlFragment;
+    return this.#axiosConfig.APIPostRequestWrapper<
+        T,
+        {
+          invoice: Invoice;
+        }
+    >(url, payload);
   }
 
   abortGetRequest(): void {

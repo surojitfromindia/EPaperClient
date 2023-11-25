@@ -30,8 +30,9 @@ import { DateUtil } from "@/util/dateUtil.ts";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import { debounce } from "lodash";
 import { Separator } from "@/components/ui/separator.tsx";
-import { LineItemInputTable } from "@/components/app/Invoices/LineItemInputTable.tsx";
+import {LineItemInputTable, LineItemRowType} from "@/components/app/Invoices/LineItemInputTable.tsx";
 import { FormValidationErrorAlert } from "@/components/app/Invoices/FormValidationErrorAlert.tsx";
+import {lineItemRowTypeToPayload, lineItemSchema} from "@/components/app/Invoices/LineItemSchema.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -50,7 +51,7 @@ export default function InvoiceAdd() {
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
 
   const navigate = useNavigate();
-  const [editPageItemDetails, setEditPageItemDetails] = useState<Invoice>();
+  const [editPageItemDetails] = useState<Invoice>();
   const [editPageContent, setEditPageContent] =
     useState<InvoiceEditPageContent>({
       taxes: [],
@@ -75,11 +76,11 @@ export default function InvoiceAdd() {
         label: z.string(),
       },
       {
-        invalid_type_error: "please select a customer",
-        required_error: "please select a customer",
+        invalid_type_error: "Please select a customer",
+        required_error: "Please select a customer",
       },
     ),
-
+    is_inclusive_tax: z.boolean(),
     invoice_number: z.string().trim(),
     order_number: z.string().trim().optional(),
     issue_date: z.date(),
@@ -89,6 +90,7 @@ export default function InvoiceAdd() {
       is_custom: z.boolean().optional(),
     }),
     due_date: z.date(),
+    line_items: z.array(lineItemSchema),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -184,6 +186,7 @@ export default function InvoiceAdd() {
   };
 
   const handleDueDateChange = (date: Date) => {
+    setValue("due_date", date)
     // on due date manual change, set the payment term to custom
     setValue("payment_term", {
       label: "Custom",
@@ -213,19 +216,45 @@ export default function InvoiceAdd() {
   }, [contactAutoCompleteFetch, isInitialContactLoadingDone]);
 
   const handleContactAutoCompleteChange = useCallback(
-    (search_text: string, callback) => {
+    (
+      search_text: string,
+      callback: (arg0: { label: string; value: number }[]) => void,
+    ) => {
       contactAutoCompleteFetch(search_text).then((data) => callback(data));
     },
     [contactAutoCompleteFetch],
   );
 
+  const handleLineItemsUpdate = useCallback(({line_items, is_inclusive_tax}:{
+    line_items: LineItemRowType[],
+    is_inclusive_tax: boolean
+  })=>{
+    setValue("is_inclusive_tax", is_inclusive_tax)
+    setValue("line_items",line_items)
+  },[setValue])
+
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-    console.log("data", data);
+    if (isEditMode) {
+      true;
+    } else {
+      const newInvoice = {
+        contact_id: data.contact.value,
+        invoice_number: data.invoice_number,
+        order_number: data.order_number,
+        issue_date: data.issue_date,
+        due_date: data.due_date,
+        payment_term_id: data.payment_term.value,
+        is_inclusive_tax: data.is_inclusive_tax,
+        line_items: data.line_items.map(lineItemRowTypeToPayload)
+      }
+      await invoiceService.addInvoice({
+        payload: newInvoice,
+      });
+    }
   };
   const setFormData = useCallback((data: typeof editPageItemDetails) => {
-    console.log("data", data);
   }, []);
 
   // effects
@@ -248,6 +277,7 @@ export default function InvoiceAdd() {
       </div>
     );
   }
+  console.log("errors", errors)
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div className={"flex-grow overflow-y-auto"}>
@@ -430,6 +460,7 @@ export default function InvoiceAdd() {
                 <LineItemInputTable
                   taxesDropDown={taxesDropDown}
                   itemFor={"sales"}
+                    onLineItemsUpdate={handleLineItemsUpdate}
                 />
               </div>
             </div>
