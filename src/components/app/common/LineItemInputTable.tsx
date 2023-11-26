@@ -58,6 +58,7 @@ type LineItemInputTableProps = {
     is_inclusive_tax: boolean;
     line_items: LineItemRowType[];
   }) => void;
+    isCreateMode?: boolean;
 };
 type LINE_ITEM_OPTION_TYPE = {
   label: string;
@@ -70,7 +71,7 @@ type LineItemTaxRowType = {
   tax_percentage: number;
 } | null;
 type LineItemRowType = {
-  item: LINE_ITEM_OPTION_TYPE | null
+  item: LINE_ITEM_OPTION_TYPE | null;
   unit: string;
   unit_id?: number;
   description: string;
@@ -88,7 +89,7 @@ type LineItemRowType = {
   account?: {
     label: string;
     value: number;
-  }|null;
+  } | null;
 };
 
 const BLANK_ROW: LineItemRowType = Object.freeze({
@@ -106,13 +107,14 @@ const BLANK_ROW: LineItemRowType = Object.freeze({
   item_total: 0,
   item_total_tax_included: 0,
   is_loading: false,
-  account:null,
+  account: null,
 });
 export function LineItemInputTable({
   taxesDropDown,
   itemFor,
   line_items = [],
   onLineItemsUpdate,
+  isCreateMode = true,
 }: LineItemInputTableProps) {
   const [lineItems, setLineItems] = useState([]);
   const [isInclusiveTax, setIsInclusiveTax] = useState(false);
@@ -124,20 +126,26 @@ export function LineItemInputTable({
    */
   const updateParentLineItemState = useCallback(
     (new_line_items: LineItemRowType[]) => {
-      setLineItems(new_line_items);
-      onLineItemsUpdate?.({
-        line_items: new_line_items,
-        is_inclusive_tax: isInclusiveTax,
-      });
+      updateParentLineItemAndTaxState(new_line_items, isInclusiveTax);
     },
     [onLineItemsUpdate, isInclusiveTax],
   );
+  const updateParentLineItemAndTaxState = useCallback(
+    (new_line_items: LineItemRowType[], is_inclusive_tax:boolean) => {
+      setLineItems(new_line_items);
+      onLineItemsUpdate?.({
+        line_items: new_line_items,
+        is_inclusive_tax: is_inclusive_tax,
+      });
+    },
+    [onLineItemsUpdate],
+  );
   useEffect(() => {
     // at the time of creation, if line_items is empty, then add a blank row.
-    if (line_items.length === 0) {
+    if (isCreateMode && lineItems.length === 0) {
       updateParentLineItemState([Object.assign({}, BLANK_ROW)]);
     }
-  }, [line_items.length, updateParentLineItemState]);
+  }, [isCreateMode, lineItems.length, updateParentLineItemState]);
 
   useEffect(() => {
     if (line_items.length > 0) {
@@ -252,8 +260,9 @@ export function LineItemInputTable({
     selected: OnChangeValue<{ label: string; value: boolean }, false>,
   ) => {
     const value = selected.value;
-    updateParentLineItemState(calculateLineItems(lineItems, value));
     setIsInclusiveTax(value);
+    const line_items = calculateLineItems(lineItems, value);
+    updateParentLineItemAndTaxState(line_items, value);
   };
   const handleItemSelect = (item_id: number, index: number) => {
     const temp_line_item = [...lineItems];
@@ -299,9 +308,15 @@ export function LineItemInputTable({
             };
             item.is_loading = false;
             item.account = {
-                label: itemFor === "sales" ? fetched_item.sales_account_name : fetched_item.purchase_account_name,
-                value: itemFor === "sales" ? fetched_item.sales_account_id : fetched_item.purchase_account_id,
-            }
+              label:
+                itemFor === "sales"
+                  ? fetched_item.sales_account_name
+                  : fetched_item.purchase_account_name,
+              value:
+                itemFor === "sales"
+                  ? fetched_item.sales_account_id
+                  : fetched_item.purchase_account_id,
+            };
             return item;
           }
           return item;

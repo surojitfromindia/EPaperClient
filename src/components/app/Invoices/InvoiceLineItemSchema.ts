@@ -1,7 +1,8 @@
 import * as z from "zod";
-import { LineItemRowType } from "@/components/app/Invoices/LineItemInputTable.tsx";
+import { LineItemRowType } from "@/components/app/common/LineItemInputTable.tsx";
+import { InvoiceLineItemCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 
-const lineItemSchema = z.object({
+const invoiceLineItemSchema = z.object({
   item: z.object(
     {
       label: z.string(),
@@ -16,10 +17,11 @@ const lineItemSchema = z.object({
   account: z.object(
     {
       label: z.string(),
+      value: z.number(),
     },
     {
-      invalid_type_error: "Please select an account",
-      required_error: "Please select an account",
+      invalid_type_error: "Please select an item account",
+      required_error: "Please select an item account",
     },
   ),
   unit: z.string().optional(),
@@ -38,7 +40,9 @@ const lineItemSchema = z.object({
   discount_percentage: z.number().optional(),
 });
 
-const lineItemRowTypeToPayload = (lineItem: LineItemRowType) => {
+const invoiceLineItemRowToPayloadDTO = (
+  lineItem: LineItemRowType,
+): InvoiceLineItemCreationPayloadType => {
   return {
     item_id: lineItem.item.value,
     name: lineItem.item.label,
@@ -54,4 +58,4 @@ const lineItemRowTypeToPayload = (lineItem: LineItemRowType) => {
     account_id: lineItem.account.value,
   };
 };
-export { lineItemSchema, lineItemRowTypeToPayload };
+export { invoiceLineItemSchema, invoiceLineItemRowToPayloadDTO };

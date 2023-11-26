@@ -1,10 +1,14 @@
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
-import {ChartOfAccount} from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
-import {TaxRate} from "@/API/Resources/v1/TaxRate.ts";
-import {ItemUnit} from "@/API/Resources/v1/ItemUnit.ts";
-import {PaymentTerm} from "@/API/Resources/v1/PaymentTerm.ts";
-import {Item, ItemCreatePayload} from "@/API/Resources/v1/Item/Item.Service.ts";
+import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
+import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
+import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
+import {
+  Item,
+  ItemCreatePayload,
+} from "@/API/Resources/v1/Item/Item.Service.ts";
+import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -24,8 +28,9 @@ interface InvoiceLineItemGenerated {
 interface Invoice extends InvoiceGenerated {
   issue_date: string;
   due_date: string;
+  payment_term_id?: number;
   issue_date_formatted: string;
-    due_date_formatted: string;
+  due_date_formatted: string;
   contact_id: number;
   contact_name: string;
   reference_number: string;
@@ -93,13 +98,13 @@ class InvoiceService implements APIService {
     });
   }
 
-  addInvoice<T>({ payload }: { payload: T }) {
+  addInvoice({ payload }: { payload: InvoiceCreationPayloadType }) {
     const url = this.urlFragment;
     return this.#axiosConfig.APIPostRequestWrapper<
-        T,
-        {
-          invoice: Invoice;
-        }
+      InvoiceCreationPayloadType,
+      {
+        invoice: Invoice;
+      }
     >(url, payload);
   }
 
@@ -108,4 +113,9 @@ class InvoiceService implements APIService {
   }
 }
 export default InvoiceService;
-export type { Invoice,InvoiceEditPageContent, InvoiceLineItem, InvoiceLineItemGenerated };
+export type {
+  Invoice,
+  InvoiceEditPageContent,
+  InvoiceLineItem,
+  InvoiceLineItemGenerated,
+};

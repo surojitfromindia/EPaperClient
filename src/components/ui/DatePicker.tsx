@@ -17,6 +17,7 @@ export function DatePicker({
   className = "",
   onChange,
   dashedBorder = false,
+    ...props
 }) {
   const [date, setDate] = React.useState<Date>(value);
   const handleChanges = (date: Date) => {
@@ -37,6 +38,7 @@ export function DatePicker({
             className,
             dashedBorder && "border-dashed",
           )}
+          id={props.id}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
           {date ? format(date, "PPP") : <span>Pick a date</span>}
