@@ -6,7 +6,7 @@ import ReactSelect, {
 } from "react-select";
 import {
   reactSelectComponentOverride,
-  reactSelectStyle,
+  reactSelectStyle, reactSelectStyleBorderLess,
 } from "@/util/style/reactSelectStyle.ts";
 import {
   Table,
@@ -573,7 +573,7 @@ export function LineItemInputTable({
                             loadOptions={handleItemAutoCompleteChange}
                             onFocus={handleItemAutoCompleteInitialFocus}
                             placeholder="Type or select an item"
-                            classNames={reactSelectStyle}
+                            classNames={reactSelectStyleBorderLess}
                             components={{
                               ...reactSelectComponentOverride,
                               DropdownIndicator: () => null,
@@ -665,14 +665,14 @@ export function LineItemInputTable({
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="px-1 py-1 align-top">
+                    <TableCell className="px-0 py-0 align-top">
                       <div>
                         <ReactSelect
                           className={"w-full z-100"}
                           options={taxesDropDown}
                           inputId={"tax"}
                           placeholder={"Select tax"}
-                          classNames={reactSelectStyle}
+                          classNames={reactSelectStyleBorderLess}
                           components={{
                             ...reactSelectComponentOverride,
                             DropdownIndicator: (
@@ -912,12 +912,12 @@ const LineItemOverviewComponent = ({
         )
       }
       <Separator className={"my-2"} />
-      <div className={"grid grid-cols-10 justify-between"}>
-        <div className={"text-sm col-span-7 font-medium"}>Total</div>
+      <div className={"grid grid-cols-10 justify-between text-lg"}>
+        <div className={"col-span-7 font-medium"}>Total</div>
         <div className={"col-span-3 text-right"}>
           <RNumberFormat
             value={sum_of_item_total_tax_included}
-            className={" text-sm font-medium"}
+            className={" font-medium"}
             displayType={"text"}
           />
         </div>

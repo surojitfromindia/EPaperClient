@@ -40,6 +40,7 @@ import {
   invoiceLineItemSchema,
 } from "@/components/app/Invoices/InvoiceLineItemSchema.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
+import {toast} from "@/components/ui/use-toast.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -268,6 +269,16 @@ export default function InvoiceAdd() {
         payload: newInvoice,
       });
     }
+
+    // show a success message
+    const toastMessage = isEditMode
+        ? "Invoice is updated successfully"
+        : "Invoice is created successfully";
+    toast({
+      title: "Success",
+      description: toastMessage,
+    });
+    navigate("/app/invoices");
   };
   const setFormData = useCallback((data: typeof editPageItemDetails) => {}, []);
 

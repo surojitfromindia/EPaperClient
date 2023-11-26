@@ -14,7 +14,6 @@ const reactSelectStyle: ClassNamesConfig = {
   control: (state) =>
     classNames(
       "!border-input",
-
       state.isFocused && "!border-ring !shadow-none",
       "!text-sm",
       state.isDisabled && "!cursor-not-allowed",
@@ -30,4 +29,36 @@ const reactSelectStyle: ClassNamesConfig = {
 const reactSelectComponentOverride = {
   IndicatorSeparator: () => null,
 };
-export { reactSelectStyle, reactSelectComponentOverride };
+
+const reactSelectStyleBorderLess: ClassNamesConfig = {
+  option: (state) =>
+    classNames(
+      state.isSelected && "!bg-primary",
+      state.isFocused && !state.isSelected && "!bg-accent !text-primary",
+      "!text-sm",
+      "rounded-sm",
+    ),
+  groupHeading: () => classNames("!text-primary"),
+
+  control: (state) =>
+    classNames(
+      "!border-input",
+      "!text-sm",
+      state.isDisabled && "!cursor-not-allowed",
+      "!border-0",
+      state.isFocused && "!border-1 !border-ring !shadow-none",
+    ),
+  container: (state) =>
+    classNames(
+      "!border-input",
+      state.isDisabled && "!cursor-not-allowed !pointer-events-auto",
+    ),
+
+  menuList: () => classNames("!p-2 !max-h-52 overflow-y-scroll"),
+};
+
+export {
+  reactSelectStyle,
+  reactSelectComponentOverride,
+  reactSelectStyleBorderLess,
+};
