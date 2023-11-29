@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { Settings2Icon, X } from "lucide-react";
+import { Loader2, Settings2Icon, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -12,7 +12,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect from "react-select";
 import ReactAsyncSelect from "react-select/async";
@@ -40,7 +40,8 @@ import {
   invoiceLineItemSchema,
 } from "@/components/app/Invoices/InvoiceLineItemSchema.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
-import {toast} from "@/components/ui/use-toast.ts";
+import { toast } from "@/components/ui/use-toast.ts";
+import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -67,12 +68,22 @@ export default function InvoiceAdd() {
       payment_terms: [],
       line_item_accounts_list: [],
     });
-  const [isLoading, setIsLoading] = useState(true);
+
+  // loading states
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [isInitialContactLoadingDone, setIsInitialContactLoadingDone] =
-    useState(false);
+    useState<boolean>(false);
+  const [isSavingActionInProgress, setIsSavingActionInProgress] =
+    useState<boolean>(false);
+
   const [contactDefaultList, setContactDefaultList] = useState<
     { label: string; value: number }[]
   >([]);
+
+  const [errorMessagesForBanner, setErrorMessagesForBanner] = useState<
+    string[]
+  >([]);
+
   const handleCloseClick = () => {
     navigate("/app/invoices");
   };
@@ -151,7 +162,7 @@ export default function InvoiceAdd() {
         handleEditPageDetailsLoad(data);
       })
       .catch((error) => console.log(error))
-      .finally(() => setIsLoading(false));
+      .finally(() => setIsInitialLoading(false));
   }, [editInvoiceId, handleEditPageDetailsLoad]);
   const paymentTermsDropDown = useMemo(() => {
     const cratedPaymentTerms = editPageContent.payment_terms.map((acc) => ({
@@ -253,34 +264,58 @@ export default function InvoiceAdd() {
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-    if (isEditMode) {
-      true;
-    } else {
-      const newInvoice: InvoiceCreationPayloadType = {
-        contact_id: data.contact.value,
-        invoice_number: data.invoice_number,
-        issue_date: data.issue_date,
-        due_date: data.due_date,
-        payment_term_id: data.payment_term.value,
-        is_inclusive_tax: data.is_inclusive_tax,
-        line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
-      };
-      await invoiceService.addInvoice({
-        payload: newInvoice,
-      });
-    }
-
-    // show a success message
-    const toastMessage = isEditMode
+    try {
+      const toastMessage = isEditMode
         ? "Invoice is updated successfully"
         : "Invoice is created successfully";
-    toast({
-      title: "Success",
-      description: toastMessage,
-    });
-    navigate("/app/invoices");
+      setIsSavingActionInProgress(true);
+      if (isEditMode) {
+        return;
+      } else {
+        const newInvoice: InvoiceCreationPayloadType = {
+          contact_id: data.contact.value,
+          invoice_number: data.invoice_number,
+          issue_date: data.issue_date,
+          due_date: data.due_date,
+          payment_term_id: data.payment_term.value,
+          is_inclusive_tax: data.is_inclusive_tax,
+          line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
+        };
+        await invoiceService
+          .addInvoice({
+            payload: newInvoice,
+          })
+          .then(() => {
+            toast({
+              title: "Success",
+              description: toastMessage,
+            });
+            navigate("/app/invoices");
+          })
+          .catch((error: WrappedError) => {
+            setErrorMessagesForBanner([error.message]);
+          });
+      }
+    } catch (error) {
+      setErrorMessagesForBanner([error.message]);
+    } finally {
+      setIsSavingActionInProgress(false);
+    }
   };
-  const setFormData = useCallback((data: typeof editPageItemDetails) => {}, []);
+  const setFormData = useCallback(
+    (data: typeof editPageItemDetails) => {
+      setValue("contact", {
+        label: data.contact_name,
+        value: data.contact_id,
+      });
+      setValue("invoice_number", data.invoice_number);
+      setValue("issue_date", data.issue_date);
+      setValue("due_date", data.due_date);
+      setValue("is_inclusive_tax", data.is_inclusive_tax);
+      setValue("line_items", data.line_items);
+    },
+    [setValue],
+  );
 
   // effects
   useEffect(() => {
@@ -295,14 +330,21 @@ export default function InvoiceAdd() {
     }
   }, [editPageItemDetails, setFormData]);
 
-  if (isLoading) {
+  // update the error message banner
+  useEffect(() => {
+    if (errors) {
+      setErrorMessagesForBanner(deepFlatReactHookFormErrorOnlyMessage(errors));
+    }
+  }, [errors]);
+
+  if (isInitialLoading) {
     return (
       <div className={"relative h-screen w-full"}>
         <LoaderComponent />
       </div>
     );
   }
-  console.log("errors", errors);
+
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
       <div className={"flex-grow overflow-y-auto"}>
@@ -319,9 +361,7 @@ export default function InvoiceAdd() {
           </span>
         </div>
         <div className={"px-5"}>
-          <FormValidationErrorAlert
-            messages={deepFlatReactHookFormErrorOnlyMessage(errors)}
-          />
+          <FormValidationErrorAlert messages={errorMessagesForBanner} />
         </div>
         <Form {...form}>
           <form>
@@ -501,6 +541,9 @@ export default function InvoiceAdd() {
           className={"capitalize"}
           onClick={handleSubmit(handleFormSubmit)}
         >
+          {isSavingActionInProgress && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           {submitButtonText}
         </Button>
         <Button
@@ -537,7 +580,7 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   }
   return { due_date: date };
 }
-function deepFlatReactHookFormErrorOnlyMessage(errors) {
+function deepFlatReactHookFormErrorOnlyMessage(errors): string[] {
   const flattenedErrors = {};
   const flattenErrors = (errorObject, parentKey = "") => {
     for (const key in errorObject) {

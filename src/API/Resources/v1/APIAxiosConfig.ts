@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from "axios";
 
 const baseURL = `${import.meta.env["VITE_API_BASE_URL"]}/v1`;
-const axiosInstance = () =>{
+const axiosInstance = () => {
   const _ePaperC = localStorage.getItem("_ePaperC");
   return axios.create({
     baseURL,
@@ -10,9 +10,7 @@ const axiosInstance = () =>{
       Authorization: `Bearer ${_ePaperC}`,
     },
   });
-}
-
-
+};
 
 interface APIResponse<T> extends AxiosResponse {
   data: {
@@ -20,6 +18,15 @@ interface APIResponse<T> extends AxiosResponse {
     code: number;
     data: T;
   };
+}
+
+interface APIError {
+  success: boolean;
+  code: number;
+  message: string;
+  errors: {
+    message: string;
+  }[];
 }
 
 interface APISearchParam {
@@ -50,93 +57,78 @@ class APIAxiosConfig {
     path: string,
     payload: TPayload,
   ) {
-    try {
-      const url = new URL(path, baseURL);
-      const postURLSearchParams = url.searchParams;
-      this.setAllSearchParameters(this._commonQuery, postURLSearchParams);
-      this.setAllSearchParameters([...this._commonQuery], postURLSearchParams);
-      console.log("POST: ", url);
-      const postURL = url.pathname + url.search;
-      const axiosResponse = await axiosInstance().post<
-        TResponse,
-        APIResponse<TResponse>,
-        TPayload
-      >(postURL, payload);
-      if (axiosResponse.data.success) {
-        return axiosResponse.data.data;
-      }
-    } catch (error: unknown) {
-      this.ResponseErrorHandler(error);
+    const url = new URL(path, baseURL);
+    const postURLSearchParams = url.searchParams;
+    this.setAllSearchParameters(this._commonQuery, postURLSearchParams);
+    this.setAllSearchParameters([...this._commonQuery], postURLSearchParams);
+    const postURL = url.pathname + url.search;
+    const axiosResponse = await axiosInstance()
+      .post<TResponse, APIResponse<TResponse>, TPayload>(postURL, payload)
+      .catch((error) => {
+        this.ResponseErrorHandler(error);
+        return;
+      });
+
+    if (axiosResponse && axiosResponse.data.success) {
+      return axiosResponse.data.data;
     }
   }
   async APIPutRequestWrapper<TPayload, TResponse>(
     path: string,
     payload: TPayload,
   ) {
-    try {
-      const url = new URL(path, baseURL);
-      const putURLSearchParams = url.searchParams;
-      this.setAllSearchParameters(this._commonQuery, putURLSearchParams);
-      this.setAllSearchParameters([...this._commonQuery], putURLSearchParams);
-      console.log("PUT: ", url);
-      const putURL = url.pathname + url.search;
-      const axiosResponse = await axiosInstance().put<
-        TResponse,
-        APIResponse<TResponse>,
-        TPayload
-      >(putURL, payload);
-      if (axiosResponse.data.success) {
-        return axiosResponse.data.data;
-      }
-    } catch (error: unknown) {
-      this.ResponseErrorHandler(error);
+    const url = new URL(path, baseURL);
+    const putURLSearchParams = url.searchParams;
+    this.setAllSearchParameters(this._commonQuery, putURLSearchParams);
+    this.setAllSearchParameters([...this._commonQuery], putURLSearchParams);
+    const putURL = url.pathname + url.search;
+    const axiosResponse = await axiosInstance()
+      .put<TResponse, APIResponse<TResponse>, TPayload>(putURL, payload)
+      .catch((error) => {
+        this.ResponseErrorHandler(error);
+        return;
+      });
+
+    if (axiosResponse && axiosResponse.data.success) {
+      return axiosResponse.data.data;
     }
   }
 
   async APIDeleteRequestWrapper<TResponse>(path: string) {
-    try {
-      const url = new URL(path, baseURL);
-      const deleteURLSearchParams = url.searchParams;
-      this.setAllSearchParameters(this._commonQuery, deleteURLSearchParams);
-      this.setAllSearchParameters(
-        [...this._commonQuery],
-        deleteURLSearchParams,
-      );
-      console.log("DELETE: ", url);
-      const deleteURL = url.pathname + url.search;
-      const axiosResponse = await axiosInstance().delete<
-        TResponse,
-        APIResponse<TResponse>
-      >(deleteURL);
-      if (axiosResponse.data.success) {
-        return true;
-      }
-    } catch (error: unknown) {
-      this.ResponseErrorHandler(error);
+    const url = new URL(path, baseURL);
+    const deleteURLSearchParams = url.searchParams;
+    this.setAllSearchParameters(this._commonQuery, deleteURLSearchParams);
+    this.setAllSearchParameters([...this._commonQuery], deleteURLSearchParams);
+    const deleteURL = url.pathname + url.search;
+    const axiosResponse = await axiosInstance()
+      .delete<TResponse, APIResponse<TResponse>>(deleteURL)
+      .catch((error) => {
+        this.ResponseErrorHandler(error);
+        return;
+      });
+
+    if (axiosResponse && axiosResponse.data.success) {
+      return axiosResponse.data.data;
     }
   }
 
   async APIGetRequestWrapper<TResponse>(path: string, options?: GetOptions) {
-    try {
-      const url = new URL(path, baseURL);
-      const postURLSearchParams = url.searchParams;
-      const searchParametersFromOption = options?.searchParameters ?? [];
-      this.setAllSearchParameters(
-        [...this._commonQuery, ...searchParametersFromOption],
-        postURLSearchParams,
-      );
-      console.log("GET:", url);
-      const getURL = url.pathname + url.search;
-      const axiosResponse = await axiosInstance().get<
-        TResponse,
-        APIResponse<TResponse>
-      >(getURL);
-      if (axiosResponse.data.success) {
-        console.log("Got data from", url.toString());
-        return axiosResponse.data.data;
-      }
-    } catch (error: unknown) {
-      this.ResponseErrorHandler(error);
+    const url = new URL(path, baseURL);
+    const postURLSearchParams = url.searchParams;
+    const searchParametersFromOption = options?.searchParameters ?? [];
+    this.setAllSearchParameters(
+      [...this._commonQuery, ...searchParametersFromOption],
+      postURLSearchParams,
+    );
+    const getURL = url.pathname + url.search;
+    const axiosResponse = await axiosInstance()
+      .get<TResponse, APIResponse<TResponse>>(getURL)
+      .catch((error) => {
+        this.ResponseErrorHandler(error);
+        return;
+      });
+    if (axiosResponse && axiosResponse.data.success) {
+      return axiosResponse.data.data;
     }
   }
 
@@ -145,12 +137,7 @@ class APIAxiosConfig {
   }
 
   private ResponseErrorHandler(error: unknown) {
-    if (axios.isAxiosError(error)) {
-      throw new Error("Axios error");
-    } else {
-      console.log(error);
-      throw new Error("Unknown error");
-    }
+    throw new WrappedError(error);
   }
 
   private setAllSearchParameters(
@@ -167,3 +154,40 @@ class APIAxiosConfig {
 }
 
 export default new APIAxiosConfig();
+
+class WrappedError extends Error {
+  private readonly errors: { message: string }[];
+  private readonly messageText: string;
+  constructor(apiError: unknown) {
+    let messageText: string = "";
+    if (axios.isAxiosError<APIError>(apiError)) {
+      const response = apiError.response;
+      const errorCode = response?.status;
+      if (errorCode === 401) {
+        messageText = "Unauthorized";
+      } else if (errorCode === 403) {
+        messageText = "Forbidden";
+      } else if (errorCode === 404) {
+        messageText = response.data.message ?? "Not Found";
+      } else if (errorCode === 500) {
+        messageText = "Internal Server Error";
+      } else {
+        messageText = "Something went wrong";
+      }
+      super(messageText);
+      this.messageText = messageText;
+      this.errors = response?.data?.errors ?? [];
+    } else {
+      super("Something went wrong");
+      this.errors = [];
+      this.messageText = "Something went wrong";
+    }
+  }
+  get message() {
+    return this.messageText;
+  }
+  get messages() {
+    return this.errors.map((error) => error.message);
+  }
+}
+export { WrappedError };

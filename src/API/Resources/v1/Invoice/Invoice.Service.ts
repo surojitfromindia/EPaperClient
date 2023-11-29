@@ -26,8 +26,8 @@ interface InvoiceLineItemGenerated {
   item_total_tax_included: number;
 }
 interface Invoice extends InvoiceGenerated {
-  issue_date: string;
-  due_date: string;
+  issue_date: Date;
+  due_date: Date;
   payment_term_id?: number;
   issue_date_formatted: string;
   due_date_formatted: string;
@@ -37,7 +37,7 @@ interface Invoice extends InvoiceGenerated {
   order_number: string;
   terms: string;
   notes: string;
-  is_inclusive_tax: string;
+  is_inclusive_tax: boolean;
   line_items: InvoiceLineItem[];
 }
 interface InvoiceLineItem extends InvoiceLineItemGenerated {

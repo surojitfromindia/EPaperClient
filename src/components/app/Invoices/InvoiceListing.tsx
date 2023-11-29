@@ -108,7 +108,7 @@ export function InvoiceListing({
         prefix: organizationCurrencyCode,
       },
     }),
-    [],
+    [organizationCurrencyCode],
   );
   const dynamicHeadersAsArray = useMemo(
     () => objectEntries(dynamicHeaders),
