@@ -64,6 +64,7 @@ type InvoiceEditPageContent = {
   units: ItemUnit[];
   line_item_accounts_list: ChartOfAccount[];
   payment_terms: PaymentTerm[];
+  invoice?: Invoice;
 };
 
 class InvoiceService implements APIService {

@@ -106,6 +106,8 @@ function App() {
           path: "invoices",
           errorElement: <Page404 />,
           children: [
+
+
             {
               path: "",
               element: (
@@ -121,6 +123,10 @@ function App() {
                   <InvoiceAdd />
                 </LazyWrapper>
               ),
+            },
+            {
+              path: ":invoice_id_param/edit",
+              element: <LazyWrapper><InvoiceAdd /></LazyWrapper>,
             },
           ],
         },

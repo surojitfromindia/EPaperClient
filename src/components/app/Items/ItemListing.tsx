@@ -215,7 +215,7 @@ export function ItemListing({
                             <MoreVertical className={"h-4 cursor-pointer"} />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
-                            className="text-sm w-56 bg-gray-50 outline-none  p-1"
+                            className="text-sm  bg-gray-50 outline-none  p-1"
                             align={"end"}
                           >
                             <DropdownMenuItem
@@ -226,7 +226,7 @@ export function ItemListing({
                               }
                             >
                               <Edit className={"h-4 w-4"} />
-                              <span>Configure</span>
+                              <span>Edit</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className={"menu-item-danger"}

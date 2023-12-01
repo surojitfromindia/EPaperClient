@@ -47,20 +47,20 @@ const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
 
 export default function InvoiceAdd() {
-  const { invoice_id } = useParams();
+  const { invoice_id_param } = useParams();
   const editInvoiceId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
-    const parseResult = Number.parseInt(invoice_id ?? "");
+    const parseResult = Number.parseInt(invoice_id_param ?? "");
     if (!Number.isNaN(parseResult)) {
       return parseResult;
     }
-  }, [invoice_id]);
+  }, [invoice_id_param]);
   const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
 
   const navigate = useNavigate();
-  const [editPageItemDetails] = useState<Invoice>();
+  const [editPageInvoiceDetails,setEditPageInvoiceDetails] = useState<Invoice>();
   const [editPageContent, setEditPageContent] =
     useState<InvoiceEditPageContent>({
       taxes: [],
@@ -158,6 +158,7 @@ export default function InvoiceAdd() {
         invoice_id: editInvoiceId,
       })
       .then((data) => {
+        setEditPageInvoiceDetails(data?.invoice);
         setEditPageContent(data!);
         handleEditPageDetailsLoad(data);
       })
@@ -303,7 +304,7 @@ export default function InvoiceAdd() {
     }
   };
   const setFormData = useCallback(
-    (data: typeof editPageItemDetails) => {
+    (data: typeof editPageInvoiceDetails) => {
       setValue("contact", {
         label: data.contact_name,
         value: data.contact_id,
@@ -325,10 +326,10 @@ export default function InvoiceAdd() {
     };
   }, [loadEditPage]);
   useEffect(() => {
-    if (editPageItemDetails) {
-      setFormData(editPageItemDetails);
+    if (editPageInvoiceDetails) {
+      setFormData(editPageInvoiceDetails);
     }
-  }, [editPageItemDetails, setFormData]);
+  }, [editPageInvoiceDetails, setFormData]);
 
   // update the error message banner
   useEffect(() => {
@@ -529,6 +530,7 @@ export default function InvoiceAdd() {
                   itemFor={"sales"}
                   onLineItemsUpdate={handleLineItemsUpdate}
                   isCreateMode={!isEditMode}
+                  line_items={editPageInvoiceDetails?.line_items ?? []}
                 />
               </div>
             </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format } from "date-fns";
+import {format, parseISO} from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,18 @@ export function DatePicker({
   dashedBorder = false,
     ...props
 }) {
-  const [date, setDate] = React.useState<Date>(value);
+  const [date, setDate] = React.useState<Date>();
   const handleChanges = (date: Date) => {
     setDate(date);
     onChange?.(date);
   };
   useEffect(() => {
-    setDate(value);
+    // if date is string, convert it to date
+    if (typeof value === "string") {
+      setDate(parseISO(value));
+    } else if (value instanceof Date) {
+      setDate(value);
+    }
   }, [value]);
   return (
     <Popover>
@@ -41,7 +46,7 @@ export function DatePicker({
           id={props.id}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
+          {date ? format(date, "yyyy-MM-dd") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

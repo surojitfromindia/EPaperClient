@@ -148,9 +148,11 @@ export function LineItemInputTable({
   }, [isCreateMode, lineItems.length, updateParentLineItemState]);
 
   useEffect(() => {
-    if (line_items.length > 0) {
-      setLineItems([...line_items]);
+    if (line_items.length > 0){
+
     }
+      // setLineItems([...line_items]);
+
   }, [line_items]);
 
   const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =
