@@ -236,7 +236,7 @@ export function InvoiceListing({
                             <MoreVertical className={"h-4 cursor-pointer"} />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
-                            className="text-sm w-56 bg-gray-50 outline-none  p-1"
+                            className="text-sm bg-gray-50 outline-none  p-1"
                             align={"end"}
                           >
                             <DropdownMenuItem

@@ -6,7 +6,8 @@ import ReactSelect, {
 } from "react-select";
 import {
   reactSelectComponentOverride,
-  reactSelectStyle, reactSelectStyleBorderLess,
+  reactSelectStyle,
+  reactSelectStyleBorderLess,
 } from "@/util/style/reactSelectStyle.ts";
 import {
   Table,
@@ -34,7 +35,7 @@ import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
 import {
   InvoiceLineItem,
-  InvoiceLineItemGenerated,
+
 } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
@@ -53,12 +54,13 @@ const mathLib = new MathLib({ precision: 2 });
 type LineItemInputTableProps = {
   taxesDropDown: { label: string; value: number; tax_percentage: number }[]; // Replace 'any' with the actual type
   itemFor: "sales" | "purchase";
-  line_items?: (InvoiceLineItem | InvoiceLineItemGenerated)[];
+  line_items?: InvoiceLineItem[];
   onLineItemsUpdate: (line_items: {
     is_inclusive_tax: boolean;
     line_items: LineItemRowType[];
   }) => void;
-    isCreateMode?: boolean;
+  isCreateMode?: boolean;
+  isTransactionInclusiveTax?: boolean;
 };
 type LINE_ITEM_OPTION_TYPE = {
   label: string;
@@ -77,7 +79,6 @@ type LineItemRowType = {
   description: string;
   quantity: number;
   rate: number;
-  discount: number;
   tax: LineItemTaxRowType;
   tax_percentage: number;
   tax_amount: number;
@@ -98,7 +99,6 @@ const BLANK_ROW: LineItemRowType = Object.freeze({
   description: "",
   quantity: 1,
   rate: 0,
-  discount: 0,
   tax: null,
   tax_percentage: 0,
   tax_amount: 0,
@@ -115,9 +115,13 @@ export function LineItemInputTable({
   line_items = [],
   onLineItemsUpdate,
   isCreateMode = true,
+  isTransactionInclusiveTax = false,
 }: LineItemInputTableProps) {
+  // console.log("isTransactionInclusiveTax",isTransactionInclusiveTax)
   const [lineItems, setLineItems] = useState([]);
-  const [isInclusiveTax, setIsInclusiveTax] = useState(false);
+  const [isInclusiveTax, setIsInclusiveTax] = useState(
+    isTransactionInclusiveTax,
+  );
   const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
   /**
    * only call this function if we want to update any needed state in the parent component.
@@ -131,7 +135,7 @@ export function LineItemInputTable({
     [onLineItemsUpdate, isInclusiveTax],
   );
   const updateParentLineItemAndTaxState = useCallback(
-    (new_line_items: LineItemRowType[], is_inclusive_tax:boolean) => {
+    (new_line_items: LineItemRowType[], is_inclusive_tax: boolean) => {
       setLineItems(new_line_items);
       onLineItemsUpdate?.({
         line_items: new_line_items,
@@ -148,11 +152,36 @@ export function LineItemInputTable({
   }, [isCreateMode, lineItems.length, updateParentLineItemState]);
 
   useEffect(() => {
-    if (line_items.length > 0){
-
+    if (line_items.length > 0) {
+      const mapped_line_items = line_items.map((line_item) => ({
+        item: {
+          label: line_item.name,
+          value: line_item.item_id,
+          rate: line_item.rate,
+        },
+        unit: line_item.unit,
+        unit_id: line_item.unit_id,
+        description: line_item.description,
+        quantity: line_item.quantity,
+        rate: line_item.rate,
+        discount_percentage: line_item.discount_percentage,
+        discount_amount: line_item.discount_amount,
+        tax: line_item.tax_id
+          ? {
+              label: `${line_item.tax_name} [${line_item.tax_percentage}%]`,
+              value: line_item.tax_id,
+              tax_percentage: line_item.tax_percentage,
+            }
+          : null,
+        tax_percentage: line_item.tax_percentage,
+        tax_amount: line_item.tax_amount,
+        item_total: line_item.item_total,
+        item_total_tax_included: line_item.item_total_tax_included,
+        is_loading: false,
+      }));
+      setIsInclusiveTax(isTransactionInclusiveTax);
+      setLineItems(calculateLineItems(mapped_line_items, isTransactionInclusiveTax));
     }
-      // setLineItems([...line_items]);
-
   }, [line_items]);
 
   const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =

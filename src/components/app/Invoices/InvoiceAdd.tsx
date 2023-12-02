@@ -20,7 +20,6 @@ import {
   reactSelectComponentOverride,
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
-import { DatePicker } from "@/components/ui/DatePicker.tsx";
 import InvoiceService, {
   Invoice,
   InvoiceEditPageContent,
@@ -38,14 +37,18 @@ import { FormValidationErrorAlert } from "@/components/app/common/FormValidation
 import {
   invoiceLineItemRowToPayloadDTO,
   invoiceLineItemSchema,
-} from "@/components/app/Invoices/InvoiceLineItemSchema.ts";
+} from "@/components/app/common/ValidationSchemas/InvoiceLineItemSchema.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
-
+const CUSTOM_PAYMENT_TERM ={
+    label: "CUSTOM",
+    is_custom: true,
+    value: -1,
+}
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
   const editInvoiceId = useMemo(() => {
@@ -60,7 +63,8 @@ export default function InvoiceAdd() {
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
 
   const navigate = useNavigate();
-  const [editPageInvoiceDetails,setEditPageInvoiceDetails] = useState<Invoice>();
+  const [editPageInvoiceDetails, setEditPageInvoiceDetails] =
+    useState<Invoice>();
   const [editPageContent, setEditPageContent] =
     useState<InvoiceEditPageContent>({
       taxes: [],
@@ -110,24 +114,26 @@ export default function InvoiceAdd() {
       value: z.number().optional(),
       label: z.string(),
       is_custom: z.boolean().optional(),
+      payment_term: z.number().optional(),
+      interval: z.string().optional(),
     }),
     due_date: z.date(),
     line_items: z.array(invoiceLineItemSchema),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: {},
+    defaultValues: {
+      payment_term: CUSTOM_PAYMENT_TERM
+    },
   });
   const {
     register,
     handleSubmit,
-    watch,
     control,
     setValue,
     formState: { errors },
+    getValues,
   } = form;
-  const issue_date_watch_value = watch("issue_date");
-  const payment_term_watch_value = watch("payment_term");
 
   const handleEditPageDetailsLoad = useCallback(
     (data: InvoiceEditPageContent) => {
@@ -146,11 +152,12 @@ export default function InvoiceAdd() {
         paymentTerm: defaultPaymentTerm!,
       }).due_date;
 
+      if(isEditMode) return;
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
     },
-    [setValue],
+    [isEditMode, setValue],
   );
   const loadEditPage = useCallback(() => {
     invoiceService
@@ -173,12 +180,8 @@ export default function InvoiceAdd() {
       payment_term: acc.payment_term,
       interval: acc.interval,
     }));
-    const customPaymentTerms = {
-      label: "Custom",
-      is_custom: true,
-      value: -1,
-    };
-    return [...cratedPaymentTerms, customPaymentTerms];
+
+    return [...cratedPaymentTerms, CUSTOM_PAYMENT_TERM];
   }, [editPageContent.payment_terms]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
@@ -188,6 +191,7 @@ export default function InvoiceAdd() {
     }));
   }, [editPageContent.taxes]);
   const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
+    const issue_date_watch_value = getValues("issue_date");
     if (selectedOption.is_custom) return;
     // depending on the payment term, set the due date
     const paymentTerm = selectedOption;
@@ -198,6 +202,7 @@ export default function InvoiceAdd() {
     setValue("due_date", newDate);
   };
   const handleIssueDateChange = (date: Date) => {
+    const payment_term_watch_value = getValues("payment_term");
     if (payment_term_watch_value.is_custom) return;
 
     // depending on the payment term, set the due date
@@ -212,7 +217,7 @@ export default function InvoiceAdd() {
     setValue("due_date", date);
     // on due date manual change, set the payment term to custom
     setValue("payment_term", {
-      label: "Custom",
+      label: "CUSTOM",
       is_custom: true,
       value: -1,
     });
@@ -310,8 +315,15 @@ export default function InvoiceAdd() {
         value: data.contact_id,
       });
       setValue("invoice_number", data.invoice_number);
-      setValue("issue_date", data.issue_date);
-      setValue("due_date", data.due_date);
+      setValue("issue_date", new Date(data.issue_date));
+      setValue("payment_term", {
+        label: data.payment_term_name,
+        value: data.payment_term_id,
+        payment_term: data.payment_term,
+        interval: data.payment_term_interval,
+        is_custom: data.payment_term_id===CUSTOM_PAYMENT_TERM.value
+      });
+      setValue("due_date", new Date(data.due_date));
       setValue("is_inclusive_tax", data.is_inclusive_tax);
       setValue("line_items", data.line_items);
     },
@@ -330,13 +342,13 @@ export default function InvoiceAdd() {
       setFormData(editPageInvoiceDetails);
     }
   }, [editPageInvoiceDetails, setFormData]);
-
   // update the error message banner
   useEffect(() => {
     if (errors) {
       setErrorMessagesForBanner(deepFlatReactHookFormErrorOnlyMessage(errors));
     }
   }, [errors]);
+
 
   if (isInitialLoading) {
     return (
@@ -441,13 +453,17 @@ export default function InvoiceAdd() {
                       </FormLabel>
                       <div className="col-span-3 flex-col">
                         <FormControl>
-                          <DatePicker
-                            value={field.value}
-                            onChange={(value: Date) => {
-                              handleIssueDateChange(value);
-                              field.onChange(value);
-                            }}
+                          <Input
+                            type={"date"}
+                            {...field}
                             id={"issue_date"}
+                            value={DateUtil.Formatter(field.value).format(
+                              "yyyy-MM-dd",
+                            )}
+                            onChange={(e) => {
+                              handleIssueDateChange(new Date(e.target.value));
+                              field.onChange(new Date(e.target.value));
+                            }}
                           />
                         </FormControl>
                       </div>
@@ -482,7 +498,7 @@ export default function InvoiceAdd() {
                               components={{
                                 ...reactSelectComponentOverride,
                               }}
-                              value={field.value}
+
                               onChange={(value: PaymentTerm) => {
                                 handlePaymentTermChange(value);
                                 field.onChange(value);
@@ -505,14 +521,17 @@ export default function InvoiceAdd() {
                         </FormLabel>
                         <div className="col-span-3 flex-col">
                           <FormControl>
-                            <DatePicker
-                              dashedBorder={true}
-                              value={field.value}
-                              onChange={(value: Date) => {
-                                handleDueDateChange(value);
-                                field.onChange(value);
-                              }}
+                            <Input
+                              type={"date"}
+                              {...field}
                               id={"due_date"}
+                              value={DateUtil.Formatter(field.value).format(
+                                "yyyy-MM-dd",
+                              )}
+                              onChange={(e) => {
+                                handleDueDateChange(new Date(e.target.value));
+                                field.onChange(new Date(e.target.value));
+                              }}
                             />
                           </FormControl>
                         </div>
@@ -531,6 +550,7 @@ export default function InvoiceAdd() {
                   onLineItemsUpdate={handleLineItemsUpdate}
                   isCreateMode={!isEditMode}
                   line_items={editPageInvoiceDetails?.line_items ?? []}
+                  isTransactionInclusiveTax={getValues("is_inclusive_tax")}
                 />
               </div>
             </div>
