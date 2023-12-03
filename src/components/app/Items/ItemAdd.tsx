@@ -123,7 +123,7 @@ export default function ItemAdd(props: ItemAddProp) {
     }));
   }, [editPageContent.taxes]);
   const handleCloseClick = () => {
-    if (props.isModal===true) {
+    if (props.isModal === true) {
       props.closeModal();
       return;
     }

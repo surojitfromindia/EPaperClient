@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button.tsx";
 import { useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import {BookMarked, ChevronLeft, Gauge, Receipt, ShoppingCart} from "lucide-react";
+import {
+  BookMarked,
+  ChevronLeft,
+  Gauge,
+  Receipt,
+  ShoppingCart,
+} from "lucide-react";
 import classNames from "classnames";
 
 export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {

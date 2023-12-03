@@ -28,8 +28,14 @@ import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 interface InvoiceTableView
   extends Pick<
     Invoice,
-    "issue_date_formatted" | "invoice_number" | "contact_name" | "due_date_formatted" | "order_number" | "total"
+    | "issue_date_formatted"
+    | "invoice_number"
+    | "contact_name"
+    | "due_date_formatted"
+    | "order_number"
+    | "total"
   > {}
+
 interface FixedTableFields
   extends Pick<Invoice, "issue_date_formatted" | "invoice_number"> {}
 
@@ -86,12 +92,12 @@ export function InvoiceListing({
     TableHeaderBody
   > = useMemo(
     () => ({
-     due_date_formatted : {
+      due_date_formatted: {
         label: "due date",
         removable: true,
         type: "text",
       },
-      contact_name:{
+      contact_name: {
         label: "customer name",
         removable: true,
         type: "text",
@@ -186,7 +192,9 @@ export function InvoiceListing({
                         "py-3 font-medium whitespace-nowrap align-top "
                       }
                     >
-                      <span className={"w-36"}>{invoice.issue_date_formatted}</span>
+                      <span className={"w-36"}>
+                        {invoice.issue_date_formatted}
+                      </span>
                     </TableCell>
                     <TableCell
                       onClick={() => {

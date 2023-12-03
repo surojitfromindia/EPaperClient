@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Tabs,
@@ -15,11 +16,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.tsx";
-import * as React from "react";
 import ItemService, { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
+
 const itemService = new ItemService();
 
 export default function ItemDetails() {
@@ -178,6 +179,7 @@ export default function ItemDetails() {
     </main>
   );
 }
+
 interface ItemOverViewProps extends React.HTMLAttributes<HTMLDivElement> {
   itemDetails?: Item;
 }

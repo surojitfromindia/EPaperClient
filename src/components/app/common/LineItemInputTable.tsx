@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactSelect, {
   components,
   DropdownIndicatorProps,
+  OnChangeValue,
   OptionProps,
 } from "react-select";
 import {
@@ -20,7 +21,6 @@ import {
 import { ChevronDown, CircleEllipsis, PlusCircle, XCircle } from "lucide-react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactAsyncSelect from "react-select/async";
-import { OnChangeValue } from "react-select";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import {
@@ -112,6 +112,7 @@ const BLANK_ROW: LineItemRowType = Object.freeze({
   is_loading: false,
   account: null,
 });
+
 export function LineItemInputTable({
   taxesDropDown,
   itemFor,
@@ -824,24 +825,23 @@ export function LineItemInputTable({
               </DropdownMenu>
             </div>
             <div className={"mt-3"}>
-            <FormField
-
-              render={({field}) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      name={"contact_notes"}
-                      className=" bg-gray-50/80 text-gray-500 "
-                      placeholder={"Thank you for your business."}
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-              name={"notes"}
-            />
-          </div>
+              <FormField
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        name={"contact_notes"}
+                        className=" bg-gray-50/80 text-gray-500 "
+                        placeholder={"Thank you for your business."}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+                name={"notes"}
+              />
+            </div>
           </div>
 
           <div className={"w-[400px]"}>
@@ -860,6 +860,7 @@ export function LineItemInputTable({
     </>
   );
 }
+
 const ITEM_OPTIONS_COMPONENT: React.FC<
   OptionProps<LINE_ITEM_OPTION_TYPE, false>
 > = (props) => (

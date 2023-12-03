@@ -1,4 +1,4 @@
-import {Outlet, useLocation, useNavigate} from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/app/SideBar.tsx";
 import TopBar from "@/components/app/TopBar.tsx";
 import { useCallback, useEffect, useState } from "react";
@@ -17,8 +17,8 @@ export default function EPaper() {
   const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
-  const [openSideDrawer,setOpenSideDrawer] = useState(false);
-  const {pathname} = useLocation()
+  const [openSideDrawer, setOpenSideDrawer] = useState(false);
+  const { pathname } = useLocation();
   // load app state.
   const loadApplicationState = useCallback(async (): Promise<boolean> => {
     await ApplicationState.build();
@@ -34,14 +34,14 @@ export default function EPaper() {
       .catch((error) => {
         console.log(error);
         setApplicationLoading(false);
-        navigate("/404")
+        navigate("/404");
       });
   }, [loadApplicationState]);
 
   // header, navbar and side components will stay here,
   // as those must appear all the time.
   useEffect(() => {
-    setOpenSideDrawer(false)
+    setOpenSideDrawer(false);
   }, [pathname]);
   return (
     <>
@@ -67,9 +67,9 @@ export default function EPaper() {
                   <Toaster />
                 </div>
                 <Button
-                    onClick={()=>{
-                      setOpenSideDrawer(prev=>!prev)
-                    }}
+                  onClick={() => {
+                    setOpenSideDrawer((prev) => !prev);
+                  }}
                   size={"icon"}
                   className={"sm:hidden p-3 rounded-3xl fixed right-5 bottom-5"}
                 >

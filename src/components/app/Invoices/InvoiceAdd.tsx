@@ -44,11 +44,11 @@ import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
-const CUSTOM_PAYMENT_TERM ={
-    label: "CUSTOM",
-    is_custom: true,
-    value: -1,
-}
+const CUSTOM_PAYMENT_TERM = {
+  label: "CUSTOM",
+  is_custom: true,
+  value: -1,
+};
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
   const editInvoiceId = useMemo(() => {
@@ -124,7 +124,7 @@ export default function InvoiceAdd() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      payment_term: CUSTOM_PAYMENT_TERM
+      payment_term: CUSTOM_PAYMENT_TERM,
     },
   });
   const {
@@ -153,7 +153,7 @@ export default function InvoiceAdd() {
         paymentTerm: defaultPaymentTerm!,
       }).due_date;
 
-      if(isEditMode) return;
+      if (isEditMode) return;
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
@@ -287,7 +287,7 @@ export default function InvoiceAdd() {
           payment_term_id: data.payment_term.value,
           is_inclusive_tax: data.is_inclusive_tax,
           line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
-          notes: data.notes
+          notes: data.notes,
         };
         await invoiceService
           .addInvoice({
@@ -323,12 +323,12 @@ export default function InvoiceAdd() {
         value: data.payment_term_id,
         payment_term: data.payment_term,
         interval: data.payment_term_interval,
-        is_custom: data.payment_term_id===CUSTOM_PAYMENT_TERM.value
+        is_custom: data.payment_term_id === CUSTOM_PAYMENT_TERM.value,
       });
       setValue("due_date", new Date(data.due_date));
       setValue("is_inclusive_tax", data.is_inclusive_tax);
       setValue("line_items", data.line_items);
-      setValue("notes",data.notes)
+      setValue("notes", data.notes);
     },
     [setValue],
   );
@@ -351,7 +351,6 @@ export default function InvoiceAdd() {
       setErrorMessagesForBanner(deepFlatReactHookFormErrorOnlyMessage(errors));
     }
   }, [errors]);
-
 
   if (isInitialLoading) {
     return (
@@ -501,7 +500,6 @@ export default function InvoiceAdd() {
                               components={{
                                 ...reactSelectComponentOverride,
                               }}
-
                               onChange={(value: PaymentTerm) => {
                                 handlePaymentTermChange(value);
                                 field.onChange(value);
@@ -605,6 +603,7 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   }
   return { due_date: date };
 }
+
 function deepFlatReactHookFormErrorOnlyMessage(errors): string[] {
   const flattenedErrors = {};
   const flattenErrors = (errorObject, parentKey = "") => {

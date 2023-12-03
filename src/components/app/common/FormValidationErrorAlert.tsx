@@ -1,4 +1,4 @@
-import { AlertDescription, Alert } from "@/components/ui/alert.tsx";
+import { Alert, AlertDescription } from "@/components/ui/alert.tsx";
 import { XCircle } from "lucide-react";
 
 function FormValidationErrorAlert({ messages }) {
@@ -8,7 +8,7 @@ function FormValidationErrorAlert({ messages }) {
     <Alert variant="destructive">
       <AlertDescription>
         <ul className="list-disc list-inside">
-          {messages.map((message:string, index:number) => (
+          {messages.map((message: string, index: number) => (
             <li key={index} className="flex items-center">
               <XCircle className="h-4 w-4 mr-2" />
               <span>{message}</span>
@@ -19,4 +19,5 @@ function FormValidationErrorAlert({ messages }) {
     </Alert>
   );
 }
+
 export { FormValidationErrorAlert };

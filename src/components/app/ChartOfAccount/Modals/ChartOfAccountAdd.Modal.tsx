@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  EditPageContent
-} from "@/components/app/ChartOfAccount/ChartOfAccountListing.tsx";
+import { EditPageContent } from "@/components/app/ChartOfAccount/ChartOfAccountListing.tsx";
 import {
   Dialog,
   DialogContent,
@@ -36,9 +34,11 @@ import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { Loader2 } from "lucide-react";
-import {reactSelectComponentOverride, reactSelectStyle} from "@/util/style/reactSelectStyle.ts";
-import {OnAccountAddOrEditSuccess} from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
-
+import {
+  reactSelectComponentOverride,
+  reactSelectStyle,
+} from "@/util/style/reactSelectStyle.ts";
+import { OnAccountAddOrEditSuccess } from "@/components/app/ChartOfAccount/ChartOfAccountPage.tsx";
 
 interface ChartOfAccountAddProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -46,6 +46,7 @@ interface ChartOfAccountAddProps
   editAccountId?: number;
   onActionSuccess: OnAccountAddOrEditSuccess;
 }
+
 type OptionType = {
   label: string;
   value: number;
@@ -58,7 +59,6 @@ export default function ChartOfAccountAdd({
   isOpen,
   onActionSuccess,
 }: ChartOfAccountAddProps) {
-
   // states
   const [editPageContent, setEditPageContent] = useState<EditPageContent>({
     account_types: [],
@@ -238,12 +238,10 @@ export default function ChartOfAccountAdd({
       const accountDetails = await chartOfAccountService.addChartOfAccounts({
         payload: chartOfAccountCreatePayload,
       });
-      if(accountDetails && accountDetails.chart_of_account){
-        onActionSuccess?.("add",accountDetails.chart_of_account.account_id);
+      if (accountDetails && accountDetails.chart_of_account) {
+        onActionSuccess?.("add", accountDetails.chart_of_account.account_id);
         handleDialogClose();
-
       }
-
     } catch (error) {
       console.log(error);
     } finally {

@@ -1,5 +1,6 @@
 import * as React from "react";
-import {format, parseISO} from "date-fns";
+import { useEffect } from "react";
+import { format, parseISO } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { useEffect } from "react";
 
 export function DatePicker({
   value,
   className = "",
   onChange,
   dashedBorder = false,
-    ...props
+  ...props
 }) {
   const [date, setDate] = React.useState<Date>();
   const handleChanges = (date: Date) => {

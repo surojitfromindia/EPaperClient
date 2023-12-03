@@ -1,6 +1,6 @@
 import { Edit, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
-import  { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ChartOfAccountService, {
   ChartOfAccount,
@@ -52,9 +52,9 @@ export default function ChartOfAccountDetails() {
   };
   if (isLoading) {
     return (
-        <div className={"relative h-screen"}>
-          <LoaderComponent />
-        </div>
+      <div className={"relative h-screen"}>
+        <LoaderComponent />
+      </div>
     );
   }
 

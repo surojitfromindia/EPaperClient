@@ -146,9 +146,12 @@ export function ItemListing({
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
                     <TableHead>name</TableHead>
                     {dynamicHeadersAsArray.map(([col_key, col]) => (
-                      <TableHead key={col_key} className={classNames(
-                          col.type==="numeric" && "text-right"
-                      )}>
+                      <TableHead
+                        key={col_key}
+                        className={classNames(
+                          col.type === "numeric" && "text-right",
+                        )}
+                      >
                         <div className={""}>{col.label}</div>
                       </TableHead>
                     ))}
@@ -175,9 +178,11 @@ export function ItemListing({
                       onClick={() => {
                         handleRowClick(item.item_id);
                       }}
-                      className={"py-3 font-medium whitespace-nowrap align-top "}
+                      className={
+                        "py-3 font-medium whitespace-nowrap align-top "
+                      }
                     >
-                        <span className={"w-36"}>{item.name}</span>
+                      <span className={"w-36"}>{item.name}</span>
                     </TableCell>
                     <>
                       {!shrinkTable &&
@@ -193,18 +198,18 @@ export function ItemListing({
                             )}
                           >
                             <div className={"max-h-24 overflow-hidden"}>
-                              {col_data.type === "text" && (item[col_key] ?? "")}
+                              {col_data.type === "text" &&
+                                (item[col_key] ?? "")}
                               {col_data.type === "numeric" && (
-                                  <RNumberFormatAsText
-                                      prefix={
-                                        item[col_key] !== 0 ? col_data.prefix : ""
-                                      }
-                                      value={item[col_key] ?? 0}
-                                      thousandSeparator={true}
-                                  />
+                                <RNumberFormatAsText
+                                  prefix={
+                                    item[col_key] !== 0 ? col_data.prefix : ""
+                                  }
+                                  value={item[col_key] ?? 0}
+                                  thousandSeparator={true}
+                                />
                               )}
                             </div>
-
                           </TableCell>
                         ))}
                     </>

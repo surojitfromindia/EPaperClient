@@ -3,23 +3,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover.tsx";
-import {CircleDollarSign, LucideSettings} from "lucide-react";
+import { CircleDollarSign, LucideSettings } from "lucide-react";
 // import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
 import * as React from "react";
-import {AppStateOrganization} from "@/API/Resources/v1/AppState/AppState.ts";
-import {useMemo} from "react";
-
+import { useMemo } from "react";
+import { AppStateOrganization } from "@/API/Resources/v1/AppState/AppState.ts";
 
 interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
-  organization?: AppStateOrganization,
-  isSideBarCollapsed?:boolean
+  organization?: AppStateOrganization;
+  isSideBarCollapsed?: boolean;
 }
 
-export default function TopBar({organization}:TopBarProps) {
-  const organizationName:string = useMemo(()=> organization?.name ?? "<No Name>",[organization])
-  const organizationAddress:string = useMemo(()=> organization?.primary_address ?? "<No Address>",[organization])
+export default function TopBar({ organization }: TopBarProps) {
+  const organizationName: string = useMemo(
+    () => organization?.name ?? "<No Name>",
+    [organization],
+  );
+  const organizationAddress: string = useMemo(
+    () => organization?.primary_address ?? "<No Address>",
+    [organization],
+  );
   return (
     <div
       className={
@@ -30,7 +35,7 @@ export default function TopBar({organization}:TopBarProps) {
         <div className={"logo-collapse flex items-center"}>
           <span className={"mt-3 mb-3 ml-4 h-6"}>
             <Link to={"/app/dashboard"}>
-              <CircleDollarSign className={"inline-flex mr-2"}/>
+              <CircleDollarSign className={"inline-flex mr-2"} />
               EPaper
             </Link>
           </span>
@@ -50,13 +55,14 @@ export default function TopBar({organization}:TopBarProps) {
               </span>
             </PopoverTrigger>
             <PopoverContent
-              className={"p-2 shadow-md mt-2.5 border-0 h-screen rounded-0.5 rounded-r-none"}
+              className={
+                "p-2 shadow-md mt-2.5 border-0 h-screen rounded-0.5 rounded-r-none"
+              }
             >
               <div className={"flex flex-col space-y-2"}>
                 <span className={"text-md"}>{organizationName}</span>
                 <span className={"text-xs"}>{organizationAddress}</span>
               </div>
-
             </PopoverContent>
           </Popover>
         </div>

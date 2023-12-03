@@ -7,11 +7,12 @@ import ChartOfAccountService, {
 import { toast } from "@/components/ui/use-toast.ts";
 import ChartOfAccountAdd from "@/components/app/ChartOfAccount/Modals/ChartOfAccountAdd.Modal.tsx";
 import classNames from "classnames";
+
 const chartOfAccountService = new ChartOfAccountService();
 type OnAccountEditClick = (account_id: number) => void;
-type ActionType = "delete"|"add"|"edit";
+type ActionType = "delete" | "add" | "edit";
 type OnAccountsDeleteSuccess = (
-  action_type: Extract<ActionType,"delete">,
+  action_type: Extract<ActionType, "delete">,
   account_ids: number[],
 ) => void;
 type OnAccountAddOrEditSuccess = (
@@ -43,8 +44,7 @@ export default function ChartOfAccountPage() {
       return parseResult;
     }
   }, [account_id]);
-  const isDetailsPageOpen: boolean =
-    selectedAccountId && selectedAccountId > 0;
+  const isDetailsPageOpen: boolean = selectedAccountId && selectedAccountId > 0;
 
   // states
   const [accounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
@@ -76,7 +76,7 @@ export default function ChartOfAccountPage() {
   }, []);
 
   const onAccountModificationSuccess = useCallback<OnAccountModification>(
-    (action_type:ActionType) => {
+    (action_type: ActionType) => {
       if (action_type === "add") {
         toast({
           title: "Success",

@@ -2,9 +2,15 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast.ts";
 import classNames from "classnames";
-import InvoiceService, {Invoice} from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
-import {InvoiceListing} from "@/components/app/Invoices/InvoiceListing.tsx";
-type OnInvoiceDeleteSuccess = (action_type: "delete", invoice_ids: number[]) => void;
+import InvoiceService, {
+  Invoice,
+} from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { InvoiceListing } from "@/components/app/Invoices/InvoiceListing.tsx";
+
+type OnInvoiceDeleteSuccess = (
+  action_type: "delete",
+  invoice_ids: number[],
+) => void;
 type OnInvoiceAddOrEditSuccess = (
   action_type: "add" | "edit",
   invoice_id: number,
@@ -92,13 +98,13 @@ export default function InvoicePage() {
           )}
         >
           <InvoiceListing
-              shrinkTable={isDetailsPageOpen}
-              selectedInvoiceId={selectedInvoiceId}
-              invoices={invoices}
-              isFetching={isLoading}
-              onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
-              onInvoiceEditClick={handleInvoiceEditClick}
-              onInvoiceAddClick={handleInvoiceAddClick}
+            shrinkTable={isDetailsPageOpen}
+            selectedInvoiceId={selectedInvoiceId}
+            invoices={invoices}
+            isFetching={isLoading}
+            onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
+            onInvoiceEditClick={handleInvoiceEditClick}
+            onInvoiceAddClick={handleInvoiceAddClick}
           />
         </div>
         {isDetailsPageOpen && (
@@ -111,7 +117,7 @@ export default function InvoicePage() {
   );
 }
 export type {
-    OnInvoiceAddOrEditSuccess,
-    OnInvoiceDeleteSuccess,
-    OnInvoiceModification,
-}
+  OnInvoiceAddOrEditSuccess,
+  OnInvoiceDeleteSuccess,
+  OnInvoiceModification,
+};

@@ -27,4 +27,4 @@ const formatOptionLabelOfAccounts = (
 ) => {
   return context === "menu" ? FormatAccountLabel(option) : option.account_name;
 };
-export { FormatAccountLabel,formatOptionLabelOfAccounts };
+export { FormatAccountLabel, formatOptionLabelOfAccounts };
