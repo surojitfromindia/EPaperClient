@@ -166,6 +166,7 @@ export default function InvoiceAdd() {
         invoice_id: editInvoiceId,
       })
       .then((data) => {
+        setFormData(data?.invoice);
         setEditPageInvoiceDetails(data?.invoice);
         setEditPageContent(data!);
         handleEditPageDetailsLoad(data);
@@ -276,19 +277,33 @@ export default function InvoiceAdd() {
         ? "Invoice is updated successfully"
         : "Invoice is created successfully";
       setIsSavingActionInProgress(true);
+      const newInvoice: InvoiceCreationPayloadType = {
+        contact_id: data.contact.value,
+        invoice_number: data.invoice_number,
+        issue_date: data.issue_date,
+        due_date: data.due_date,
+        payment_term_id: data.payment_term.value,
+        is_inclusive_tax: data.is_inclusive_tax,
+        line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
+        notes: data.notes,
+      };
       if (isEditMode) {
-        return;
+        await invoiceService
+          .updateInvoice({
+            payload: newInvoice,
+            invoice_id: editInvoiceId,
+          })
+          .then(() => {
+            toast({
+              title: "Success",
+              description: toastMessage,
+            });
+            navigate("/app/invoices");
+          })
+          .catch((error: WrappedError) => {
+            setErrorMessagesForBanner([error.message]);
+          });
       } else {
-        const newInvoice: InvoiceCreationPayloadType = {
-          contact_id: data.contact.value,
-          invoice_number: data.invoice_number,
-          issue_date: data.issue_date,
-          due_date: data.due_date,
-          payment_term_id: data.payment_term.value,
-          is_inclusive_tax: data.is_inclusive_tax,
-          line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
-          notes: data.notes,
-        };
         await invoiceService
           .addInvoice({
             payload: newInvoice,
@@ -340,11 +355,7 @@ export default function InvoiceAdd() {
       invoiceService.abortGetRequest();
     };
   }, [loadEditPage]);
-  useEffect(() => {
-    if (editPageInvoiceDetails) {
-      setFormData(editPageInvoiceDetails);
-    }
-  }, [editPageInvoiceDetails, setFormData]);
+
   // update the error message banner
   useEffect(() => {
     if (errors) {
@@ -359,6 +370,7 @@ export default function InvoiceAdd() {
       </div>
     );
   }
+  console.log("errorMessagesForBanner", errors)
 
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>

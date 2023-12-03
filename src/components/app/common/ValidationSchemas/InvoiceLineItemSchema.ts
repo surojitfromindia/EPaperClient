@@ -32,7 +32,7 @@ const invoiceLineItemSchema = z.object({
   discount_amount: z.number().optional(),
   tax: z
     .string()
-    .optional()
+    .nullable()
     .or(
       z.object({
         label: z.string().optional(),

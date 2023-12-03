@@ -182,9 +182,17 @@ export function LineItemInputTable({
         item_total: line_item.item_total,
         item_total_tax_included: line_item.item_total_tax_included,
         is_loading: false,
+        account : {
+            label: line_item.account_name,
+            value: line_item.account_id,
+        }
       }));
       setIsInclusiveTax(isTransactionInclusiveTax);
       setLineItems(mapped_line_items);
+      onLineItemsUpdate?.({
+        line_items: mapped_line_items,
+        is_inclusive_tax: isTransactionInclusiveTax,
+      }); // parent callback
     }
   }, [line_items]);
 

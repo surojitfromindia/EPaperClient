@@ -9,6 +9,7 @@ import {
   ItemCreatePayload,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
+import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -50,8 +51,9 @@ interface InvoiceLineItem extends InvoiceLineItemGenerated {
   unit: string;
   unit_id: number;
   account_id: number;
-  tax_id: number;
-  tax_name: string;
+  account_name?: string;
+  tax_id?: number;
+  tax_name?: string;
   rate: number;
   quantity: number;
   discount_percentage: number;
@@ -107,6 +109,21 @@ class InvoiceService implements APIService {
     const url = this.urlFragment;
     return this.#axiosConfig.APIPostRequestWrapper<
       InvoiceCreationPayloadType,
+      {
+        invoice: Invoice;
+      }
+    >(url, payload);
+  }
+  updateInvoice({
+    invoice_id,
+    payload,
+  }: {
+    invoice_id: number;
+    payload: InvoiceUpdatePayloadType;
+  }) {
+    const url = this.urlFragment + "/" + invoice_id;
+    return this.#axiosConfig.APIPutRequestWrapper<
+      InvoiceUpdatePayloadType,
       {
         invoice: Invoice;
       }
