@@ -31,11 +31,14 @@ const invoiceLineItemSchema = z.object({
   rate: z.number(),
   discount_amount: z.number().optional(),
   tax: z
-    .object({
-      label: z.string().optional(),
-      value: z.number().optional(),
-    })
-    .nullable(),
+    .string()
+    .optional()
+    .or(
+      z.object({
+        label: z.string().optional(),
+        value: z.number().optional(),
+      }),
+    ),
   tax_percentage: z.number().optional(),
   discount_percentage: z.number().optional(),
 });
