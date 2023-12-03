@@ -48,4 +48,3 @@ const elementRepeat = <T,>(element: T, times: number): T[] => {
 };
 export { generateTreeLine, elementRepeat };
 
-console.log(elementRepeat('2',2))

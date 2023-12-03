@@ -33,10 +33,7 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import AutoCompleteService from "@/API/Resources/v1/AutoComplete.Service.ts";
 import ItemService from "@/API/Resources/v1/Item/Item.Service.ts";
-import {
-  InvoiceLineItem,
-
-} from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { InvoiceLineItem } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
 import { Badge } from "@/components/ui/badge.tsx";
@@ -46,6 +43,12 @@ import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { isValidNumber } from "@/util/validityCheckUtil.ts";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -180,7 +183,7 @@ export function LineItemInputTable({
         is_loading: false,
       }));
       setIsInclusiveTax(isTransactionInclusiveTax);
-      setLineItems(calculateLineItems(mapped_line_items, isTransactionInclusiveTax));
+      setLineItems(mapped_line_items);
     }
   }, [line_items]);
 
@@ -564,6 +567,7 @@ export function LineItemInputTable({
                                       className={
                                         "w-4 h-4 text-gray-400 cursor-pointer"
                                       }
+                                      name={"more_option_on_line_item"}
                                     />
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent
@@ -596,11 +600,11 @@ export function LineItemInputTable({
                         )}
                         <div className={cn(!lineItem.item ? "" : "hidden")}>
                           <ReactAsyncSelect
+                            name={"line_item"}
                             openMenuOnFocus={true}
-                            id={`line_item-${index}`}
+                            inputId={`line_item-${index}`}
                             className={"w-full"}
                             defaultOptions={itemDefaultList}
-                            inputId={"item"}
                             loadOptions={handleItemAutoCompleteChange}
                             onFocus={handleItemAutoCompleteInitialFocus}
                             placeholder="Type or select an item"
@@ -626,6 +630,7 @@ export function LineItemInputTable({
 
                         {lineItem.item && (
                           <Textarea
+                            name={"line_item_description"}
                             className="w-full min-h-[40px] border-0 max bg-gray-50/80 text-gray-500"
                             placeholder="Item Description"
                             defaultValue={lineItem.description}
@@ -639,6 +644,7 @@ export function LineItemInputTable({
                     <TableCell className="px-1 py-1 align-top">
                       <div className={"flex flex-col items-end space-y-2"}>
                         <RNumberFormat
+                          name={"line_item_quantity"}
                           value={lineItem.quantity}
                           customInput={Input}
                           className="w-full border-0 text-right"
@@ -667,6 +673,7 @@ export function LineItemInputTable({
                     <TableCell className="px-1 py-1 align-top">
                       <div>
                         <RNumberFormat
+                          name={"line_item_rate"}
                           value={lineItem.rate}
                           customInput={Input}
                           className="w-full border-0 text-right"
@@ -683,6 +690,7 @@ export function LineItemInputTable({
                     <TableCell className="px-1 py-1 align-top">
                       <div>
                         <RNumberFormat
+                          name={"line_item_discount_percentage"}
                           value={lineItem.discount_percentage}
                           customInput={Input}
                           className="w-full border-0 text-right"
@@ -699,9 +707,9 @@ export function LineItemInputTable({
                     <TableCell className="px-0 py-0 align-top">
                       <div>
                         <ReactSelect
+                          name={"line_item_tax"}
                           className={"w-full z-100"}
                           options={taxesDropDown}
-                          inputId={"tax"}
                           placeholder={"Select tax"}
                           classNames={reactSelectStyleBorderLess}
                           components={{
@@ -784,36 +792,58 @@ export function LineItemInputTable({
             ))}
           </TableBody>
         </Table>
-        <div className="flex mt-2.5 justify-between w-[900px]">
-          <div className={"flex"}>
-            <Button
-              variant="secondary"
-              className={"border-r-0 rounded-r-none h-8 pl-2"}
-              type={"button"}
-              aria-description={"Add new row at the end"}
-              onClick={() => handleNewRowAt(lineItems.length)}
-            >
-              <PlusCircle className={"h-4 w-4 text-primary mr-1"} />
-              New Row
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size={"icon"}
-                  className={"ml-[1px] border-l-0 rounded-l-none h-8 px-1"}
-                  type={"button"}
-                  aria-description={"More options on adding new rows"}
-                >
-                  <ChevronDown className={"h-4 w-4"} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-36">
-                <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
-                <DropdownMenuItem>Insert Header</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <div className="flex mt-2.5 justify-between w-[900px] ">
+          <div className={"flex flex-col flex-1 justify-between mr-10"}>
+            <div className={"flex"}>
+              <Button
+                variant="secondary"
+                className={"border-r-0 rounded-r-none h-8 pl-2"}
+                type={"button"}
+                aria-description={"Add new row at the end"}
+                onClick={() => handleNewRowAt(lineItems.length)}
+              >
+                <PlusCircle className={"h-4 w-4 text-primary mr-1"} />
+                New Row
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size={"icon"}
+                    className={"ml-[1px] border-l-0 rounded-l-none h-8 px-1"}
+                    type={"button"}
+                    aria-description={"More options on adding new rows"}
+                  >
+                    <ChevronDown className={"h-4 w-4"} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-36">
+                  <DropdownMenuItem>Bulk Insert</DropdownMenuItem>
+                  <DropdownMenuItem>Insert Header</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className={"mt-3"}>
+            <FormField
+
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      name={"contact_notes"}
+                      className=" bg-gray-50/80 text-gray-500 "
+                      placeholder={"Thank you for your business."}
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+              name={"notes"}
+            />
           </div>
+          </div>
+
           <div className={"w-[400px]"}>
             <LineItemOverviewComponent
               line_items={lineItems}
@@ -883,13 +913,13 @@ const LineItemOverviewComponent = ({
       const tax_label = first_item.tax.label;
       return {
         tax_label,
-        tax_total,
+        tax_total: mathLib.getWithPrecision(tax_total),
       };
     });
   }, [line_items]);
 
   return (
-    <div className={"p-5 bg-secondary rounded"}>
+    <div className={"p-5 bg-secondary rounded h-full"}>
       <div className={"grid grid-cols-10 justify-between mb-2"}>
         <div className={"col-span-7"}>
           <div className={"text-sm font-medium"}>
@@ -913,6 +943,8 @@ const LineItemOverviewComponent = ({
             }
             className={" text-sm font-medium"}
             displayType={"text"}
+            decimalScale={2}
+            fixedDecimalScale={true}
           />
         </div>
       </div>
@@ -935,6 +967,8 @@ const LineItemOverviewComponent = ({
                     value={tax_group.tax_total}
                     className={" text-sm "}
                     displayType={"text"}
+                    decimalScale={2}
+                    fixedDecimalScale={true}
                   />
                 </div>
               </div>
@@ -950,6 +984,8 @@ const LineItemOverviewComponent = ({
             value={sum_of_item_total_tax_included}
             className={" font-medium"}
             displayType={"text"}
+            decimalScale={2}
+            fixedDecimalScale={true}
           />
         </div>
       </div>

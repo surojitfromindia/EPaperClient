@@ -119,6 +119,7 @@ export default function InvoiceAdd() {
     }),
     due_date: z.date(),
     line_items: z.array(invoiceLineItemSchema),
+    notes: z.string().optional(),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -286,6 +287,7 @@ export default function InvoiceAdd() {
           payment_term_id: data.payment_term.value,
           is_inclusive_tax: data.is_inclusive_tax,
           line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
+          notes: data.notes
         };
         await invoiceService
           .addInvoice({
@@ -326,6 +328,7 @@ export default function InvoiceAdd() {
       setValue("due_date", new Date(data.due_date));
       setValue("is_inclusive_tax", data.is_inclusive_tax);
       setValue("line_items", data.line_items);
+      setValue("notes",data.notes)
     },
     [setValue],
   );

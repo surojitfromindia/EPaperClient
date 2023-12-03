@@ -7,6 +7,7 @@ type InvoiceCreationPayloadType = {
     invoice_number: string;
     is_inclusive_tax: boolean;
     line_items: InvoiceLineItemCreationPayloadType[];
+    notes?:string,
 }
 type InvoiceLineItemCreationPayloadType = {
     item_id: number;
