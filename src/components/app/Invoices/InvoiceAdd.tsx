@@ -41,6 +41,7 @@ import {
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
+import {ValidityUtil} from "@/util/ValidityUtil.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -111,15 +112,15 @@ export default function InvoiceAdd() {
     order_number: z.string().trim().optional(),
     issue_date: z.date(),
     payment_term: z.object({
-      value: z.number().optional(),
-      label: z.string(),
-      is_custom: z.boolean().optional(),
-      payment_term: z.number().optional(),
-      interval: z.string().optional(),
+      value: z.number(),
+      label: z.string().nullable(),
+      is_custom: z.boolean().optional().nullable(),
+      payment_term: z.number().optional().nullable(),
+      interval: z.string().optional().nullable(),
     }),
     due_date: z.date(),
     line_items: z.array(invoiceLineItemSchema),
-    notes: z.string().optional(),
+    notes: z.string().optional().nullable(),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -166,8 +167,12 @@ export default function InvoiceAdd() {
         invoice_id: editInvoiceId,
       })
       .then((data) => {
-        setFormData(data?.invoice);
-        setEditPageInvoiceDetails(data?.invoice);
+        if(ValidityUtil.isNotEmpty(data.invoice))
+        {
+          setFormData(data?.invoice);
+          setEditPageInvoiceDetails(data?.invoice);
+        }
+
         setEditPageContent(data!);
         handleEditPageDetailsLoad(data);
       })
