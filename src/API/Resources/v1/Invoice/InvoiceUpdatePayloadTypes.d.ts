@@ -5,6 +5,7 @@ import {
 
 interface InvoiceUpdatePayloadType extends InvoiceCreationPayloadType {
     invoice_id?: number;
+    line_items: InvoiceLineItemUpdatePayloadType[];
 }
 interface InvoiceLineItemUpdatePayloadType extends InvoiceLineItemCreationPayloadType {
     line_item_id?: number;

@@ -41,7 +41,7 @@ import {
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
-import {ValidityUtil} from "@/util/ValidityUtil.ts";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -167,8 +167,7 @@ export default function InvoiceAdd() {
         invoice_id: editInvoiceId,
       })
       .then((data) => {
-        if(ValidityUtil.isNotEmpty(data.invoice))
-        {
+        if (ValidityUtil.isNotEmpty(data.invoice)) {
           setFormData(data?.invoice);
           setEditPageInvoiceDetails(data?.invoice);
         }
@@ -274,8 +273,10 @@ export default function InvoiceAdd() {
     [setValue],
   );
 
-  const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
-    data,
+  const handleFormSubmit = async (
+    data: z.infer<typeof schema>,
+    event?: React.BaseSyntheticEvent,
+    with_status: "draft" | "sent" = "draft",
   ) => {
     try {
       const toastMessage = isEditMode
@@ -291,6 +292,7 @@ export default function InvoiceAdd() {
         is_inclusive_tax: data.is_inclusive_tax,
         line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
         notes: data.notes,
+        transaction_status: with_status,
       };
       if (isEditMode) {
         await invoiceService
@@ -375,7 +377,7 @@ export default function InvoiceAdd() {
       </div>
     );
   }
-  console.log("errorMessagesForBanner", errors)
+  console.log("errorMessagesForBanner", errors);
 
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
@@ -579,7 +581,9 @@ export default function InvoiceAdd() {
       <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 border-t-1 "}>
         <Button
           className={"capitalize"}
-          onClick={handleSubmit(handleFormSubmit)}
+          onClick={handleSubmit((data) =>
+            handleFormSubmit(data, undefined, "draft"),
+          )}
         >
           {isSavingActionInProgress && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

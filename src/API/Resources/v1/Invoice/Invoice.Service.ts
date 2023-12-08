@@ -43,6 +43,7 @@ interface Invoice extends InvoiceGenerated {
   notes: string;
   is_inclusive_tax: boolean;
   line_items: InvoiceLineItem[];
+  transaction_status :"draft"|"sent"|"void"
 }
 interface InvoiceLineItem extends InvoiceLineItemGenerated {
   item_id: number;
