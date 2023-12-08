@@ -4,12 +4,9 @@ import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
-import {
-  Item,
-  ItemCreatePayload,
-} from "@/API/Resources/v1/Item/Item.Service.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
+import {Contact} from "@/API/Resources/v1/Contact.Service.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -73,6 +70,13 @@ type InvoiceEditPageContent = {
   payment_terms: PaymentTerm[];
   invoice?: Invoice;
 };
+type InvoiceEditPageFromContactServiceParams = {
+  contact_id?: number;
+};
+
+type InvoiceEditPageFromContactContent = {
+ contact: Contact;
+};
 
 class InvoiceService implements APIService {
   readonly urlFragment: string = "/invoices";
@@ -100,6 +104,18 @@ class InvoiceService implements APIService {
         {
           key: "invoice_id",
           value: invoice_id,
+        },
+      ],
+      abortController: this.abortController,
+    });
+  }
+  getInvoiceEditPageFromContact({ contact_id }: InvoiceEditPageFromContactServiceParams) {
+    const url = this.urlFragment + "/edit_page/from_contact";
+    return this.#axiosConfig.APIGetRequestWrapper<InvoiceEditPageFromContactContent>(url, {
+      searchParameters: [
+        {
+          key: "contact_id",
+          value: contact_id,
         },
       ],
       abortController: this.abortController,

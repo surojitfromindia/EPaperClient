@@ -42,6 +42,7 @@ import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCr
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
+import {Contact} from "@/API/Resources/v1/Contact.Service.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -66,6 +67,7 @@ export default function InvoiceAdd() {
   const navigate = useNavigate();
   const [editPageInvoiceDetails, setEditPageInvoiceDetails] =
     useState<Invoice>();
+  const [contactDetails, setContactDetails] = useState<Contact>();
   const [editPageContent, setEditPageContent] =
     useState<InvoiceEditPageContent>({
       taxes: [],
@@ -370,6 +372,17 @@ export default function InvoiceAdd() {
     }
   }, [errors]);
 
+  const handleContactChange = useCallback((contact_id: number) => {
+    if (contact_id)
+      invoiceService
+        .getInvoiceEditPageFromContact({
+          contact_id: contact_id,
+        })
+        .then((data) => {
+          setContactDetails(data.contact);
+        });
+  }, []);
+
   if (isInitialLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -377,7 +390,6 @@ export default function InvoiceAdd() {
       </div>
     );
   }
-  console.log("errorMessagesForBanner", errors);
 
   return (
     <div className={"flex flex-col h-screen max-h-screen  justify-between"}>
@@ -419,6 +431,13 @@ export default function InvoiceAdd() {
                             )}
                             defaultOptions={contactDefaultList}
                             {...field}
+                            onChange={(value: {
+                              label: string;
+                              value: number;
+                            }) => {
+                              field.onChange(value);
+                              handleContactChange(value.value);
+                            }}
                             inputId={"contact"}
                             classNames={reactSelectStyle}
                             components={{
@@ -571,6 +590,7 @@ export default function InvoiceAdd() {
                   isCreateMode={!isEditMode}
                   line_items={editPageInvoiceDetails?.line_items ?? []}
                   isTransactionInclusiveTax={getValues("is_inclusive_tax")}
+                  contactDetails={contactDetails}
                 />
               </div>
             </div>

@@ -49,6 +49,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
+import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -64,6 +65,7 @@ type LineItemInputTableProps = {
   }) => void;
   isCreateMode?: boolean;
   isTransactionInclusiveTax?: boolean;
+  contactDetails?: Contact;
 };
 type LINE_ITEM_OPTION_TYPE = {
   label: string;
@@ -120,8 +122,8 @@ export function LineItemInputTable({
   onLineItemsUpdate,
   isCreateMode = true,
   isTransactionInclusiveTax = false,
+  contactDetails,
 }: LineItemInputTableProps) {
-  // console.log("isTransactionInclusiveTax",isTransactionInclusiveTax)
   const [lineItems, setLineItems] = useState([]);
   const [isInclusiveTax, setIsInclusiveTax] = useState(
     isTransactionInclusiveTax,
@@ -182,10 +184,10 @@ export function LineItemInputTable({
         item_total: line_item.item_total,
         item_total_tax_included: line_item.item_total_tax_included,
         is_loading: false,
-        account : {
-            label: line_item.account_name,
-            value: line_item.account_id,
-        }
+        account: {
+          label: line_item.account_name,
+          value: line_item.account_id,
+        },
       }));
       setIsInclusiveTax(isTransactionInclusiveTax);
       setLineItems(mapped_line_items);
@@ -856,6 +858,7 @@ export function LineItemInputTable({
             <LineItemOverviewComponent
               line_items={lineItems}
               is_inclusive_tax={isInclusiveTax}
+              transactionCurrencySymbol={contactDetails?.currency_symbol  ?? "$"}
             />
           </div>
         </div>{" "}
@@ -883,9 +886,11 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
 const LineItemOverviewComponent = ({
   line_items,
   is_inclusive_tax,
+  transactionCurrencySymbol,
 }: {
   line_items: LineItemRowType[];
   is_inclusive_tax: boolean;
+  transactionCurrencySymbol: string;
 }) => {
   const sum_of_item_total =
     line_items.length > 0
@@ -987,7 +992,7 @@ const LineItemOverviewComponent = ({
       }
       <Separator className={"my-2"} />
       <div className={"grid grid-cols-10 justify-between text-lg"}>
-        <div className={"col-span-7 font-medium"}>Total</div>
+        <div className={"col-span-7 font-medium"}>Total ({transactionCurrencySymbol})</div>
         <div className={"col-span-3 text-right"}>
           <RNumberFormat
             value={sum_of_item_total_tax_included}
@@ -995,6 +1000,7 @@ const LineItemOverviewComponent = ({
             displayType={"text"}
             decimalScale={2}
             fixedDecimalScale={true}
+
           />
         </div>
       </div>
