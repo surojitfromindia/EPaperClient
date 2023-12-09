@@ -600,6 +600,7 @@ export default function InvoiceAdd() {
                   line_items={editPageInvoiceDetails?.line_items ?? []}
                   isTransactionInclusiveTax={getValues("is_inclusive_tax")}
                   contactDetails={contactDetails}
+                  exchangeRate={editPageInvoiceDetails?.exchange_rate}
                 />
               </div>
             </div>

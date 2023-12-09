@@ -45,6 +45,7 @@ interface Invoice extends InvoiceGenerated {
   currency_symbol: string;
   currency_name: string;
   currency_id: number;
+  exchange_rate?: number;
 }
 interface InvoiceLineItem extends InvoiceLineItemGenerated {
   item_id: number;

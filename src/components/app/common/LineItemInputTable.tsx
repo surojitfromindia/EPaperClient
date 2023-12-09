@@ -18,7 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table.tsx";
-import { ChevronDown, CircleEllipsis, PlusCircle, XCircle } from "lucide-react";
+import {
+  ArrowLeft, ArrowRight,
+  ChevronDown,
+  CircleEllipsis,
+  Pencil,
+  PlusCircle,
+  XCircle,
+} from "lucide-react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactAsyncSelect from "react-select/async";
 import { Textarea } from "@/components/ui/textarea.tsx";
@@ -37,7 +44,9 @@ import { InvoiceLineItem } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
 import { Badge } from "@/components/ui/badge.tsx";
-import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
+import RNumberFormat, {
+  RNumberFormatAsText,
+} from "@/components/app/common/RNumberFormat.tsx";
 import { MathLib } from "@/util/MathLib/mathLib.ts";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
@@ -50,6 +59,13 @@ import {
   FormLabel,
 } from "@/components/ui/form.tsx";
 import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
+import { useAppSelector } from "@/redux/hooks.ts";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover.tsx";
+import { Label } from "@/components/ui/label.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -66,6 +82,8 @@ type LineItemInputTableProps = {
   isCreateMode?: boolean;
   isTransactionInclusiveTax?: boolean;
   contactDetails?: Contact;
+  exchangeRate?: number;
+  onOnlyExchangeRateChange?: (exchange_rate: number) => void; // when the exchange rate is changed, but re-calculations are not needed.
 };
 type LINE_ITEM_OPTION_TYPE = {
   label: string;
@@ -123,11 +141,39 @@ export function LineItemInputTable({
   isCreateMode = true,
   isTransactionInclusiveTax = false,
   contactDetails,
+  exchangeRate = 1,
 }: LineItemInputTableProps) {
+  const organizationDetails = useAppSelector(
+    ({ organization }) => organization,
+  );
+
+  // currency details
+  const organizationCurrencyDetails = useMemo(() => {
+    return {
+      currency_symbol: organizationDetails?.currency_symbol,
+      currency_code: organizationDetails?.currency_code,
+      currency_name: organizationDetails?.currency_name,
+    };
+  }, []);
+  const contactCurrencyDetails = useMemo(() => {
+    if (!contactDetails) return null;
+    return {
+      currency_symbol: contactDetails.currency_symbol,
+      currency_code: contactDetails.currency_code,
+      currency_name: contactDetails.currency_name,
+    };
+  }, [contactDetails]);
+  const showExchangeRateInput = useMemo(() => {
+    // show exchange rate input only if the contact currency is different from the organization currency.
+    if (!contactDetails) return false;
+    return contactDetails.currency_code !== organizationDetails.currency_code;
+  }, [contactDetails, organizationDetails]);
+
   const [lineItems, setLineItems] = useState([]);
   const [isInclusiveTax, setIsInclusiveTax] = useState(
     isTransactionInclusiveTax,
   );
+  const [exchangeRateValue, setExchangeRateValue] = useState(exchangeRate);
   const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
   /**
    * only call this function if we want to update any needed state in the parent component.
@@ -157,6 +203,7 @@ export function LineItemInputTable({
     }
   }, [isCreateMode, lineItems.length, updateParentLineItemState]);
 
+  // when line_items is updated from parent, update the local state.
   useEffect(() => {
     if (line_items.length > 0) {
       const mapped_line_items = line_items.map((line_item) => ({
@@ -331,10 +378,13 @@ export function LineItemInputTable({
         const fetched_item = data.item;
         const updated_line_items = lineItems.map((item, item_index) => {
           if (item_index === index) {
-            item.rate =
+            const rate =
               itemFor === "sales"
                 ? fetched_item.selling_price
                 : fetched_item.purchase_price;
+            item.baseRate = rate;
+            item.rate = rate * exchangeRateValue;
+
             item.unit = fetched_item.unit;
             item.unit_id = fetched_item.unit_id;
             item.description =
@@ -498,25 +548,34 @@ export function LineItemInputTable({
 
   return (
     <>
-      <div className={"flex flex-col space-y-3"}>
-        <ReactSelect
-          className={"w-[150px]"}
-          classNames={reactSelectStyle}
-          components={{
-            ...reactSelectComponentOverride,
-          }}
-          onChange={handleTaxInclusiveExclusiveChange}
-          placeholder={"Tax treatment"}
-          value={{
-            label: isInclusiveTax ? "Tax Inclusive" : "Tax Exclusive",
-            value: isInclusiveTax,
-          }}
-          options={[
-            { label: "Tax Inclusive", value: true },
-            { label: "Tax Exclusive", value: false },
-          ]}
-          isSearchable={false}
-        />
+      <div className={"flex flex-col space-y-3 "}>
+        <div className={"flex items-end justify-between max-w-[900px]"}>
+          <ReactSelect
+            className={"w-[150px]"}
+            classNames={reactSelectStyle}
+            components={{
+              ...reactSelectComponentOverride,
+            }}
+            onChange={handleTaxInclusiveExclusiveChange}
+            placeholder={"Tax treatment"}
+            value={{
+              label: isInclusiveTax ? "Tax Inclusive" : "Tax Exclusive",
+              value: isInclusiveTax,
+            }}
+            options={[
+              { label: "Tax Inclusive", value: true },
+              { label: "Tax Exclusive", value: false },
+            ]}
+            isSearchable={false}
+          />
+          {showExchangeRateInput && (
+            <ExchangeInputComponent
+              contactCurrencyDetails={contactCurrencyDetails}
+              exchangeRateValue={exchangeRateValue}
+              organizationCurrencyDetails={organizationCurrencyDetails}
+            />
+          )}
+        </div>
         <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
           <TableHeader>
             <TableRow className="divide-x divide-gray-200 hover:bg-transparent  ">
@@ -858,7 +917,11 @@ export function LineItemInputTable({
             <LineItemOverviewComponent
               line_items={lineItems}
               is_inclusive_tax={isInclusiveTax}
-              transactionCurrencySymbol={contactDetails?.currency_symbol  ?? "$"}
+              transactionCurrencySymbol={
+                contactCurrencyDetails?.currency_symbol ??
+                organizationCurrencyDetails?.currency_symbol ??
+                ""
+              }
             />
           </div>
         </div>{" "}
@@ -882,6 +945,79 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
     </div>
   </components.Option>
 );
+
+const ExchangeInputComponent = ({
+  contactCurrencyDetails,
+  exchangeRateValue,
+  organizationCurrencyDetails,
+}) => {
+  return (
+    <div className={"flex items-center space-x-1 rounded-md bg-secondary pl-2"}>
+      <div className={"text-xs font-medium "}> 1</div>
+      <span
+        className={"text-xs  font-medium capitalize text-primary"}
+      >
+        {contactCurrencyDetails?.currency_code ??
+          contactCurrencyDetails?.currency_code}
+      </span>
+      <span>
+      <ArrowRight className={"h-3 w-3 mx-1"} />
+        </span>
+      <RNumberFormatAsText
+        className={"text-xs font-medium"}
+        value={exchangeRateValue}
+      />
+      <Popover>
+        <div className={"flex items-center"}>
+          <span
+            className={
+              "text-xs  font-medium"
+            }
+          >
+            {organizationCurrencyDetails?.currency_code ??
+              organizationCurrencyDetails?.currency_code}
+          </span>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost_secondary"
+              size={"icon"}
+              className={"border-l-0 rounded-l-none h-8 w-8 ml-1"}
+              type={"button"}
+              aria-description={"More options on adding new rows"}
+            >
+              <Pencil className={"h-4 w-4"} />
+            </Button>
+          </PopoverTrigger>
+        </div>
+
+        <PopoverContent className="w-80">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Exchange rate</h4>
+              <p className="text-sm text-muted-foreground">
+                Set the exchange rate for this transaction.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <div className="grid grid-cols-3 items-center gap-4 w-full">
+                <Label htmlFor="exchange_rate">Rate</Label>
+
+                <RNumberFormat
+                  id={"exchange_rate"}
+                  value={exchangeRateValue}
+                  customInput={Input}
+                  className={"text-right col-span-2"}
+                  allowNegative={false}
+                  decimalScale={2}
+                />
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
 
 const LineItemOverviewComponent = ({
   line_items,
@@ -992,7 +1128,9 @@ const LineItemOverviewComponent = ({
       }
       <Separator className={"my-2"} />
       <div className={"grid grid-cols-10 justify-between text-lg"}>
-        <div className={"col-span-7 font-medium"}>Total ({transactionCurrencySymbol})</div>
+        <div className={"col-span-7 font-medium"}>
+          Total ({transactionCurrencySymbol})
+        </div>
         <div className={"col-span-3 text-right"}>
           <RNumberFormat
             value={sum_of_item_total_tax_included}
@@ -1000,7 +1138,6 @@ const LineItemOverviewComponent = ({
             displayType={"text"}
             decimalScale={2}
             fixedDecimalScale={true}
-
           />
         </div>
       </div>
