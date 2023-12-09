@@ -69,6 +69,8 @@ type InvoiceEditPageContent = {
   line_item_accounts_list: ChartOfAccount[];
   payment_terms: PaymentTerm[];
   invoice?: Invoice;
+  contact?: Contact;
+
 };
 type InvoiceEditPageFromContactServiceParams = {
   contact_id?: number;

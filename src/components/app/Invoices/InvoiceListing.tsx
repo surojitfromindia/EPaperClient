@@ -255,7 +255,7 @@ export function InvoiceListing({
                               }
                             >
                               <Edit className={"h-4 w-4"} />
-                              <span>Configure</span>
+                              <span>Edit</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className={"menu-item-danger"}

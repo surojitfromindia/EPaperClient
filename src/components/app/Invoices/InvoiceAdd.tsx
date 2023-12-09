@@ -8,7 +8,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
@@ -42,7 +42,9 @@ import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCr
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
-import {Contact} from "@/API/Resources/v1/Contact.Service.ts";
+import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
+import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
+import {Badge} from "@/components/ui/badge.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -51,6 +53,34 @@ const CUSTOM_PAYMENT_TERM = {
   is_custom: true,
   value: -1,
 };
+
+const schema = z.object({
+  contact: z.object(
+    {
+      value: z.number(),
+      label: z.string(),
+    },
+    {
+      invalid_type_error: "Please select a customer",
+      required_error: "Please select a customer",
+    },
+  ),
+  is_inclusive_tax: z.boolean(),
+  invoice_number: z.string().trim().nonempty("Please enter an invoice number"),
+  order_number: z.string().trim().optional(),
+  issue_date: z.date(),
+  payment_term: z.object({
+    value: z.number(),
+    label: z.string().nullable(),
+    is_custom: z.boolean().optional().nullable(),
+    payment_term: z.number().optional().nullable(),
+    interval: z.string().optional().nullable(),
+  }),
+  due_date: z.date(),
+  line_items: z.array(invoiceLineItemSchema),
+  notes: z.string().optional().nullable(),
+});
+
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
   const editInvoiceId = useMemo(() => {
@@ -95,35 +125,6 @@ export default function InvoiceAdd() {
     navigate("/app/invoices");
   };
 
-  const schema = z.object({
-    contact: z.object(
-      {
-        value: z.number(),
-        label: z.string(),
-      },
-      {
-        invalid_type_error: "Please select a customer",
-        required_error: "Please select a customer",
-      },
-    ),
-    is_inclusive_tax: z.boolean(),
-    invoice_number: z
-      .string()
-      .trim()
-      .nonempty("Please enter an invoice number"),
-    order_number: z.string().trim().optional(),
-    issue_date: z.date(),
-    payment_term: z.object({
-      value: z.number(),
-      label: z.string().nullable(),
-      is_custom: z.boolean().optional().nullable(),
-      payment_term: z.number().optional().nullable(),
-      interval: z.string().optional().nullable(),
-    }),
-    due_date: z.date(),
-    line_items: z.array(invoiceLineItemSchema),
-    notes: z.string().optional().nullable(),
-  });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -172,6 +173,9 @@ export default function InvoiceAdd() {
         if (ValidityUtil.isNotEmpty(data.invoice)) {
           setFormData(data?.invoice);
           setEditPageInvoiceDetails(data?.invoice);
+        }
+        if (ValidityUtil.isNotEmpty(data.contact)) {
+          setContactDetails(data?.contact);
         }
 
         setEditPageContent(data!);
@@ -277,7 +281,7 @@ export default function InvoiceAdd() {
 
   const handleFormSubmit = async (
     data: z.infer<typeof schema>,
-    event?: React.BaseSyntheticEvent,
+    _event?: React.BaseSyntheticEvent,
     with_status: "draft" | "sent" = "draft",
   ) => {
     try {
@@ -368,7 +372,9 @@ export default function InvoiceAdd() {
   // update the error message banner
   useEffect(() => {
     if (errors) {
-      setErrorMessagesForBanner(deepFlatReactHookFormErrorOnlyMessage(errors));
+      setErrorMessagesForBanner(
+        ReactHookFormUtil.deepFlatReactHookFormErrorOnlyMessage(errors),
+      );
     }
   }, [errors]);
 
@@ -413,45 +419,48 @@ export default function InvoiceAdd() {
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
               <div className={"md:grid-cols-4 col-span-5 space-y-2.5"}>
-                <FormField
-                  name={"contact"}
-                  render={({ field }) => (
-                    <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel htmlFor={"contact"} className=" capitalize">
-                        Customer
-                      </FormLabel>
-                      <div className="col-span-3 flex-col">
-                        <FormControl>
-                          <ReactAsyncSelect
-                            onFocus={handleContactAutoCompleteInitialFocus}
-                            className={"col-span-3"}
-                            loadOptions={debounce(
-                              handleContactAutoCompleteChange,
-                              600,
-                            )}
-                            defaultOptions={contactDefaultList}
-                            {...field}
-                            onChange={(value: {
-                              label: string;
-                              value: number;
-                            }) => {
-                              field.onChange(value);
-                              handleContactChange(value.value);
-                            }}
-                            inputId={"contact"}
-                            classNames={reactSelectStyle}
-                            components={{
-                              ...reactSelectComponentOverride,
-                            }}
-                            cacheOptions={true}
-                          />
-                        </FormControl>
-                      </div>
-                    </FormItem>
-                  )}
-                  control={control}
-                />
+                <div>
+                  <FormField
+                    name={"contact"}
+                    render={({ field }) => (
+                      <FormItem className={"grid grid-cols-4  items-baseline "}>
+                        <FormLabel htmlFor={"contact"} className=" capitalize">
+                          Customer
+                        </FormLabel>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <ReactAsyncSelect
+                              onFocus={handleContactAutoCompleteInitialFocus}
+                              className={"col-span-3"}
+                              loadOptions={debounce(
+                                handleContactAutoCompleteChange,
+                                600,
+                              )}
+                              defaultOptions={contactDefaultList}
+                              {...field}
+                              onChange={(value: {
+                                label: string;
+                                value: number;
+                              }) => {
+                                field.onChange(value);
+                                handleContactChange(value.value);
+                              }}
+                              inputId={"contact"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              cacheOptions={true}
+                            />
+                          </FormControl>
+                          {ValidityUtil.isNotEmpty(contactDetails) && <Badge className={"text-[10px] px-1 py-0.5 rounded-sm capitalize"}>{contactDetails?.currency_code}</Badge> }
 
+                        </div>
+                      </FormItem>
+                    )}
+                    control={control}
+                  />
+                </div>
                 <FormField
                   name={"invoice_number"}
                   render={() => (
@@ -643,25 +652,4 @@ function calculateDueDate({ issue_date, paymentTerm }) {
     }
   }
   return { due_date: date };
-}
-
-function deepFlatReactHookFormErrorOnlyMessage(errors): string[] {
-  const flattenedErrors = {};
-  const flattenErrors = (errorObject, parentKey = "") => {
-    for (const key in errorObject) {
-      const newKey = parentKey ? `${parentKey}.${key}` : key;
-      if (typeof errorObject[key] === "object" && errorObject[key] !== null) {
-        if ("message" in errorObject[key]) {
-          flattenedErrors[newKey] = errorObject[key].message;
-        } else {
-          flattenErrors(errorObject[key], newKey);
-        }
-      } else {
-        flattenedErrors[newKey] = errorObject[key];
-      }
-    }
-  };
-
-  flattenErrors(errors);
-  return Object.values(flattenedErrors);
 }
