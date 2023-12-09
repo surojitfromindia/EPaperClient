@@ -48,7 +48,7 @@ export function ItemListing({
   onItemAddClick,
 }: ItemListingProps) {
   const organizationCurrencyCode = useAppSelector(
-    ({ organization }) => organization.currency_code,
+    ({ organization }) => organization.currency_symbol,
   );
   const navigate = useNavigate();
   const isLoading = isItemsFetching;

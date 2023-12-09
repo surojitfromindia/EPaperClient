@@ -58,6 +58,8 @@ type TableHeaderBody = {
   type: "numeric" | "text";
   prefix?: string;
   suffix?: string;
+    isCurrency?: boolean;
+  currencyPrefix?: (value: string) => string;
 };
 
 export function InvoiceListing({
@@ -111,7 +113,8 @@ export function InvoiceListing({
         label: "total",
         removable: true,
         type: "numeric",
-        prefix: organizationCurrencyCode,
+        isCurrency: true,
+        currencyPrefix: (value:string) => value
       },
     }),
     [organizationCurrencyCode],
@@ -225,8 +228,8 @@ export function InvoiceListing({
                               {col_data.type === "numeric" && (
                                 <RNumberFormatAsText
                                   prefix={
-                                    invoice[col_key] !== 0
-                                      ? col_data.prefix
+                                    (col_data.isCurrency && invoice[col_key] !== 0)
+                                      ? col_data.currencyPrefix(invoice.currency_symbol)
                                       : ""
                                   }
                                   value={invoice[col_key] ?? 0}

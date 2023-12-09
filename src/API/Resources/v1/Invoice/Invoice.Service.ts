@@ -6,7 +6,7 @@ import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
-import {Contact} from "@/API/Resources/v1/Contact.Service.ts";
+import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -40,7 +40,11 @@ interface Invoice extends InvoiceGenerated {
   notes: string;
   is_inclusive_tax: boolean;
   line_items: InvoiceLineItem[];
-  transaction_status :"draft"|"sent"|"void"
+  transaction_status: "draft" | "sent" | "void";
+  currency_code: string;
+  currency_symbol: string;
+  currency_name: string;
+  currency_id: number;
 }
 interface InvoiceLineItem extends InvoiceLineItemGenerated {
   item_id: number;
@@ -70,14 +74,13 @@ type InvoiceEditPageContent = {
   payment_terms: PaymentTerm[];
   invoice?: Invoice;
   contact?: Contact;
-
 };
 type InvoiceEditPageFromContactServiceParams = {
   contact_id?: number;
 };
 
 type InvoiceEditPageFromContactContent = {
- contact: Contact;
+  contact: Contact;
 };
 
 class InvoiceService implements APIService {
@@ -111,17 +114,22 @@ class InvoiceService implements APIService {
       abortController: this.abortController,
     });
   }
-  getInvoiceEditPageFromContact({ contact_id }: InvoiceEditPageFromContactServiceParams) {
+  getInvoiceEditPageFromContact({
+    contact_id,
+  }: InvoiceEditPageFromContactServiceParams) {
     const url = this.urlFragment + "/edit_page/from_contact";
-    return this.#axiosConfig.APIGetRequestWrapper<InvoiceEditPageFromContactContent>(url, {
-      searchParameters: [
-        {
-          key: "contact_id",
-          value: contact_id,
-        },
-      ],
-      abortController: this.abortController,
-    });
+    return this.#axiosConfig.APIGetRequestWrapper<InvoiceEditPageFromContactContent>(
+      url,
+      {
+        searchParameters: [
+          {
+            key: "contact_id",
+            value: contact_id,
+          },
+        ],
+        abortController: this.abortController,
+      },
+    );
   }
 
   addInvoice({ payload }: { payload: InvoiceCreationPayloadType }) {

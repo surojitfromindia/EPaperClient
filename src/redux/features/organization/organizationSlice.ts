@@ -3,13 +3,15 @@ import { RootState } from "@/redux/store.ts";
 import { AppStateOrganization } from "@/API/Resources/v1/AppState/AppState.ts";
 
 // Define a type for the slice state
-interface OrganizationState extends AppStateOrganization {
-}
+interface OrganizationState extends AppStateOrganization {}
 
 // Define the initial state using that type
 const initialState: OrganizationState = {
   country_code: "",
   currency_code: "",
+  currency_symbol: "",
+  currency_name: "",
+  currency_id: null,
   organization_id: 0,
   primary_address: "",
   sector: "",

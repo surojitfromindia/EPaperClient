@@ -9,6 +9,9 @@ type AppStateResponse = {
     currency_code: string;
     sector: string;
     country_code: string;
+    currency_symbol: string;
+    currency_name: string;
+    currency_id: number;
   }
 
 };
