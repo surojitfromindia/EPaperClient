@@ -32,7 +32,7 @@ interface InvoiceTableView
     | "invoice_number"
     | "contact_name"
     | "due_date_formatted"
-    | "order_number"
+    // | "order_number"
     | "total"
   > {}
 
@@ -69,8 +69,8 @@ export function InvoiceListing({
   isFetching = true,
   onInvoiceAddClick,
 }: InvoiceListingProps) {
-  const organizationCurrencyCode = useAppSelector(
-    ({ organization }) => organization.currency_code,
+  useAppSelector(
+      ({ organization }) => organization.currency_code,
   );
   const navigate = useNavigate();
   const isLoading = isFetching;
@@ -104,11 +104,11 @@ export function InvoiceListing({
         removable: true,
         type: "text",
       },
-      order_number: {
-        label: "order number",
-        removable: true,
-        type: "text",
-      },
+      // order_number: {
+      //   label: "order number",
+      //   removable: true,
+      //   type: "text",
+      // },
       total: {
         label: "total",
         removable: true,
@@ -117,7 +117,7 @@ export function InvoiceListing({
         currencyPrefix: (value:string) => value
       },
     }),
-    [organizationCurrencyCode],
+    [],
   );
   const dynamicHeadersAsArray = useMemo(
     () => objectEntries(dynamicHeaders),

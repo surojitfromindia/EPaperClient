@@ -44,7 +44,7 @@ import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
 import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
-import {Badge} from "@/components/ui/badge.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -79,6 +79,7 @@ const schema = z.object({
   due_date: z.date(),
   line_items: z.array(invoiceLineItemSchema),
   notes: z.string().optional().nullable(),
+  exchange_rate: z.number().optional().nullable(),
 });
 
 export default function InvoiceAdd() {
@@ -98,6 +99,7 @@ export default function InvoiceAdd() {
   const [editPageInvoiceDetails, setEditPageInvoiceDetails] =
     useState<Invoice>();
   const [contactDetails, setContactDetails] = useState<Contact>();
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
   const [editPageContent, setEditPageContent] =
     useState<InvoiceEditPageContent>({
       taxes: [],
@@ -173,6 +175,7 @@ export default function InvoiceAdd() {
         if (ValidityUtil.isNotEmpty(data.invoice)) {
           setFormData(data?.invoice);
           setEditPageInvoiceDetails(data?.invoice);
+          setExchangeRate(data?.invoice?.exchange_rate ?? 1);
         }
         if (ValidityUtil.isNotEmpty(data.contact)) {
           setContactDetails(data?.contact);
@@ -269,12 +272,15 @@ export default function InvoiceAdd() {
     ({
       line_items,
       is_inclusive_tax,
+      exchange_rate,
     }: {
       line_items: LineItemRowType[];
       is_inclusive_tax: boolean;
+      exchange_rate: number;
     }) => {
       setValue("is_inclusive_tax", is_inclusive_tax);
       setValue("line_items", line_items);
+      setValue("exchange_rate", exchange_rate);
     },
     [setValue],
   );
@@ -299,6 +305,7 @@ export default function InvoiceAdd() {
         line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
         notes: data.notes,
         transaction_status: with_status,
+        exchange_rate: data.exchange_rate,
       };
       if (isEditMode) {
         await invoiceService
@@ -357,6 +364,7 @@ export default function InvoiceAdd() {
       setValue("is_inclusive_tax", data.is_inclusive_tax);
       setValue("line_items", data.line_items);
       setValue("notes", data.notes);
+      setValue("exchange_rate", data.exchange_rate);
     },
     [setValue],
   );
@@ -385,9 +393,21 @@ export default function InvoiceAdd() {
           contact_id: contact_id,
         })
         .then((data) => {
-          setContactDetails(data.contact);
+          const contact = data.contact;
+          // update exchange rate if the currency is different
+          if (contact.currency_code !== contactDetails?.currency_code) {
+            setExchangeRate(1);
+          }
+          setContactDetails(contact);
         });
   }, []);
+
+  const handleOnlyExchangeRateChange = useCallback(
+    (exchange_rate: number) => {
+      setValue("exchange_rate", exchange_rate);
+    },
+    [setValue],
+  );
 
   if (isInitialLoading) {
     return (
@@ -453,8 +473,15 @@ export default function InvoiceAdd() {
                               cacheOptions={true}
                             />
                           </FormControl>
-                          {ValidityUtil.isNotEmpty(contactDetails) && <Badge className={"text-[10px] px-1 py-0.5 rounded-sm capitalize"}>{contactDetails?.currency_code}</Badge> }
-
+                          {ValidityUtil.isNotEmpty(contactDetails) && (
+                            <Badge
+                              className={
+                                "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                              }
+                            >
+                              {contactDetails?.currency_code}
+                            </Badge>
+                          )}
                         </div>
                       </FormItem>
                     )}
@@ -600,7 +627,8 @@ export default function InvoiceAdd() {
                   line_items={editPageInvoiceDetails?.line_items ?? []}
                   isTransactionInclusiveTax={getValues("is_inclusive_tax")}
                   contactDetails={contactDetails}
-                  exchangeRate={editPageInvoiceDetails?.exchange_rate}
+                  transactionExchangeRate={exchangeRate}
+                  onOnlyExchangeRateChange={handleOnlyExchangeRateChange}
                 />
               </div>
             </div>

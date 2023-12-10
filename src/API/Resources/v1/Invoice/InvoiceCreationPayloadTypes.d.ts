@@ -8,6 +8,7 @@ type InvoiceCreationPayloadType = {
   line_items: InvoiceLineItemCreationPayloadType[];
   notes?: string;
   transaction_status: "draft" | "sent";
+  exchange_rate?: number;
 };
 type InvoiceLineItemCreationPayloadType = {
   item_id: number;

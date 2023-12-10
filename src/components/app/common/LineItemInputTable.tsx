@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table.tsx";
 import {
-  ArrowLeft, ArrowRight,
+  ArrowRight,
   ChevronDown,
   CircleEllipsis,
   Pencil,
@@ -53,10 +53,12 @@ import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { isValidNumber } from "@/util/validityCheckUtil.ts";
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form.tsx";
 import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
 import { useAppSelector } from "@/redux/hooks.ts";
@@ -65,7 +67,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover.tsx";
-import { Label } from "@/components/ui/label.tsx";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -78,11 +83,12 @@ type LineItemInputTableProps = {
   onLineItemsUpdate: (line_items: {
     is_inclusive_tax: boolean;
     line_items: LineItemRowType[];
+    exchange_rate: number;
   }) => void;
   isCreateMode?: boolean;
   isTransactionInclusiveTax?: boolean;
   contactDetails?: Contact;
-  exchangeRate?: number;
+  transactionExchangeRate?: number;
   onOnlyExchangeRateChange?: (exchange_rate: number) => void; // when the exchange rate is changed, but re-calculations are not needed.
 };
 type LINE_ITEM_OPTION_TYPE = {
@@ -102,6 +108,7 @@ type LineItemRowType = {
   description: string;
   quantity: number;
   rate: number;
+  rate_base: number;
   tax: LineItemTaxRowType;
   tax_percentage: number;
   tax_amount: number;
@@ -122,6 +129,7 @@ const BLANK_ROW: LineItemRowType = Object.freeze({
   description: "",
   quantity: 1,
   rate: 0,
+  rate_base: 0,
   tax: null,
   tax_percentage: 0,
   tax_amount: 0,
@@ -141,7 +149,8 @@ export function LineItemInputTable({
   isCreateMode = true,
   isTransactionInclusiveTax = false,
   contactDetails,
-  exchangeRate = 1,
+  transactionExchangeRate,
+  onOnlyExchangeRateChange,
 }: LineItemInputTableProps) {
   const organizationDetails = useAppSelector(
     ({ organization }) => organization,
@@ -149,12 +158,13 @@ export function LineItemInputTable({
 
   // currency details
   const organizationCurrencyDetails = useMemo(() => {
+    const organization_details = organizationDetails;
     return {
-      currency_symbol: organizationDetails?.currency_symbol,
-      currency_code: organizationDetails?.currency_code,
-      currency_name: organizationDetails?.currency_name,
+      currency_symbol: organization_details?.currency_symbol,
+      currency_code: organization_details?.currency_code,
+      currency_name: organization_details?.currency_name,
     };
-  }, []);
+  }, [organizationDetails]);
   const contactCurrencyDetails = useMemo(() => {
     if (!contactDetails) return null;
     return {
@@ -173,7 +183,13 @@ export function LineItemInputTable({
   const [isInclusiveTax, setIsInclusiveTax] = useState(
     isTransactionInclusiveTax,
   );
-  const [exchangeRateValue, setExchangeRateValue] = useState(exchangeRate);
+  const [exchangeRateValue, setExchangeRateValue] = useState(
+    transactionExchangeRate,
+  );
+  useEffect(() => {
+    setExchangeRateValue(transactionExchangeRate);
+  }, [transactionExchangeRate]);
+
   const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
   /**
    * only call this function if we want to update any needed state in the parent component.
@@ -182,16 +198,25 @@ export function LineItemInputTable({
    */
   const updateParentLineItemState = useCallback(
     (new_line_items: LineItemRowType[]) => {
-      updateParentLineItemAndTaxState(new_line_items, isInclusiveTax);
+      updateParentLineItemAndTaxState(
+        new_line_items,
+        isInclusiveTax,
+        exchangeRateValue,
+      );
     },
-    [onLineItemsUpdate, isInclusiveTax],
+    [isInclusiveTax, exchangeRateValue],
   );
   const updateParentLineItemAndTaxState = useCallback(
-    (new_line_items: LineItemRowType[], is_inclusive_tax: boolean) => {
+    (
+      new_line_items: LineItemRowType[],
+      is_inclusive_tax: boolean,
+      exchange_rate: number,
+    ) => {
       setLineItems(new_line_items);
       onLineItemsUpdate?.({
         line_items: new_line_items,
         is_inclusive_tax: is_inclusive_tax,
+        exchange_rate: exchange_rate,
       });
     },
     [onLineItemsUpdate],
@@ -217,6 +242,7 @@ export function LineItemInputTable({
         description: line_item.description,
         quantity: line_item.quantity,
         rate: line_item.rate,
+        rate_base: line_item.rate,
         discount_percentage: line_item.discount_percentage,
         discount_amount: line_item.discount_amount,
         tax: line_item.tax_id
@@ -241,6 +267,7 @@ export function LineItemInputTable({
       onLineItemsUpdate?.({
         line_items: mapped_line_items,
         is_inclusive_tax: isTransactionInclusiveTax,
+        exchange_rate: transactionExchangeRate,
       }); // parent callback
     }
   }, [line_items]);
@@ -292,12 +319,18 @@ export function LineItemInputTable({
   );
 
   const singleLineItemCalculation = useCallback(
-    (line_item: LineItemRowType, is_inclusive_tax: boolean) => {
+    (
+      line_item: LineItemRowType,
+      is_inclusive_tax: boolean,
+    ) => {
       // calculate sub total
       const quantity = isValidNumber(line_item.quantity)
         ? line_item.quantity
         : 0;
-      const rate = isValidNumber(line_item.rate) ? line_item.rate : 0;
+
+      const rate = isValidNumber(line_item.rate)
+        ? mathLib.getWithPrecision(line_item.rate)
+        : 0;
       const tax_percentage = isValidNumber(line_item.tax_percentage)
         ? line_item.tax_percentage
         : 0;
@@ -340,7 +373,10 @@ export function LineItemInputTable({
     [],
   );
   const calculateLineItems = useCallback(
-    (line_items: LineItemRowType[], is_inclusive_tax: boolean) => {
+    (
+      line_items: LineItemRowType[],
+      is_inclusive_tax: boolean,
+    ) => {
       return line_items.map((line_item) =>
         singleLineItemCalculation(line_item, is_inclusive_tax),
       );
@@ -354,7 +390,7 @@ export function LineItemInputTable({
     const value = selected.value;
     setIsInclusiveTax(value);
     const line_items = calculateLineItems(lineItems, value);
-    updateParentLineItemAndTaxState(line_items, value);
+    updateParentLineItemAndTaxState(line_items, value, exchangeRateValue);
   };
   const handleItemSelect = (item_id: number, index: number) => {
     const temp_line_item = [...lineItems];
@@ -382,8 +418,8 @@ export function LineItemInputTable({
               itemFor === "sales"
                 ? fetched_item.selling_price
                 : fetched_item.purchase_price;
-            item.baseRate = rate;
-            item.rate = rate * exchangeRateValue;
+            item.rate_base = rate;
+            item.rate = rate / exchangeRateValue;
 
             item.unit = fetched_item.unit;
             item.unit_id = fetched_item.unit_id;
@@ -451,7 +487,11 @@ export function LineItemInputTable({
       isInclusiveTax,
     );
     setLineItems(calculated_line_items);
-    onLineItemsUpdate?.({ line_items, is_inclusive_tax: isInclusiveTax }); // parent callback
+    onLineItemsUpdate?.({
+      line_items,
+      is_inclusive_tax: isInclusiveTax,
+      exchange_rate: exchangeRateValue,
+    }); // parent callback
   };
 
   const handleInputFocusChange = () => {
@@ -491,6 +531,9 @@ export function LineItemInputTable({
       if (item_index === index) {
         return {
           ...item,
+          // on manual price change, we need to update the rate_base as well.
+          // which is the same with given rate.
+          rate_base: value,
           rate: value,
         };
       }
@@ -546,6 +589,38 @@ export function LineItemInputTable({
     setItemEditingModalOpenFor(null);
   };
 
+  const handleExchangeInfoSave = ({
+    exchange_rate,
+    update_all_line_items,
+  }: {
+    exchange_rate: number;
+    update_all_line_items: boolean;
+  }) => {
+    const hasExchangeRateChanged = exchangeRateValue !== exchange_rate;
+    if (hasExchangeRateChanged) {
+      setExchangeRateValue(exchange_rate);
+      if (update_all_line_items) {
+        let line_items = lineItems.map((line_item) => ({
+          ...line_item,
+          rate: line_item.rate_base / exchange_rate, // just update the rate, don't update the rate_base.
+        }));
+
+        line_items = calculateLineItems(
+            line_items,
+          isInclusiveTax,
+        );
+        setLineItems(line_items);
+        updateParentLineItemAndTaxState(
+          line_items,
+          isInclusiveTax,
+          exchange_rate,
+        );
+      } else {
+        onOnlyExchangeRateChange?.(exchange_rate);
+      }
+    }
+  };
+
   return (
     <>
       <div className={"flex flex-col space-y-3 "}>
@@ -573,6 +648,7 @@ export function LineItemInputTable({
               contactCurrencyDetails={contactCurrencyDetails}
               exchangeRateValue={exchangeRateValue}
               organizationCurrencyDetails={organizationCurrencyDetails}
+              onExchangeInfoSave={handleExchangeInfoSave}
             />
           )}
         </div>
@@ -950,30 +1026,48 @@ const ExchangeInputComponent = ({
   contactCurrencyDetails,
   exchangeRateValue,
   organizationCurrencyDetails,
+  onExchangeInfoSave,
 }) => {
+
+
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  const eRateSchema = z.object({
+    exchange_rate: z.number().nonnegative("Exchange rate must be positive"),
+    update_all_line_items: z.boolean(),
+  });
+  const form = useForm<z.infer<typeof eRateSchema>>({
+    resolver: zodResolver(eRateSchema),
+    defaultValues: {
+      exchange_rate: exchangeRateValue,
+      update_all_line_items: false,
+    },
+  });
+  const { handleSubmit, control } = form;
+  const handleFormSubmit = (data: z.infer<typeof eRateSchema>) => {
+    const exchange_rate = data.exchange_rate;
+    const update_all_line_items = data.update_all_line_items;
+    onExchangeInfoSave?.({ exchange_rate, update_all_line_items });
+    setIsPopoverOpen(false);
+  };
+
   return (
     <div className={"flex items-center space-x-1 rounded-md bg-secondary pl-2"}>
       <div className={"text-xs font-medium "}> 1</div>
-      <span
-        className={"text-xs  font-medium capitalize text-primary"}
-      >
+      <span className={"text-xs  font-medium capitalize text-primary"}>
         {contactCurrencyDetails?.currency_code ??
           contactCurrencyDetails?.currency_code}
       </span>
       <span>
-      <ArrowRight className={"h-3 w-3 mx-1"} />
-        </span>
+        <ArrowRight className={"h-3 w-3 mx-1"} />
+      </span>
       <RNumberFormatAsText
         className={"text-xs font-medium"}
         value={exchangeRateValue}
       />
-      <Popover>
+      <Popover open={isPopoverOpen}>
         <div className={"flex items-center"}>
-          <span
-            className={
-              "text-xs  font-medium"
-            }
-          >
+          <span className={"text-xs  font-medium"}>
             {organizationCurrencyDetails?.currency_code ??
               organizationCurrencyDetails?.currency_code}
           </span>
@@ -984,13 +1078,14 @@ const ExchangeInputComponent = ({
               className={"border-l-0 rounded-l-none h-8 w-8 ml-1"}
               type={"button"}
               aria-description={"More options on adding new rows"}
+              onClick={() => setIsPopoverOpen((prev) => !prev)}
             >
               <Pencil className={"h-4 w-4"} />
             </Button>
           </PopoverTrigger>
         </div>
 
-        <PopoverContent className="w-80">
+        <PopoverContent className="w-80" align={"end"}>
           <div className="grid gap-4">
             <div className="space-y-2">
               <h4 className="font-medium leading-none">Exchange rate</h4>
@@ -998,20 +1093,80 @@ const ExchangeInputComponent = ({
                 Set the exchange rate for this transaction.
               </p>
             </div>
-            <div className="grid gap-2">
-              <div className="grid grid-cols-3 items-center gap-4 w-full">
-                <Label htmlFor="exchange_rate">Rate</Label>
-
-                <RNumberFormat
-                  id={"exchange_rate"}
-                  value={exchangeRateValue}
-                  customInput={Input}
-                  className={"text-right col-span-2"}
-                  allowNegative={false}
-                  decimalScale={2}
-                />
+            <Form {...form}>
+              <div className="grid gap-2 mb-4">
+                <div className=" w-full">
+                  <FormField
+                    name={"exchange_rate"}
+                    render={({ field }) => (
+                      <FormItem
+                        className={"flex flex-row items-center space-x-2 "}
+                      >
+                        <FormLabel
+                          htmlFor={"exchange_rate"}
+                          className={"capitalize"}
+                        >
+                          Rate
+                        </FormLabel>
+                        <div className=" flex-col">
+                          <FormControl>
+                            <RNumberFormat
+                              value={field.value}
+                              id="exchange_rate"
+                              onValueChange={({ floatValue }) => {
+                                field.onChange(floatValue);
+                              }}
+                              customInput={Input}
+                              getInputRef={field.ref}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className=" w-full flex items-center space-x-3">
+                  <FormField
+                    render={({ field }) => (
+                      <FormItem
+                        className={"flex flex-row items-start space-y-0"}
+                      >
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            id="update_all_line_items"
+                            name={"update_all_line_items"}
+                            className={"inline-flex mt-1.5 mr-2"}
+                          />
+                        </FormControl>
+                        <div className="">
+                          <FormLabel
+                            htmlFor={"update_all_line_items"}
+                            className={" capitalize"}
+                          >
+                            Update all line items
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                    name={"update_all_line_items"}
+                    control={control}
+                  />
+                </div>
               </div>
-            </div>
+
+              <div className="flex justify-start">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleSubmit(handleFormSubmit)}
+                >
+                  Save
+                </Button>
+              </div>
+            </Form>
           </div>
         </PopoverContent>
       </Popover>
