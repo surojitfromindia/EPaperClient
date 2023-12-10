@@ -49,6 +49,7 @@ interface Invoice extends InvoiceGenerated {
 }
 interface InvoiceLineItem extends InvoiceLineItemGenerated {
   item_id: number;
+  product_type: string;
   name: string;
   description: string;
   unit: string;

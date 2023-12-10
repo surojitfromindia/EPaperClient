@@ -13,6 +13,7 @@ const invoiceLineItemSchema = z.object({
       required_error: "Please select an item",
     },
   ),
+  product_type: z.string({required_error:"item does not have a product type"}),
 
   account: z.object(
     {
@@ -48,6 +49,7 @@ const invoiceLineItemRowToPayloadDTO = (
 ): InvoiceLineItemCreationPayloadType => {
   return {
     item_id: lineItem.item.value,
+    product_type: lineItem.product_type,
     name: lineItem.item.label,
     unit: lineItem.unit,
     unit_id: lineItem.unit_id,

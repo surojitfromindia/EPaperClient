@@ -103,6 +103,7 @@ type LineItemTaxRowType = {
 } | null;
 type LineItemRowType = {
   item: LINE_ITEM_OPTION_TYPE | null;
+  product_type: string;
   unit: string;
   unit_id?: number;
   description: string;
@@ -126,6 +127,7 @@ type LineItemRowType = {
 const BLANK_ROW: LineItemRowType = Object.freeze({
   item: null,
   unit: "",
+  product_type: "",
   description: "",
   quantity: 1,
   rate: 0,
@@ -237,6 +239,7 @@ export function LineItemInputTable({
           value: line_item.item_id,
           rate: line_item.rate,
         },
+        product_type: line_item.product_type,
         unit: line_item.unit,
         unit_id: line_item.unit_id,
         description: line_item.description,
@@ -319,10 +322,7 @@ export function LineItemInputTable({
   );
 
   const singleLineItemCalculation = useCallback(
-    (
-      line_item: LineItemRowType,
-      is_inclusive_tax: boolean,
-    ) => {
+    (line_item: LineItemRowType, is_inclusive_tax: boolean) => {
       // calculate sub total
       const quantity = isValidNumber(line_item.quantity)
         ? line_item.quantity
@@ -373,10 +373,7 @@ export function LineItemInputTable({
     [],
   );
   const calculateLineItems = useCallback(
-    (
-      line_items: LineItemRowType[],
-      is_inclusive_tax: boolean,
-    ) => {
+    (line_items: LineItemRowType[], is_inclusive_tax: boolean) => {
       return line_items.map((line_item) =>
         singleLineItemCalculation(line_item, is_inclusive_tax),
       );
@@ -420,6 +417,7 @@ export function LineItemInputTable({
                 : fetched_item.purchase_price;
             item.rate_base = rate;
             item.rate = rate / exchangeRateValue;
+            item.product_type = fetched_item.product_type;
 
             item.unit = fetched_item.unit;
             item.unit_id = fetched_item.unit_id;
@@ -605,10 +603,7 @@ export function LineItemInputTable({
           rate: line_item.rate_base / exchange_rate, // just update the rate, don't update the rate_base.
         }));
 
-        line_items = calculateLineItems(
-            line_items,
-          isInclusiveTax,
-        );
+        line_items = calculateLineItems(line_items, isInclusiveTax);
         setLineItems(line_items);
         updateParentLineItemAndTaxState(
           line_items,
@@ -784,6 +779,17 @@ export function LineItemInputTable({
                               handleDescriptionChange(ev, index);
                             }}
                           />
+                        )}
+                        {lineItem.item && (
+                          <div className={"w-auto"}>
+                              <Badge
+                                className={
+                                  "text-[10px] px-1 py-0.5 rounded-none bg-teal-600 capitalize"
+                                }
+                              >
+                                {lineItem.product_type}
+                              </Badge>
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -1028,8 +1034,6 @@ const ExchangeInputComponent = ({
   organizationCurrencyDetails,
   onExchangeInfoSave,
 }) => {
-
-
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const eRateSchema = z.object({

@@ -12,6 +12,7 @@ type InvoiceCreationPayloadType = {
 };
 type InvoiceLineItemCreationPayloadType = {
   item_id: number;
+    product_type: string;
   name: string;
   description?: string;
   unit?: string;

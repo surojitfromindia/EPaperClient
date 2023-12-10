@@ -4,7 +4,8 @@ import classNames from "classnames";
 const reactSelectStyle: ClassNamesConfig = {
   option: (state) =>
     classNames(
-      state.isSelected && "!bg-primary",
+      state.isSelected &&
+        "!bg-primary !flex justify-between after:content-['✓']",
       state.isFocused && !state.isSelected && "!bg-accent !text-primary",
       "!text-sm",
       "rounded-sm",
