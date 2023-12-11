@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils.ts";
 import { Button } from "@/components/ui/button.tsx";
@@ -12,6 +12,19 @@ import AuthenticationService, {
   LoginWithEmailPayload,
 } from "@/API/Authentication/v1/loginService.ts";
 import { Loader2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover.tsx";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command.tsx";
+import { CheckIcon } from "@radix-ui/react-icons";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -89,8 +102,133 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In with Email
           </Button>
+          {/*<AutoCompleteInput />*/}
         </div>
       </form>
+    </div>
+  );
+}
+
+function AutoCompleteInput() {
+  const [open, setOpen] = React.useState(false);
+  const [value, setValue] = React.useState("");
+
+  const salutations = [
+    {
+      value: "Mr",
+      label: "Mr",
+    },
+    {
+      value: "Mrs",
+      label: "Mrs",
+    },
+    {
+      value: "Miss",
+      label: "Miss",
+    },
+    {
+      value: "Ms",
+      label: "Ms",
+    },
+    {
+      value: "Dr",
+      label: "Dr",
+    },
+    {
+      value: "Mrs",
+      label: "Mrs",
+    },
+    {
+      value: "Miss",
+      label: "Miss",
+    },
+    {
+      value: "Ms",
+      label: "Ms",
+    },
+    {
+      value: "Dr",
+      label: "Dr",
+    },
+  ];
+  const [visibleOptions, setVisibleOptions] = useState(salutations);
+
+  const View = ({ option }) => <div>{option.label}</div>;
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [ref]);
+
+  const handleSelect = (option) => {
+    setValue(option.value);
+    setOpen(false);
+  };
+
+  const onSearching = (value) => {
+    if (value.length > 0) {
+      setVisibleOptions(
+        salutations.filter((option) =>
+          option.value.toLowerCase().includes(value.toLowerCase()),
+        ),
+      );
+    } else {
+      setVisibleOptions(salutations);
+    }
+    setValue(value);
+    setOpen(true);
+  };
+
+  const handleOpen = ()=>{
+    setOpen(true);
+    setVisibleOptions(salutations)
+  }
+
+  return (
+    <div className={"relative"} id={"acib"} ref={ref}>
+      <Input
+        value={value}
+        onFocus={() => {
+          handleOpen()
+        }}
+        onKeyDown={(event) => {
+          // Close the popover when the escape key is pressed
+          if (event.key === "Escape") {
+            setOpen(false);
+          }
+          if (event.key === "Enter") {
+            setOpen(false);
+          }
+        }}
+        onChange={(event) => {
+          onSearching(event.target.value);
+        }}
+      />
+      {open && (
+        <div
+          className={"absolute z-[100] overflow-y-scroll h-56 mt-2 rounded-sm shadow-md w-full flex flex-col"}
+        >
+          {visibleOptions.map((option, index) => (
+            <div
+              className={"p-3 text-sm hover:bg-accent"}
+              onClick={() => handleSelect(option)}
+            >
+              <View option={option} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
