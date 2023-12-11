@@ -81,6 +81,15 @@ const schema = z.object({
   notes: z.string().optional().nullable(),
   exchange_rate: z.number().optional().nullable(),
 });
+const defaultIssueDate = new Date();
+
+const mapPaymentTermToRSelect = (paymentTerm: PaymentTerm) => ({
+  label: `${paymentTerm.payment_term_name}`,
+  value: paymentTerm.payment_term_id,
+  is_default: paymentTerm.is_default,
+  payment_term: paymentTerm.payment_term,
+  interval: paymentTerm.interval,
+});
 
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
@@ -94,8 +103,9 @@ export default function InvoiceAdd() {
   const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
-
   const navigate = useNavigate();
+
+  // edit page states
   const [editPageInvoiceDetails, setEditPageInvoiceDetails] =
     useState<Invoice>();
   const [contactDetails, setContactDetails] = useState<Contact>();
@@ -115,10 +125,12 @@ export default function InvoiceAdd() {
   const [isSavingActionInProgress, setIsSavingActionInProgress] =
     useState<boolean>(false);
 
+  // default values for contact autocomplete
   const [contactDefaultList, setContactDefaultList] = useState<
     { label: string; value: number }[]
   >([]);
 
+  // error messages
   const [errorMessagesForBanner, setErrorMessagesForBanner] = useState<
     string[]
   >([]);
@@ -145,15 +157,10 @@ export default function InvoiceAdd() {
   const handleEditPageDetailsLoad = useCallback(
     (data: InvoiceEditPageContent) => {
       const paymentTerms = data.payment_terms;
-      const defaultIssueDate = new Date();
       const defaultPaymentTerm = paymentTerms.find((term) => term.is_default);
-      const defaultPaymentTermRSelect = {
-        label: `${defaultPaymentTerm?.name}`,
-        value: defaultPaymentTerm?.payment_term_id,
-        is_default: defaultPaymentTerm?.is_default,
-        payment_term: defaultPaymentTerm?.payment_term,
-        interval: defaultPaymentTerm?.interval,
-      };
+      const defaultPaymentTermRSelect = mapPaymentTermToRSelect(
+        defaultPaymentTerm!,
+      );
       const defaultDueDate = calculateDueDate({
         issue_date: defaultIssueDate,
         paymentTerm: defaultPaymentTerm!,
@@ -186,16 +193,13 @@ export default function InvoiceAdd() {
       })
       .catch((error) => console.log(error))
       .finally(() => setIsInitialLoading(false));
-  }, [editInvoiceId, handleEditPageDetailsLoad]);
-  const paymentTermsDropDown = useMemo(() => {
-    const cratedPaymentTerms = editPageContent.payment_terms.map((acc) => ({
-      label: `${acc.name}`,
-      value: acc.payment_term_id,
-      is_default: acc.is_default,
-      payment_term: acc.payment_term,
-      interval: acc.interval,
-    }));
+  }, [editInvoiceId]);
 
+  // ----------------- dropdowns -----------------
+  const paymentTermsDropDown = useMemo(() => {
+    const cratedPaymentTerms = editPageContent.payment_terms.map(
+      mapPaymentTermToRSelect,
+    );
     return [...cratedPaymentTerms, CUSTOM_PAYMENT_TERM];
   }, [editPageContent.payment_terms]);
   const taxesDropDown = useMemo(() => {
@@ -205,17 +209,22 @@ export default function InvoiceAdd() {
       tax_percentage: acc.tax_percentage,
     }));
   }, [editPageContent.taxes]);
-  const handlePaymentTermChange = (selectedOption: PaymentTerm) => {
-    const issue_date_watch_value = getValues("issue_date");
-    if (selectedOption.is_custom) return;
-    // depending on the payment term, set the due date
-    const paymentTerm = selectedOption;
-    const newDate = calculateDueDate({
-      issue_date: issue_date_watch_value,
-      paymentTerm,
-    }).due_date;
-    setValue("due_date", newDate);
-  };
+
+  // ----------------- event handlers -----------------
+  const handlePaymentTermChange = useCallback(
+    (selectedOption: PaymentTerm) => {
+      const issue_date_watch_value = getValues("issue_date");
+      if (selectedOption.is_custom) return;
+      // depending on the payment term, set the due date
+      const paymentTerm = selectedOption;
+      const newDate = calculateDueDate({
+        issue_date: issue_date_watch_value,
+        paymentTerm,
+      }).due_date;
+      setValue("due_date", newDate);
+    },
+    [getValues, setValue],
+  );
   const handleIssueDateChange = (date: Date) => {
     const payment_term_watch_value = getValues("payment_term");
     if (payment_term_watch_value.is_custom) return;
@@ -227,7 +236,6 @@ export default function InvoiceAdd() {
     }).due_date;
     setValue("due_date", newDate);
   };
-
   const handleDueDateChange = (date: Date) => {
     setValue("due_date", date);
     // on due date manual change, set the payment term to custom
@@ -257,7 +265,6 @@ export default function InvoiceAdd() {
         .catch((error) => console.log(error));
     }
   }, [contactAutoCompleteFetch, isInitialContactLoadingDone]);
-
   const handleContactAutoCompleteChange = useCallback(
     (
       search_text: string,
@@ -280,6 +287,53 @@ export default function InvoiceAdd() {
     }) => {
       setValue("is_inclusive_tax", is_inclusive_tax);
       setValue("line_items", line_items);
+      setValue("exchange_rate", exchange_rate);
+    },
+    [setValue],
+  );
+
+  const handleContactChange = useCallback(
+    (contact_id: number) => {
+      if (contact_id)
+        invoiceService
+          .getInvoiceEditPageFromContact({
+            contact_id: contact_id,
+          })
+          .then((data) => {
+            const contact = data.contact;
+            setContactDetails(contact);
+
+            // update exchange rate if the currency is different
+            if (contact.currency_code !== contactDetails?.currency_code) {
+              setExchangeRate(1);
+            }
+
+            // update the payment term using the contact payment term
+            const contactPaymentTerm = editPageContent.payment_terms.find(
+              (term) => term.payment_term_id === contact.payment_term_id,
+            );
+            const defaultDueDate = calculateDueDate({
+              issue_date: getValues("issue_date"),
+              paymentTerm: contactPaymentTerm!,
+            }).due_date;
+            handlePaymentTermChange(contactPaymentTerm!);
+            setValue("due_date", defaultDueDate);
+            setValue(
+              "payment_term",
+              mapPaymentTermToRSelect(contactPaymentTerm!),
+            );
+          });
+    },
+    [
+      contactDetails?.currency_code,
+      editPageContent.payment_terms,
+      getValues,
+      handlePaymentTermChange,
+      setValue,
+    ],
+  );
+  const handleOnlyExchangeRateChange = useCallback(
+    (exchange_rate: number) => {
       setValue("exchange_rate", exchange_rate);
     },
     [setValue],
@@ -385,29 +439,6 @@ export default function InvoiceAdd() {
       );
     }
   }, [errors]);
-
-  const handleContactChange = useCallback((contact_id: number) => {
-    if (contact_id)
-      invoiceService
-        .getInvoiceEditPageFromContact({
-          contact_id: contact_id,
-        })
-        .then((data) => {
-          const contact = data.contact;
-          // update exchange rate if the currency is different
-          if (contact.currency_code !== contactDetails?.currency_code) {
-            setExchangeRate(1);
-          }
-          setContactDetails(contact);
-        });
-  }, []);
-
-  const handleOnlyExchangeRateChange = useCallback(
-    (exchange_rate: number) => {
-      setValue("exchange_rate", exchange_rate);
-    },
-    [setValue],
-  );
 
   if (isInitialLoading) {
     return (

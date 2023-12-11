@@ -18,14 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table.tsx";
-import {
-  ArrowRight,
-  ChevronDown,
-  CircleEllipsis,
-  Pencil,
-  PlusCircle,
-  XCircle,
-} from "lucide-react";
+import { ChevronDown, CircleEllipsis, PlusCircle, XCircle } from "lucide-react";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactAsyncSelect from "react-select/async";
 import { Textarea } from "@/components/ui/textarea.tsx";
@@ -44,33 +37,24 @@ import { InvoiceLineItem } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { cn } from "@/lib/utils.ts";
 import { Badge } from "@/components/ui/badge.tsx";
-import RNumberFormat, {
-  RNumberFormatAsText,
-} from "@/components/app/common/RNumberFormat.tsx";
+import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { MathLib } from "@/util/MathLib/mathLib.ts";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { isValidNumber } from "@/util/validityCheckUtil.ts";
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form.tsx";
 import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
 import { useAppSelector } from "@/redux/hooks.ts";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+  ExchangeInputComponent,
+  onExchangeInfoSave,
+} from "@/components/app/common/ExchangeInputComponent.tsx";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -188,6 +172,7 @@ export function LineItemInputTable({
   const [exchangeRateValue, setExchangeRateValue] = useState(
     transactionExchangeRate,
   );
+  const [showDiscountColumn, setShowDiscountColumn] = useState(false);
   useEffect(() => {
     setExchangeRateValue(transactionExchangeRate);
   }, [transactionExchangeRate]);
@@ -265,6 +250,11 @@ export function LineItemInputTable({
           value: line_item.account_id,
         },
       }));
+      const someLineHasDiscount = mapped_line_items.some(
+        (line_item) => line_item.discount_amount !== 0,
+      );
+      setShowDiscountColumn(someLineHasDiscount);
+
       setIsInclusiveTax(isTransactionInclusiveTax);
       setLineItems(mapped_line_items);
       onLineItemsUpdate?.({
@@ -587,32 +577,33 @@ export function LineItemInputTable({
     setItemEditingModalOpenFor(null);
   };
 
-  const handleExchangeInfoSave = ({
+  const handleExchangeInfoSave: onExchangeInfoSave = ({
     exchange_rate,
     update_all_line_items,
-  }: {
-    exchange_rate: number;
-    update_all_line_items: boolean;
   }) => {
     const hasExchangeRateChanged = exchangeRateValue !== exchange_rate;
+    // update the exchange rate value only if it has changed.
     if (hasExchangeRateChanged) {
       setExchangeRateValue(exchange_rate);
-      if (update_all_line_items) {
-        let line_items = lineItems.map((line_item) => ({
-          ...line_item,
-          rate: line_item.rate_base / exchange_rate, // just update the rate, don't update the rate_base.
-        }));
+    }
+    // update the rate of all line items only if
+    // user chooses to update all line items
+    // otherwise call the callback function to update the exchange rate only in the parent component.
+    if (update_all_line_items) {
+      let line_items = lineItems.map((line_item) => ({
+        ...line_item,
+        rate: line_item.rate_base / exchange_rate, // just update the rate, don't update the rate_base.
+      }));
 
-        line_items = calculateLineItems(line_items, isInclusiveTax);
-        setLineItems(line_items);
-        updateParentLineItemAndTaxState(
-          line_items,
-          isInclusiveTax,
-          exchange_rate,
-        );
-      } else {
-        onOnlyExchangeRateChange?.(exchange_rate);
-      }
+      line_items = calculateLineItems(line_items, isInclusiveTax);
+      setLineItems(line_items);
+      updateParentLineItemAndTaxState(
+        line_items,
+        isInclusiveTax,
+        exchange_rate,
+      );
+    } else {
+      onOnlyExchangeRateChange?.(exchange_rate);
     }
   };
 
@@ -659,9 +650,11 @@ export function LineItemInputTable({
               <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
                 rate
               </TableHead>
-              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-                discount (%)
-              </TableHead>
+              {showDiscountColumn && (
+                <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+                  discount (%)
+                </TableHead>
+              )}
               <TableHead className="w-[170px] px-4 py-1 text_thead">
                 tax (%)
               </TableHead>
@@ -669,7 +662,25 @@ export function LineItemInputTable({
                 <div>amount</div>
                 <div className={"relative break-words"}>
                   <div className={"absolute -top-[17px] -right-[32px] "}>
-                    <CircleEllipsis className={"w-4 h-4 text-primary"} />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <CircleEllipsis className={"w-4 h-4 text-primary"} />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side={"bottom"}
+                        align={"end"}
+                        className="w-36"
+                      >
+
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setShowDiscountColumn((prev) => !prev);
+                          }}
+                        >
+                          {showDiscountColumn ? "Hide" : "Show"} Discount
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </TableHead>
@@ -782,13 +793,13 @@ export function LineItemInputTable({
                         )}
                         {lineItem.item && (
                           <div className={"w-auto"}>
-                              <Badge
-                                className={
-                                  "text-[10px] px-1 py-0.5 rounded-none bg-teal-600 capitalize"
-                                }
-                              >
-                                {lineItem.product_type}
-                              </Badge>
+                            <Badge
+                              className={
+                                "text-[10px] px-1 py-0.5 rounded-none bg-teal-600 capitalize"
+                              }
+                            >
+                              {lineItem.product_type}
+                            </Badge>
                           </div>
                         )}
                       </div>
@@ -839,23 +850,25 @@ export function LineItemInputTable({
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="px-1 py-1 align-top">
-                      <div>
-                        <RNumberFormat
-                          name={"line_item_discount_percentage"}
-                          value={lineItem.discount_percentage}
-                          customInput={Input}
-                          className="w-full border-0 text-right"
-                          allowNegative={false}
-                          onBlur={() => {
-                            handleInputFocusChange();
-                          }}
-                          onValueChange={({ floatValue }) => {
-                            handleDiscountChange(floatValue, index);
-                          }}
-                        />
-                      </div>
-                    </TableCell>
+                    {showDiscountColumn && (
+                      <TableCell className="px-1 py-1 align-top">
+                        <div>
+                          <RNumberFormat
+                            name={"line_item_discount_percentage"}
+                            value={lineItem.discount_percentage}
+                            customInput={Input}
+                            className="w-full border-0 text-right"
+                            allowNegative={false}
+                            onBlur={() => {
+                              handleInputFocusChange();
+                            }}
+                            onValueChange={({ floatValue }) => {
+                              handleDiscountChange(floatValue, index);
+                            }}
+                          />
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell className="px-0 py-0 align-top">
                       <div>
                         <ReactSelect
@@ -1027,156 +1040,6 @@ const ITEM_OPTIONS_COMPONENT: React.FC<
     </div>
   </components.Option>
 );
-
-const ExchangeInputComponent = ({
-  contactCurrencyDetails,
-  exchangeRateValue,
-  organizationCurrencyDetails,
-  onExchangeInfoSave,
-}) => {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
-  const eRateSchema = z.object({
-    exchange_rate: z.number().nonnegative("Exchange rate must be positive"),
-    update_all_line_items: z.boolean(),
-  });
-  const form = useForm<z.infer<typeof eRateSchema>>({
-    resolver: zodResolver(eRateSchema),
-    defaultValues: {
-      exchange_rate: exchangeRateValue,
-      update_all_line_items: false,
-    },
-  });
-  const { handleSubmit, control } = form;
-  const handleFormSubmit = (data: z.infer<typeof eRateSchema>) => {
-    const exchange_rate = data.exchange_rate;
-    const update_all_line_items = data.update_all_line_items;
-    onExchangeInfoSave?.({ exchange_rate, update_all_line_items });
-    setIsPopoverOpen(false);
-  };
-
-  return (
-    <div className={"flex items-center space-x-1 rounded-md bg-secondary pl-2"}>
-      <div className={"text-xs font-medium "}> 1</div>
-      <span className={"text-xs  font-medium capitalize text-primary"}>
-        {contactCurrencyDetails?.currency_code ??
-          contactCurrencyDetails?.currency_code}
-      </span>
-      <span>
-        <ArrowRight className={"h-3 w-3 mx-1"} />
-      </span>
-      <RNumberFormatAsText
-        className={"text-xs font-medium"}
-        value={exchangeRateValue}
-      />
-      <Popover open={isPopoverOpen}>
-        <div className={"flex items-center"}>
-          <span className={"text-xs  font-medium"}>
-            {organizationCurrencyDetails?.currency_code ??
-              organizationCurrencyDetails?.currency_code}
-          </span>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost_secondary"
-              size={"icon"}
-              className={"border-l-0 rounded-l-none h-8 w-8 ml-1"}
-              type={"button"}
-              aria-description={"More options on adding new rows"}
-              onClick={() => setIsPopoverOpen((prev) => !prev)}
-            >
-              <Pencil className={"h-4 w-4"} />
-            </Button>
-          </PopoverTrigger>
-        </div>
-
-        <PopoverContent className="w-80" align={"end"}>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Exchange rate</h4>
-              <p className="text-sm text-muted-foreground">
-                Set the exchange rate for this transaction.
-              </p>
-            </div>
-            <Form {...form}>
-              <div className="grid gap-2 mb-4">
-                <div className=" w-full">
-                  <FormField
-                    name={"exchange_rate"}
-                    render={({ field }) => (
-                      <FormItem
-                        className={"flex flex-row items-center space-x-2 "}
-                      >
-                        <FormLabel
-                          htmlFor={"exchange_rate"}
-                          className={"capitalize"}
-                        >
-                          Rate
-                        </FormLabel>
-                        <div className=" flex-col">
-                          <FormControl>
-                            <RNumberFormat
-                              value={field.value}
-                              id="exchange_rate"
-                              onValueChange={({ floatValue }) => {
-                                field.onChange(floatValue);
-                              }}
-                              customInput={Input}
-                              getInputRef={field.ref}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className=" w-full flex items-center space-x-3">
-                  <FormField
-                    render={({ field }) => (
-                      <FormItem
-                        className={"flex flex-row items-start space-y-0"}
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            id="update_all_line_items"
-                            name={"update_all_line_items"}
-                            className={"inline-flex mt-1.5 mr-2"}
-                          />
-                        </FormControl>
-                        <div className="">
-                          <FormLabel
-                            htmlFor={"update_all_line_items"}
-                            className={" capitalize"}
-                          >
-                            Update all line items
-                          </FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
-                    name={"update_all_line_items"}
-                    control={control}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-start">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleSubmit(handleFormSubmit)}
-                >
-                  Save
-                </Button>
-              </div>
-            </Form>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-};
 
 const LineItemOverviewComponent = ({
   line_items,
