@@ -12,19 +12,9 @@ import AuthenticationService, {
   LoginWithEmailPayload,
 } from "@/API/Authentication/v1/loginService.ts";
 import { Loader2 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command.tsx";
-import { CheckIcon } from "@radix-ui/react-icons";
+
+import CommandMenu, {Option} from "@/components/login/BBN.tsx";
+
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -66,6 +56,44 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     }
   }
 
+
+  const FRAMEWORKS = [
+    {
+      value: "next.js",
+      label: "Next.js",
+    },
+    {
+      value: "sveltekit",
+      label: "SvelteKit",
+    },
+    {
+      value: "nuxt.js",
+      label: "Nuxt.js",
+    },
+    {
+      value: "remix",
+      label: "Remix",
+    },
+    {
+      value: "astro",
+      label: "Astro",
+    },
+    {
+      value: "wordpress",
+      label: "WordPress",
+    },
+    {
+      value: "express.js",
+      label: "Express.js",
+    },
+    {
+      value: "nest.js",
+      label: "Nest.js",
+    },
+  ]
+  const [isDisabled, setDisbled] = useState(false)
+  const [value, setValue] = useState<Option>()
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <form onSubmit={onSubmit}>
@@ -98,137 +126,26 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               autoComplete={"current-password"}
             />
           </div>
+          <CommandMenu
+              options={FRAMEWORKS}
+              emptyMessage="No resulsts."
+              placeholder="Find something"
+              isLoading={isLoading}
+              onValueChange={setValue}
+              value={value}
+              disabled={isDisabled}
+          />
+
           <Button type={"submit"} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In with Email
           </Button>
-          {/*<AutoCompleteInput />*/}
         </div>
       </form>
     </div>
   );
 }
 
-function AutoCompleteInput() {
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
 
-  const salutations = [
-    {
-      value: "Mr",
-      label: "Mr",
-    },
-    {
-      value: "Mrs",
-      label: "Mrs",
-    },
-    {
-      value: "Miss",
-      label: "Miss",
-    },
-    {
-      value: "Ms",
-      label: "Ms",
-    },
-    {
-      value: "Dr",
-      label: "Dr",
-    },
-    {
-      value: "Mrs",
-      label: "Mrs",
-    },
-    {
-      value: "Miss",
-      label: "Miss",
-    },
-    {
-      value: "Ms",
-      label: "Ms",
-    },
-    {
-      value: "Dr",
-      label: "Dr",
-    },
-  ];
-  const [visibleOptions, setVisibleOptions] = useState(salutations);
 
-  const View = ({ option }) => <div>{option.label}</div>;
-  const ref = useRef(null);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
-        setOpen(false);
-      }
-    }
-
-    // Bind the event listener
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      // Unbind the event listener on clean up
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [ref]);
-
-  const handleSelect = (option) => {
-    setValue(option.value);
-    setOpen(false);
-  };
-
-  const onSearching = (value) => {
-    if (value.length > 0) {
-      setVisibleOptions(
-        salutations.filter((option) =>
-          option.value.toLowerCase().includes(value.toLowerCase()),
-        ),
-      );
-    } else {
-      setVisibleOptions(salutations);
-    }
-    setValue(value);
-    setOpen(true);
-  };
-
-  const handleOpen = ()=>{
-    setOpen(true);
-    setVisibleOptions(salutations)
-  }
-
-  return (
-    <div className={"relative"} id={"acib"} ref={ref}>
-      <Input
-        value={value}
-        onFocus={() => {
-          handleOpen()
-        }}
-        onKeyDown={(event) => {
-          // Close the popover when the escape key is pressed
-          if (event.key === "Escape") {
-            setOpen(false);
-          }
-          if (event.key === "Enter") {
-            setOpen(false);
-          }
-        }}
-        onChange={(event) => {
-          onSearching(event.target.value);
-        }}
-      />
-      {open && (
-        <div
-          className={"absolute z-[100] overflow-y-scroll h-56 mt-2 rounded-sm shadow-md w-full flex flex-col"}
-        >
-          {visibleOptions.map((option, index) => (
-            <div
-              className={"p-3 text-sm hover:bg-accent"}
-              onClick={() => handleSelect(option)}
-            >
-              <View option={option} />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
