@@ -49,7 +49,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import { Contact } from "@/API/Resources/v1/Contact.Service.ts";
+import { Contact } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { useAppSelector } from "@/redux/hooks.ts";
 import {
   ExchangeInputComponent,

@@ -116,14 +116,6 @@ class ItemService implements APIService {
       }
     >(url, payload);
   }
-  //
-  // deleteSingleChartOfAccounts({ account_id }: { account_id: number }) {
-  //     const url = `/accounts/${account_id}`;
-  //     return this.#axiosConfig.APIDeleteRequestWrapper<{
-  //         account_ids: number[];
-  //     }>(url);
-  // }
-  //
   getItem({ item_id }: EditPageServiceParams = {}) {
     const url = `${this.urlFragment}/${item_id}`;
     return this.#axiosConfig.APIGetRequestWrapper<{
