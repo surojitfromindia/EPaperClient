@@ -5,11 +5,11 @@ import {
   CommandItem,
   CommandList,
   CommandInput,
-} from "@/components/ui/command";
+} from "@/components/ui/command.tsx";
 import { Command as CommandPrimitive } from "cmdk";
 import { useState, useRef, useCallback, type KeyboardEvent } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils.ts";
 import { Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -24,6 +24,7 @@ type AutoCompleteProps = {
   isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  textInputClassNames?: string;
 };
 
 export default function AutoComplete({
@@ -34,6 +35,7 @@ export default function AutoComplete({
   onValueChange,
   disabled,
   isLoading = false,
+  textInputClassNames,
 }: AutoCompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -103,6 +105,7 @@ export default function AutoComplete({
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
+          className={textInputClassNames}
         ></CommandInput>
       </div>
       <div className="mt-3 relative">

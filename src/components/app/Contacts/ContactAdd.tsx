@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Trash, X } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form.tsx";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -17,22 +16,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
 import ItemService, {
   Item,
-  ItemCreatePayload,
   ItemEditPageContent,
-  ItemFor,
 } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import ReactSelect, { components, OptionProps } from "react-select";
-import ReactSelectCRE from "react-select/creatable";
+import ReactSelect from "react-select";
 import {
   reactSelectComponentOverride,
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
-import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs.tsx";
+import * as React from "react";
+import AutoComplete from "@/components/app/common/AutoCompleteInputable.tsx";
 
 const itemService = new ItemService();
 
@@ -51,6 +52,9 @@ type ItemAddConditionalProp = {
 type ItemAddProp = ItemAddPropBasic | ItemAddConditionalProp;
 
 export default function ContactAdd(props: ItemAddProp) {
+  const redirect_sub_part =
+    props.contact_type === "customer" ? "customers" : "vendors";
+
   const { view_contact_id, isModal } = props;
 
   const { item_id_param } = useParams();
@@ -73,7 +77,7 @@ export default function ContactAdd(props: ItemAddProp) {
   const showCloseButton = !isModal;
 
   const navigate = useNavigate();
-  const [editPageItemDetails, setEditPageItemDetails] = useState<Item>();
+  const [editPageContactDetails, setEditPageContactDetails] = useState<Item>();
   const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
     inventory_accounts_list: [],
     purchase_accounts_list: [],
@@ -90,34 +94,12 @@ export default function ContactAdd(props: ItemAddProp) {
       })
       .then((data) => {
         setEditPageContent(data!);
-        setEditPageItemDetails(data?.item);
+        setEditPageContactDetails(data?.item);
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
   }, [editItemId]);
 
-  const unitsDropDownOptions = useMemo(() => {
-    const units = editPageContent.units;
-    return units.map((unit) => ({
-      label: unit.unit,
-      value: unit.unit,
-      unit_id: unit.unit_id,
-    }));
-  }, [editPageContent]);
-  const incomeAccountsDropDown = useMemo(() => {
-    return editPageContent.income_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
-  }, [editPageContent.income_accounts_list]);
-  const purchaseAccountsDropDown = useMemo(() => {
-    return editPageContent.purchase_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
-  }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map((acc) => ({
       label: `${acc.tax_name} [${acc.tax_percentage}%]`,
@@ -129,14 +111,13 @@ export default function ContactAdd(props: ItemAddProp) {
       props.closeModal();
       return;
     }
-    navigate("/app/inventory/items");
+    navigate(`/app/${redirect_sub_part}`);
   };
 
   const basicSchema = z.object({
     contact_name: z.string().trim().nonempty({ message: "enter item name" }),
     contact_type: z.enum(["customer", "vendor"]),
     company_name: z.string().trim().optional(),
-    email: z.string().email().optional(),
     tax: z.object(
       { value: z.number(), label: z.string() },
       {
@@ -151,6 +132,15 @@ export default function ContactAdd(props: ItemAddProp) {
         required_error: "select a currency",
       },
     ),
+    remarks: z.string().trim().optional(),
+
+    // treat these as first contact person
+    first_name: z.string().trim().optional(),
+    last_name: z.string().trim().optional(),
+    salutation: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    mobile: z.string().trim().optional(),
+    email: z.string().email().optional(),
   });
 
   const customerSchema = z.object({
@@ -224,7 +214,7 @@ export default function ContactAdd(props: ItemAddProp) {
     // navigate("/app/inventory/items");
   };
   // const setFormData = useCallback(
-  //   (data: typeof editPageItemDetails) => {
+  //   (data: typeof editPageContactDetails) => {
   //     // reset the defaults when update
   //     setValue("has_selling_price", false);
   //     setValue("has_purchase_price", false);
@@ -279,11 +269,18 @@ export default function ContactAdd(props: ItemAddProp) {
     };
   }, [loadEditPage]);
   // useEffect(() => {
-  //   if (editPageItemDetails) {
-  //     setFormData(editPageItemDetails);
+  //   if (editPageContactDetails) {
+  //     setFormData(editPageContactDetails);
   //   }
-  // }, [editPageItemDetails, setFormData]);
+  // }, [editPageContactDetails, setFormData]);
 
+  const saluations = useMemo(() => {
+    return [
+      { label: "Mr.", value: "Mr." },
+      { label: "Mrs.", value: "Mrs." },
+      { label: "Ms.", value: "Ms." },
+    ];
+  }, []);
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -311,7 +308,11 @@ export default function ContactAdd(props: ItemAddProp) {
         <Form {...form}>
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
-              <div className={"md:grid-cols-4 col-span-7 space-y-2.5"}>
+              <div
+                className={
+                  "md:grid-cols-4 col-span-8 space-y-2.5 max-w-[1000px]"
+                }
+              >
                 <FormField
                   control={form.control}
                   name="contact_sub_type"
@@ -349,21 +350,35 @@ export default function ContactAdd(props: ItemAddProp) {
                 />
                 <div>
                   <FormField
-                    name={"customer_name"}
-                    render={() => (
+                    name={"salutation"}
+                    render={({ field}) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel className={"capitalize"}>
                           customer name
                         </FormLabel>
-                        <div className="col-span-3 flex flex-row space-x-2">
+                        <div className="col-span-3 flex">
+                            <AutoComplete
+                              options={saluations}
+                              emptyMessage={""}
+                              placeholder={"Salutation"}
+                              textInputClassNames={"w-40"}
+                              onValueChange={
+                                  field.onChange
+                              }
+                              value={field.value}
+                            />
                           <FormControl>
-                            <Input {...register("company_name")} />
+                            <Input
+                                className={"mx-2"}
+                              {...register("first_name")}
+                              placeholder={"First name"}
+                            />
                           </FormControl>{" "}
                           <FormControl>
-                            <Input {...register("company_name")} />
-                          </FormControl>{" "}
-                          <FormControl>
-                            <Input {...register("company_name")} />
+                            <Input
+                              {...register("last_name")}
+                              placeholder={"Last name"}
+                            />
                           </FormControl>
                         </div>
                       </FormItem>
@@ -422,46 +437,84 @@ export default function ContactAdd(props: ItemAddProp) {
                       </FormLabel>
                       <div className="col-span-2 flex-col">
                         <FormControl>
-                          <Input
-                            id="sku"
-                            {...register("email")}
-                          />
+                          <Input id="sku" {...register("email")} />
                         </FormControl>
                       </div>
                     </FormItem>
                   )}
                 />
-                <FormField
-                  name={"comtact"}
-                  render={() => (
-                    <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel htmlFor={"sku"} className={"capitalize"}>
-                        Customer phone
-                      </FormLabel>
-                      <div className="col-span-2 flex flex-row space-x-2">
-                        <FormControl>
-                          <Input
-                            id="sku"
-                            {...register("email")}
-                          />
-                        </FormControl>
-                        <FormControl>
-                          <Input
-                            id="sku"
-                            {...register("email")}
-                          />
-                        </FormControl>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+
+                <FormItem className={"grid grid-cols-4 items-center "}>
+                  <FormLabel htmlFor={"sku"} className={"capitalize"}>
+                    Customer phone
+                  </FormLabel>
+                  <div className="col-span-2 flex flex-row space-x-2">
+                    <FormControl>
+                      <Input
+                        {...register("phone")}
+                        placeholder={"Work phone"}
+                      />
+                    </FormControl>
+                    <FormControl>
+                      <Input {...register("mobile")} placeholder={"Mobile"} />
+                    </FormControl>
+                  </div>
+                </FormItem>
               </div>
             </div>
-            <div
-              className={
-                "grid grid-cols-1 md:grid-cols-5 p-5 bg-gray-50 space-y-6 bg-opacity-60 md:space-y-0   md:space-x-10"
-              }
-            ></div>
+            <Tabs
+              defaultValue={"other_details"}
+              className="mt-3 flex-1 flex-grow"
+            >
+              <div className={"w-full ml-4  bg-background"}>
+                <TabsList className={"space-x-4"}>
+                  <TabsTrigger value="other_details" className={"capitalize"}>
+                    Other Details
+                  </TabsTrigger>
+                  <TabsTrigger value="address" className={"capitalize"}>
+                    Address
+                  </TabsTrigger>
+                  <TabsTrigger value="contact_persons" className={"capitalize"}>
+                    Contact Persons
+                  </TabsTrigger>
+                  <TabsTrigger value="remarks" className={"capitalize"}>
+                    Remarks
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="other_details">
+                <div className={"px-5"}>
+                  <ContactOtherDetails
+                    taxesDropDown={taxesDropDown}
+                    contactDetails={editPageContactDetails}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="address">
+                <div className={"px-5"}>Address</div>
+              </TabsContent>
+              <TabsContent value="contact_persons">
+                <div className={"px-5"}>Contact Persons</div>
+              </TabsContent>
+              <TabsContent value="remarks">
+                <div className={"px-5"}>
+                  <FormItem className={"flex flex-col mt-5 max-w-[600px]"}>
+                    <FormLabel htmlFor={"remarks"} className={"capitalize"}>
+                      Remarks
+                      <span className={"text-muted-foreground mx-2"}>
+                        (For internal use only)
+                      </span>
+                    </FormLabel>
+                    <div className="">
+                      <FormControl>
+                        <Textarea id="remarks" {...register("remarks")} />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                </div>
+              </TabsContent>
+            </Tabs>
             <div className={"h-32"}></div>
           </form>
         </Form>
@@ -488,3 +541,88 @@ export default function ContactAdd(props: ItemAddProp) {
     </div>
   );
 }
+
+const ContactOtherDetails = ({ taxesDropDown, contactDetails }) => {
+  return (
+    <div className={""}>
+      <div className={"grid md:grid-cols-12 grid-cols-6 "}>
+        <div className={"md:grid-cols-4 col-span-7 space-y-2.5 max-w-[900px]"}>
+          <div className={""}>
+            <FormField
+              name={"currency"}
+              render={() => (
+                <FormItem className={"grid grid-cols-4 items-center "}>
+                  <FormLabel
+                    htmlFor={"currency"}
+                    className={"capitalize label-required"}
+                  >
+                    Currency
+                  </FormLabel>
+                  <div className="col-span-2 flex-col">
+                    <FormControl>
+                      <ReactSelect
+                        classNames={reactSelectStyle}
+                        components={reactSelectComponentOverride}
+                        options={[]}
+                        placeholder={"select currency"}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className={""}>
+            <FormField
+              name={"tax"}
+              render={() => (
+                <FormItem className={"grid grid-cols-4 items-center "}>
+                  <FormLabel htmlFor={"tax"} className={"capitalize"}>
+                    Tax Rate
+                  </FormLabel>
+                  <div className="col-span-2 flex-col">
+                    <FormControl>
+                      <ReactSelect
+                        isClearable={true}
+                        placeholder={"select tax"}
+                        options={taxesDropDown}
+                        inputId={"selling_account"}
+                        classNames={reactSelectStyle}
+                        components={{
+                          ...reactSelectComponentOverride,
+                        }}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className={""}>
+            <FormField
+              name={"currency"}
+              render={() => (
+                <FormItem className={"grid grid-cols-4 items-center "}>
+                  <FormLabel htmlFor={"currency"} className={"capitalize "}>
+                    Payment Terms
+                  </FormLabel>
+                  <div className="col-span-2 flex-col">
+                    <FormControl>
+                      <ReactSelect
+                        classNames={reactSelectStyle}
+                        components={reactSelectComponentOverride}
+                        options={[]}
+                        placeholder={"select payment terms"}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

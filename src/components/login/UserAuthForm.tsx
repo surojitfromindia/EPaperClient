@@ -13,7 +13,7 @@ import AuthenticationService, {
 } from "@/API/Authentication/v1/loginService.ts";
 import { Loader2 } from "lucide-react";
 
-import CommandMenu, {Option} from "@/components/login/BBN.tsx";
+import CommandMenu, {Option} from "@/components/app/common/AutoCompleteInputable.tsx";
 
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
