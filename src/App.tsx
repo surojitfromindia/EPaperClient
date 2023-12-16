@@ -5,7 +5,7 @@ import { default as PubicErrorPage } from "@/pages/public/ErrorPages/Page404.tsx
 import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
 import EPaper from "@/components/app/EPaper.tsx";
 import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
-import InvoicePage  from "@/components/app/Invoices/InvoicePage.tsx";
+import InvoicePage from "@/components/app/Invoices/InvoicePage.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ItemPage from "@/components/app/Items/ItemPage.tsx";
 // make InvoiceAdd lazy
@@ -24,6 +24,13 @@ const ChartOfAccountPage = React.lazy(
 const ItemAdd = React.lazy(() => import("@/components/app/Items/ItemAdd.tsx"));
 const ItemDetails = React.lazy(
   () => import("@/components/app/Items/ItemDetails.tsx"),
+);
+
+const ContactPage = React.lazy(
+  () => import("@/components/app/Contacts/ContactPage.tsx"),
+);
+const CustomerAddWrapper = React.lazy(
+  () => import("@/components/app/Contacts/CustomerAddWrapper.tsx"),
 );
 
 function App() {
@@ -59,11 +66,19 @@ function App() {
           children: [
             {
               path: "items/new",
-              element:<LazyWrapper><ItemAdd /></LazyWrapper>,
+              element: (
+                <LazyWrapper>
+                  <ItemAdd />
+                </LazyWrapper>
+              ),
             },
             {
               path: "items/:item_id_param/edit",
-              element: <LazyWrapper><ItemAdd /></LazyWrapper>,
+              element: (
+                <LazyWrapper>
+                  <ItemAdd />
+                </LazyWrapper>
+              ),
             },
             {
               path: "items",
@@ -71,7 +86,11 @@ function App() {
               children: [
                 {
                   path: ":item_id_param",
-                  element: <LazyWrapper><ItemDetails /></LazyWrapper>,
+                  element: (
+                    <LazyWrapper>
+                      <ItemDetails />
+                    </LazyWrapper>
+                  ),
                   children: [
                     {
                       path: "transactions",
@@ -106,8 +125,6 @@ function App() {
           path: "invoices",
           errorElement: <Page404 />,
           children: [
-
-
             {
               path: "",
               element: (
@@ -126,7 +143,33 @@ function App() {
             },
             {
               path: ":invoice_id_param/edit",
-              element: <LazyWrapper><InvoiceAdd /></LazyWrapper>,
+              element: (
+                <LazyWrapper>
+                  <InvoiceAdd />
+                </LazyWrapper>
+              ),
+            },
+          ],
+        },
+        {
+          path: "customers",
+          errorElement: <Page404 />,
+          children: [
+            {
+              path: "",
+              element: (
+                <LazyWrapper>
+                  <ContactPage />
+                </LazyWrapper>
+              ),
+            },
+            {
+              path: "new",
+              element: (
+                <LazyWrapper>
+                  <CustomerAddWrapper />
+                </LazyWrapper>
+              ),
             },
           ],
         },

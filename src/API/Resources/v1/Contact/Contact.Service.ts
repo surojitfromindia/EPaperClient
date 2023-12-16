@@ -2,8 +2,8 @@ import { Currency } from "@/API/Resources/v1/Currency.Service.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
+import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
-import {PaymentTerm} from "@/API/Resources/v1/PaymentTerm.ts";
 
 interface ContactGenerated {
   contact_id: number;
@@ -34,6 +34,14 @@ type EditPageServiceParams = {
 type UpdateServiceParams = {
   contact_id?: number;
 };
+
+type ContactTableView = {
+    contact_name: string;
+    company_name?: string;
+    currency_code?: string;
+    currency_name?: string;
+    currency_symbol?: string;
+}
 
 type ContactCreateCommonPayload = {
   contact_name: string;
@@ -66,16 +74,16 @@ class ContactService implements APIService {
     this.abortController = new AbortController();
   }
 
-  getItems() {
+  getContacts() {
     const url = this.urlFragment;
     return this.#axiosConfig.APIGetRequestWrapper<{
-      items: Item[];
+      contacts: Contact[];
     }>(url, {
       searchParameters: [],
       abortController: this.abortController,
     });
   }
-  getItemEditPage({ contact_id }: EditPageServiceParams = {}) {
+  getContactEditPage({ contact_id }: EditPageServiceParams = {}) {
     const url = this.urlFragment + "/edit_page";
     return this.#axiosConfig.APIGetRequestWrapper<ContactEditPageContent>(url, {
       searchParameters: [
@@ -112,5 +120,5 @@ class ContactService implements APIService {
   }
 }
 
-export type { Contact };
+export type { Contact, ContactTableView };
 export default ContactService;

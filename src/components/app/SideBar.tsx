@@ -6,7 +6,7 @@ import {
   ChevronLeft,
   Gauge,
   Receipt,
-  ShoppingCart,
+  ShoppingCart, UserCircle,
 } from "lucide-react";
 import classNames from "classnames";
 
@@ -57,6 +57,18 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
                 >
                   <ShoppingCart className={"h-4 w-4 mr-2"} />
                   Item
+                </Button>
+              )}
+            </NavLink>
+
+            <NavLink to={"/app/customers"}>
+              {({ isActive }) => (
+                <Button
+                  variant={isActiveLink(isActive)}
+                  className="w-full  justify-start"
+                >
+                  <UserCircle className={"h-4 w-4 mr-2"} />
+                  Customer
                 </Button>
               )}
             </NavLink>
