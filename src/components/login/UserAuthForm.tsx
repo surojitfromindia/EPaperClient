@@ -57,42 +57,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   }
 
 
-  const FRAMEWORKS = [
-    {
-      value: "next.js",
-      label: "Next.js",
-    },
-    {
-      value: "sveltekit",
-      label: "SvelteKit",
-    },
-    {
-      value: "nuxt.js",
-      label: "Nuxt.js",
-    },
-    {
-      value: "remix",
-      label: "Remix",
-    },
-    {
-      value: "astro",
-      label: "Astro",
-    },
-    {
-      value: "wordpress",
-      label: "WordPress",
-    },
-    {
-      value: "express.js",
-      label: "Express.js",
-    },
-    {
-      value: "nest.js",
-      label: "Nest.js",
-    },
-  ]
-  const [isDisabled, setDisbled] = useState(false)
-  const [value, setValue] = useState<Option>()
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -126,15 +90,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               autoComplete={"current-password"}
             />
           </div>
-          <CommandMenu
-              options={FRAMEWORKS}
-              emptyMessage="No resulsts."
-              placeholder="Find something"
-              isLoading={isLoading}
-              onValueChange={setValue}
-              value={value}
-              disabled={isDisabled}
-          />
+
 
           <Button type={"submit"} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

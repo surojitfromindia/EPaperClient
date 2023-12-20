@@ -75,15 +75,23 @@ export default function AutoComplete({
 
   const handleBlur = useCallback(() => {
     setOpen(false);
-    setInputValue(selected?.label);
+    const input_text = inputRef.current?.value;
+    const last_selected_label = selected?.label;
+    let new_selected: Option;
+    if (last_selected_label &&last_selected_label.toLowerCase() === input_text.toLowerCase()) {
+      setInputValue(last_selected_label);
+      new_selected = selected;
+    } else {
+      setInputValue(input_text || "");
+      new_selected = { label: input_text, value: input_text };
+    }
+    onValueChange?.(new_selected);
   }, [selected]);
 
   const handleSelectOption = useCallback(
     (selectedOption: Option) => {
       setInputValue(selectedOption.label);
-
       setSelected(selectedOption);
-      onValueChange?.(selectedOption);
 
       // This is a hack to prevent the input from being focused after the user selects an option
       // We can call this hack: "The next tick"
