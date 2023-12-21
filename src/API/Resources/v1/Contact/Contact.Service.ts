@@ -1,68 +1,12 @@
-import { Currency } from "@/API/Resources/v1/Currency.Service.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
-import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
-import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
-import { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
+import { ContactCreatePayload } from "@/API/Resources/v1/Contact/ContactCreate.Payload";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { ContactEditPageContent } from "@/API/Resources/v1/Contact/ContactEditPage.Payload";
 
-interface ContactGenerated {
-  contact_id: number;
-  status: "active" | "deleted";
-}
-
-interface Contact extends ContactGenerated {
-  contact_name: string;
-  company_name: string;
-  currency_id: number;
-  currency_name?: Currency["currency_name"];
-  currency_code?: Currency["currency_code"];
-  currency_symbol?: Currency["currency_symbol"];
-  payment_term_id: number;
-  remarks?: string;
-  contact_type: "customer" | "vendor";
-  contact_sub_type?: "individual" | "business";
-}
-
-type ContactEditPageContent = {
-  taxes: TaxRate[];
-  payment_terms: PaymentTerm[];
-  contact?: Contact;
-};
 type EditPageServiceParams = {
   contact_id?: number;
 };
-type UpdateServiceParams = {
-  contact_id?: number;
-};
-
-type ContactTableView = {
-    contact_name: string;
-    company_name?: string;
-    currency_code?: string;
-    currency_name?: string;
-    currency_symbol?: string;
-}
-
-type ContactCreateCommonPayload = {
-  contact_name: string;
-  company_name: string;
-  currency_id: number;
-  currency_name?: Currency["currency_name"];
-  currency_code?: Currency["currency_code"];
-  currency_symbol?: Currency["currency_symbol"];
-  payment_term_id: number;
-  remarks?: string;
-  contact_type: "customer" | "vendor";
-};
-
-type ContactTypeVendorPayload = ContactCreateCommonPayload;
-type ContactTypeCustomerPayload = ContactCreateCommonPayload & {
-  contact_sub_type: "individual" | "business";
-};
-
-type ContactCreatePayload =
-  | ContactTypeVendorPayload
-  | ContactTypeCustomerPayload;
 
 class ContactService implements APIService {
   readonly urlFragment: string = "/contacts";
@@ -120,5 +64,4 @@ class ContactService implements APIService {
   }
 }
 
-export type { Contact, ContactTableView };
-export default ContactService;
+export  { ContactService };

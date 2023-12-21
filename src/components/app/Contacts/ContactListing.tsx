@@ -22,10 +22,8 @@ import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import {
-  Contact,
-  ContactTableView,
-} from "@/API/Resources/v1/Contact/Contact.Service.ts";
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
+import {ContactTableView} from "@/API/Resources/v1/Contact/Contact.TableView";
 
 interface ContactListingProps extends React.HTMLAttributes<HTMLDivElement> {
   contact_type: "customer" | "vendor";

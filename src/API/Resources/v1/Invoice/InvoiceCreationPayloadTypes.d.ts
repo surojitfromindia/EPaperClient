@@ -1,8 +1,10 @@
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
+
 type InvoiceCreationPayloadType = {
   issue_date: Date;
   due_date: Date;
   payment_term_id?: number;
-  contact_id: number;
+  contact_id: Contact["contact_id"];
   invoice_number: string;
   is_inclusive_tax: boolean;
   line_items: InvoiceLineItemCreationPayloadType[];

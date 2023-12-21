@@ -42,9 +42,9 @@ import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCr
 import { toast } from "@/components/ui/use-toast.ts";
 import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
-import { Contact } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
 import { Badge } from "@/components/ui/badge.tsx";
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();

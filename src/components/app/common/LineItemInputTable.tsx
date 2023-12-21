@@ -49,12 +49,12 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form.tsx";
-import { Contact } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { useAppSelector } from "@/redux/hooks.ts";
 import {
   ExchangeInputComponent,
   onExchangeInfoSave,
 } from "@/components/app/common/ExchangeInputComponent.tsx";
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();

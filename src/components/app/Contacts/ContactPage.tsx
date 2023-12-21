@@ -3,9 +3,8 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast.ts";
 import classNames from "classnames";
 import ContactListing from "@/components/app/Contacts/ContactListing.tsx";
-import ContactService, {
-  Contact,
-} from "@/API/Resources/v1/Contact/Contact.Service.ts";
+import ContactService from "@/API/Resources/v1/Contact/Contact.Service.ts";
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
 
 type OnItemsDeleteSuccess = (action_type: "delete", item_ids: number[]) => void;
 type OnItemAddOrEditSuccess = (

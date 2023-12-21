@@ -34,8 +34,13 @@ import {
 } from "@/components/ui/tabs.tsx";
 import * as React from "react";
 import AutoComplete from "@/components/app/common/AutoCompleteInputable.tsx";
+import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
+import { ContactEditPageContent } from "@/API/Resources/v1/Contact/ContactEditPage.Payload";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { SALUTATION } from "@/constants/Contact.Constants.ts";
 
 const itemService = new ItemService();
+const contactService = new ContactService();
 
 type ItemAddPropBasic = {
   contact_type: "customer" | "supplier";
@@ -77,24 +82,23 @@ export default function ContactAdd(props: ItemAddProp) {
   const showCloseButton = !isModal;
 
   const navigate = useNavigate();
-  const [editPageContactDetails, setEditPageContactDetails] = useState<Item>();
-  const [editPageContent, setEditPageContent] = useState<ItemEditPageContent>({
-    inventory_accounts_list: [],
-    purchase_accounts_list: [],
-    taxes: [],
-    units: [],
-    income_accounts_list: [],
-  });
+  const [editPageContactDetails, setEditPageContactDetails] =
+    useState<Contact>();
+  const [editPageContent, setEditPageContent] =
+    useState<ContactEditPageContent>({
+      taxes: [],
+      payment_terms: [],
+    });
   const [isLoading, setIsLoading] = useState(true);
 
   const loadEditPage = useCallback(() => {
-    itemService
-      .getItemEditPage({
-        item_id: editItemId,
+    contactService
+      .getContactEditPage({
+        contact_id: editItemId,
       })
       .then((data) => {
         setEditPageContent(data!);
-        setEditPageContactDetails(data?.item);
+        setEditPageContactDetails(data?.contact);
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
@@ -274,13 +278,10 @@ export default function ContactAdd(props: ItemAddProp) {
   //   }
   // }, [editPageContactDetails, setFormData]);
 
-  const saluations = useMemo(() => {
-    return [
-      { label: "Mr.", value: "Mr." },
-      { label: "Mrs.", value: "Mrs." },
-      { label: "Ms.", value: "Ms." },
-    ];
+  const salutations = useMemo(() => {
+    return SALUTATION;
   }, []);
+
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -351,25 +352,23 @@ export default function ContactAdd(props: ItemAddProp) {
                 <div>
                   <FormField
                     name={"salutation"}
-                    render={({ field}) => (
+                    render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
                         <FormLabel className={"capitalize"}>
                           customer name
                         </FormLabel>
                         <div className="col-span-3 flex">
-                            <AutoComplete
-                              options={saluations}
-                              emptyMessage={""}
-                              placeholder={"Salutation"}
-                              textInputClassNames={"w-40"}
-                              onValueChange={
-                                  field.onChange
-                              }
-                              value={field.value}
-                            />
+                          <AutoComplete
+                            options={salutations}
+                            emptyMessage={""}
+                            placeholder={"Salutation"}
+                            textInputClassNames={"w-40"}
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          />
                           <FormControl>
                             <Input
-                                className={"mx-2"}
+                              className={"mx-2"}
                               {...register("first_name")}
                               placeholder={"First name"}
                             />

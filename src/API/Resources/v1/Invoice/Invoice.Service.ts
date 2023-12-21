@@ -6,7 +6,8 @@ import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
-import { Contact } from "@/API/Resources/v1/Contact/Contact.Service.ts";
+
+import {Contact} from "@/API/Resources/v1/Contact/Contact";
 
 interface InvoiceGenerated {
   invoice_id: number;
