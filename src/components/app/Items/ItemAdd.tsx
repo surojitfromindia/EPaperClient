@@ -33,6 +33,8 @@ import { Textarea } from "@/components/ui/textarea.tsx";
 import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
 import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
+import { ReactSelectOptionComponentsUnit } from "@/components/app/common/ReactSelectComponents.tsx";
+import {makeTaxRSelectOptions, makeUnitRSelectOptions} from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const itemService = new ItemService();
 
@@ -96,11 +98,7 @@ export default function ItemAdd(props: ItemAddProp) {
 
   const unitsDropDownOptions = useMemo(() => {
     const units = editPageContent.units;
-    return units.map((unit) => ({
-      label: unit.unit,
-      value: unit.unit,
-      unit_id: unit.unit_id,
-    }));
+    return units.map(makeUnitRSelectOptions);
   }, [editPageContent]);
   const incomeAccountsDropDown = useMemo(() => {
     return editPageContent.income_accounts_list.map((acc) => ({
@@ -117,10 +115,7 @@ export default function ItemAdd(props: ItemAddProp) {
     }));
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage}%]`,
-      value: acc.tax_id,
-    }));
+    return editPageContent.taxes.map(makeTaxRSelectOptions);
   }, [editPageContent.taxes]);
   const handleCloseClick = () => {
     if (props.isModal === true) {
@@ -479,7 +474,7 @@ export default function ItemAdd(props: ItemAddProp) {
                             classNames={reactSelectStyle}
                             components={{
                               ...reactSelectComponentOverride,
-                              Option,
+                              Option: ReactSelectOptionComponentsUnit,
                             }}
                             isClearable={true}
                           />

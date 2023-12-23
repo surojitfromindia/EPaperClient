@@ -44,7 +44,8 @@ import { WrappedError } from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
 import { Badge } from "@/components/ui/badge.tsx";
-import {Contact} from "@/API/Resources/v1/Contact/Contact";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { mapPaymentTermToRSelect } from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -82,14 +83,6 @@ const schema = z.object({
   exchange_rate: z.number().optional().nullable(),
 });
 const defaultIssueDate = new Date();
-
-const mapPaymentTermToRSelect = (paymentTerm: PaymentTerm) => ({
-  label: `${paymentTerm.payment_term_name}`,
-  value: paymentTerm.payment_term_id,
-  is_default: paymentTerm.is_default,
-  payment_term: paymentTerm.payment_term,
-  interval: paymentTerm.interval,
-});
 
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
@@ -463,7 +456,7 @@ export default function InvoiceAdd() {
             </Button>
           </span>
         </div>
-        <div className={"px-5"}>
+        <div className={"px-5 mt-5"}>
           <FormValidationErrorAlert messages={errorMessagesForBanner} />
         </div>
         <Form {...form}>
@@ -713,3 +706,4 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   }
   return { due_date: date };
 }
+

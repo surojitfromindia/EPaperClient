@@ -14,6 +14,7 @@ interface ContactBasic extends ContactGenerated {
   currency_symbol?: Currency["currency_symbol"];
   payment_term_id: number;
   remarks?: string;
+  contact_persons?: ContactPerson[];
 }
 interface ContactVendor extends ContactBasic {
     contact_type: "vendor";

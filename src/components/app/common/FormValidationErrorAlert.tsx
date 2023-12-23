@@ -5,11 +5,11 @@ function FormValidationErrorAlert({ messages }) {
   const hasError = messages.length > 0;
   if (!hasError) return null;
   return (
-    <Alert variant="destructive">
+    <Alert variant="destructive" className={"py-2"}>
       <AlertDescription>
         <ul className="list-disc list-inside">
           {messages.map((message: string, index: number) => (
-            <li key={index} className="flex items-center">
+            <li key={index} className="flex items-center capitalize my-2">
               <XCircle className="h-4 w-4 mr-2" />
               <span>{message}</span>
             </li>

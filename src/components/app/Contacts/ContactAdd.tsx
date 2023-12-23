@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
-import { Trash, X } from "lucide-react";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { PlusCircle, X, XCircle } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -12,12 +12,9 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input.tsx";
+import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.tsx";
-import ItemService, {
-  Item,
-  ItemEditPageContent,
-} from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ReactSelect from "react-select";
 import {
@@ -25,38 +22,100 @@ import {
   reactSelectStyle,
 } from "@/util/style/reactSelectStyle.ts";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { toast } from "@/components/ui/use-toast.ts";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs.tsx";
-import * as React from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import AutoComplete from "@/components/app/common/AutoCompleteInputable.tsx";
 import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { ContactEditPageContent } from "@/API/Resources/v1/Contact/ContactEditPage.Payload";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { SALUTATION } from "@/constants/Contact.Constants.ts";
 
-const itemService = new ItemService();
+import {
+  makeCurrencyRSelectOptions,
+  makeTaxRSelectOptions,
+  mapPaymentTermToRSelect,
+} from "@/components/app/common/reactSelectOptionCompositions.ts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.tsx";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
+import { ContactPerson } from "@/API/Resources/v1/ContactPerson/ContactPerson";
+import { ContactPersonCreatePayload } from "@/API/Resources/v1/ContactPerson/ContactPersonCreate.Payload";
+import { FormValidationErrorAlert } from "@/components/app/common/FormValidationErrorAlert.tsx";
+import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
+
 const contactService = new ContactService();
 
-type ItemAddPropBasic = {
-  contact_type: "customer" | "supplier";
+//-------------------types-------------------
+type ContactAddPropBasic = {
+  contact_type: "customer" | "vendor";
   view_contact_id?: number;
   isModal?: false;
 };
-type ItemAddConditionalProp = {
-  contact_type: "customer" | "supplier";
+type ContactAddConditionalProp = {
+  contact_type: "customer" | "vendor";
   view_contact_id?: number;
   isModal?: true;
   closeModal: () => void;
 };
+type ContactAddProp = ContactAddPropBasic | ContactAddConditionalProp;
 
-type ItemAddProp = ItemAddPropBasic | ItemAddConditionalProp;
+//-------------------validation schema-------------------
+const contactPersonSchema = z.object({
+  salutation: z.string().trim().optional(),
+  first_name: z.string().trim().optional(),
+  last_name: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  mobile: z.string().trim().optional(),
+});
+const basicSchema = z.object({
+  contact_name: z.string().trim().nonempty({ message: "enter contact name" }),
+  contact_type: z.enum(["customer", "vendor"]),
+  company_name: z.string().trim().optional(),
+  currency: z.object(
+    { value: z.number(), label: z.string() },
+    {
+      invalid_type_error: "select a currency",
+      required_error: "select a currency",
+    },
+  ),
+  tax: z
+    .object(
+      { value: z.number(), label: z.string() },
+      {
+        invalid_type_error: "select a tax",
+        required_error: "select a tax",
+      },
+    )
+    .optional(),
+  remarks: z.string().trim().optional(),
 
-export default function ContactAdd(props: ItemAddProp) {
+  // treat these as first contact person
+  salutation: contactPersonSchema.shape.salutation,
+  first_name: contactPersonSchema.shape.first_name,
+  last_name: contactPersonSchema.shape.last_name,
+  email: contactPersonSchema.shape.email,
+  phone: contactPersonSchema.shape.phone,
+  mobile: contactPersonSchema.shape.mobile,
+  contact_persons: z.array(contactPersonSchema).optional(),
+});
+const customerSchema = z.object({
+  contact_type: z.literal("customer"),
+  contact_sub_type: z.enum(["business", "individual"]),
+});
+const vendorSchema = z.object({
+  contact_type: z.literal("vendor"),
+});
+const schema = basicSchema.and(
+  z.discriminatedUnion("contact_type", [customerSchema, vendorSchema]),
+);
+
+export default function ContactAdd(props: ContactAddProp) {
   const redirect_sub_part =
     props.contact_type === "customer" ? "customers" : "vendors";
 
@@ -88,8 +147,14 @@ export default function ContactAdd(props: ItemAddProp) {
     useState<ContactEditPageContent>({
       taxes: [],
       payment_terms: [],
+      currencies: [],
     });
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTab, setCurrentTab] = useState("other_details" as string);
+
+  const [errorMessagesForBanner, setErrorMessagesForBanner] = useState<
+    string[]
+  >([]);
 
   const loadEditPage = useCallback(() => {
     contactService
@@ -105,11 +170,15 @@ export default function ContactAdd(props: ItemAddProp) {
   }, [editItemId]);
 
   const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage}%]`,
-      value: acc.tax_id,
-    }));
+    return editPageContent.taxes.map(makeTaxRSelectOptions);
   }, [editPageContent.taxes]);
+  const paymentTermsDropDown = useMemo(() => {
+    return editPageContent.payment_terms.map(mapPaymentTermToRSelect);
+  }, [editPageContent.payment_terms]);
+  const currenciesDropDown = useMemo(() => {
+    return editPageContent.currencies.map(makeCurrencyRSelectOptions);
+  }, [editPageContent.currencies]);
+
   const handleCloseClick = () => {
     if (props.isModal === true) {
       props.closeModal();
@@ -118,57 +187,26 @@ export default function ContactAdd(props: ItemAddProp) {
     navigate(`/app/${redirect_sub_part}`);
   };
 
-  const basicSchema = z.object({
-    contact_name: z.string().trim().nonempty({ message: "enter item name" }),
-    contact_type: z.enum(["customer", "vendor"]),
-    company_name: z.string().trim().optional(),
-    tax: z.object(
-      { value: z.number(), label: z.string() },
-      {
-        invalid_type_error: "select a tax",
-        required_error: "select a tax",
-      },
-    ),
-    currency: z.object(
-      { value: z.number(), label: z.string() },
-      {
-        invalid_type_error: "select a currency",
-        required_error: "select a currency",
-      },
-    ),
-    remarks: z.string().trim().optional(),
-
-    // treat these as first contact person
-    first_name: z.string().trim().optional(),
-    last_name: z.string().trim().optional(),
-    salutation: z.string().trim().optional(),
-    phone: z.string().trim().optional(),
-    mobile: z.string().trim().optional(),
-    email: z.string().email().optional(),
-  });
-
-  const customerSchema = z.object({
-    contact_type: z.literal("customer"),
-    contact_sub_type: z.enum(["business", "individual"]),
-  });
-  const vendorSchema = z.object({
-    contact_type: z.literal("vendor"),
-  });
-  const schema = basicSchema.and(
-    z.discriminatedUnion("contact_type", [customerSchema, vendorSchema]),
-  );
-
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      contact_sub_type: "business",
+      contact_type: props.contact_type,
+      contact_sub_type: props.contact_type === "customer" ? "business" : null,
+      contact_persons: [],
     },
   });
-  const { register, handleSubmit, watch, control, setValue } = form;
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = form;
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
+    console.log("data", data);
+
     // let itemFor: ItemFor = "sales";
     // const newItem: ItemCreatePayload = {
     //   name: data.name,
@@ -265,22 +303,38 @@ export default function ContactAdd(props: ItemAddProp) {
   //   [setValue],
   // );
 
+  const onTabChange = (value: string) => {
+    setCurrentTab(value);
+  };
+  const handleContactPersonsUpdate = (
+    contactPersons: (ContactPerson | ContactPersonCreatePayload)[],
+  ) => {
+    console.log("contactPersons", contactPersons);
+    setValue("contact_persons", contactPersons);
+  };
+
   // effects
   useEffect(() => {
     loadEditPage();
     return () => {
-      itemService.abortGetRequest();
+      contactService.abortGetRequest();
     };
   }, [loadEditPage]);
+
   // useEffect(() => {
   //   if (editPageContactDetails) {
   //     setFormData(editPageContactDetails);
   //   }
   // }, [editPageContactDetails, setFormData]);
 
-  const salutations = useMemo(() => {
-    return SALUTATION;
-  }, []);
+  // update the error message banner
+  useEffect(() => {
+    if (errors) {
+      setErrorMessagesForBanner(
+        ReactHookFormUtil.deepFlatReactHookFormErrorOnlyMessage(errors),
+      );
+    }
+  }, [errors]);
 
   if (isLoading) {
     return (
@@ -305,7 +359,11 @@ export default function ContactAdd(props: ItemAddProp) {
           </span>
         )}
       </div>
-      <div className={"flex-grow overflow-y-auto"}>
+
+      <div className={"flex-grow overflow-y-auto mt-5"}>
+        <div className={"px-5"}>
+          <FormValidationErrorAlert messages={errorMessagesForBanner} />
+        </div>
         <Form {...form}>
           <form>
             <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
@@ -319,33 +377,39 @@ export default function ContactAdd(props: ItemAddProp) {
                   name="contact_sub_type"
                   render={({ field }) => (
                     <FormItem className={"grid grid-cols-4 space-y-0"}>
-                      <FormLabel>Customer Type</FormLabel>
-                      <div className="col-span-3 flex-col">
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-row space-x-5"
-                          >
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="business" />
-                              </FormControl>
-                              <FormLabel className="font-normal">
-                                Business
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="individual" />
-                              </FormControl>
-                              <FormLabel className="font-normal">
-                                Individual
-                              </FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                      </div>
+                      <FormLabel htmlFor={"contact_sub_type_business"}>
+                        Customer Type
+                      </FormLabel>
+                      <FormControl className="col-span-3 flex-col">
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-row space-x-5"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem
+                                id={"contact_sub_type_business"}
+                                value="business"
+                              />
+                            </FormControl>
+                            <FormLabel
+                              className="font-normal"
+                              htmlFor={"contact_sub_type_business"}
+                            >
+                              Business
+                            </FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="individual" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              Individual
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
                     </FormItem>
                   )}
                 />
@@ -354,20 +418,27 @@ export default function ContactAdd(props: ItemAddProp) {
                     name={"salutation"}
                     render={({ field }) => (
                       <FormItem className={"grid grid-cols-4 items-center "}>
-                        <FormLabel className={"capitalize"}>
+                        <FormLabel
+                          className={"capitalize"}
+                          htmlFor={"first_name"}
+                        >
                           customer name
                         </FormLabel>
                         <div className="col-span-3 flex">
                           <AutoComplete
-                            options={salutations}
+                            options={SALUTATION}
                             emptyMessage={""}
                             placeholder={"Salutation"}
                             textInputClassNames={"w-40"}
-                            onValueChange={field.onChange}
+                            onValueChange={(option) => {
+                              field.onChange(option.value);
+                            }}
                             value={field.value}
                           />
                           <FormControl>
                             <Input
+                              autoComplete={"off"}
+                              id={"first_name"}
                               className={"mx-2"}
                               {...register("first_name")}
                               placeholder={"First name"}
@@ -375,6 +446,8 @@ export default function ContactAdd(props: ItemAddProp) {
                           </FormControl>{" "}
                           <FormControl>
                             <Input
+                              autoComplete={"off"}
+                              id={"last_name"}
                               {...register("last_name")}
                               placeholder={"Last name"}
                             />
@@ -398,6 +471,7 @@ export default function ContactAdd(props: ItemAddProp) {
                       <div className="col-span-2 flex-col">
                         <FormControl>
                           <Input
+                            autoComplete={"off"}
                             id="company_name"
                             {...register("company_name")}
                           />
@@ -419,6 +493,7 @@ export default function ContactAdd(props: ItemAddProp) {
                       <div className="col-span-2 flex-col">
                         <FormControl>
                           <Input
+                            autoComplete={"off"}
                             id="contact_name"
                             {...register("contact_name")}
                           />
@@ -431,12 +506,16 @@ export default function ContactAdd(props: ItemAddProp) {
                   name={"email"}
                   render={() => (
                     <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel htmlFor={"sku"} className={"capitalize"}>
+                      <FormLabel htmlFor={"email"} className={"capitalize"}>
                         Customer email
                       </FormLabel>
                       <div className="col-span-2 flex-col">
                         <FormControl>
-                          <Input id="sku" {...register("email")} />
+                          <Input
+                            autoComplete={"off"}
+                            id="email"
+                            {...register("email")}
+                          />
                         </FormControl>
                       </div>
                     </FormItem>
@@ -444,18 +523,24 @@ export default function ContactAdd(props: ItemAddProp) {
                 />
 
                 <FormItem className={"grid grid-cols-4 items-center "}>
-                  <FormLabel htmlFor={"sku"} className={"capitalize"}>
+                  <FormLabel htmlFor={"phone"} className={"capitalize"}>
                     Customer phone
                   </FormLabel>
                   <div className="col-span-2 flex flex-row space-x-2">
                     <FormControl>
                       <Input
+                        autoComplete={"off"}
+                        id={"phone"}
                         {...register("phone")}
                         placeholder={"Work phone"}
                       />
                     </FormControl>
                     <FormControl>
-                      <Input {...register("mobile")} placeholder={"Mobile"} />
+                      <Input
+                        autoComplete={"off"}
+                        {...register("mobile")}
+                        placeholder={"Mobile"}
+                      />
                     </FormControl>
                   </div>
                 </FormItem>
@@ -464,14 +549,12 @@ export default function ContactAdd(props: ItemAddProp) {
             <Tabs
               defaultValue={"other_details"}
               className="mt-3 flex-1 flex-grow"
+              onValueChange={onTabChange}
             >
               <div className={"w-full ml-4  bg-background"}>
                 <TabsList className={"space-x-4"}>
                   <TabsTrigger value="other_details" className={"capitalize"}>
                     Other Details
-                  </TabsTrigger>
-                  <TabsTrigger value="address" className={"capitalize"}>
-                    Address
                   </TabsTrigger>
                   <TabsTrigger value="contact_persons" className={"capitalize"}>
                     Contact Persons
@@ -481,43 +564,54 @@ export default function ContactAdd(props: ItemAddProp) {
                   </TabsTrigger>
                 </TabsList>
               </div>
-
-              <TabsContent value="other_details">
-                <div className={"px-5"}>
-                  <ContactOtherDetails
-                    taxesDropDown={taxesDropDown}
-                    contactDetails={editPageContactDetails}
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="address">
-                <div className={"px-5"}>Address</div>
-              </TabsContent>
-              <TabsContent value="contact_persons">
-                <div className={"px-5"}>Contact Persons</div>
-              </TabsContent>
-              <TabsContent value="remarks">
-                <div className={"px-5"}>
-                  <FormItem className={"flex flex-col mt-5 max-w-[600px]"}>
-                    <FormLabel htmlFor={"remarks"} className={"capitalize"}>
-                      Remarks
-                      <span className={"text-muted-foreground mx-2"}>
-                        (For internal use only)
-                      </span>
-                    </FormLabel>
-                    <div className="">
-                      <FormControl>
-                        <Textarea id="remarks" {...register("remarks")} />
-                      </FormControl>
-                    </div>
-                  </FormItem>
-                </div>
-              </TabsContent>
             </Tabs>
+            <div className={"w-full  mt-5  bg-background"}>
+              <div
+                className={`px-5  ${
+                  currentTab === "other_details" ? "block" : "hidden"
+                }`}
+              >
+                <ContactCurrencyAndOtherDetails
+                  taxesDropDown={taxesDropDown}
+                  paymentTermsDropDown={paymentTermsDropDown}
+                  currenciesDropDown={currenciesDropDown}
+                />
+              </div>{" "}
+              <div
+                className={`px-5  ${
+                  currentTab === "contact_persons" ? "block" : "hidden"
+                }`}
+              >
+                <ContactPersonsList
+                  contactDetails={editPageContactDetails}
+                  onContactPersonUpdate={handleContactPersonsUpdate}
+                />
+              </div>
+              <div
+                className={`px-5  ${
+                  currentTab === "remarks" ? "block" : "hidden"
+                }`}
+              >
+                <FormItem className={"flex flex-col mt-5 max-w-[600px]"}>
+                  <FormLabel htmlFor={"remarks"} className={"capitalize"}>
+                    Remarks
+                    <span className={"text-muted-foreground mx-2"}>
+                      (For internal use only)
+                    </span>
+                  </FormLabel>
+                  <div className="">
+                    <FormControl>
+                      <Textarea id="remarks" {...register("remarks")} />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              </div>
+            </div>
             <div className={"h-32"}></div>
           </form>
         </Form>
       </div>
+      <div className={"h-32"}></div>
       <div
         className={
           "fixed bottom-0 bg-background w-full py-2 px-5 flex space-x-2 border-t-1 "
@@ -541,87 +635,249 @@ export default function ContactAdd(props: ItemAddProp) {
   );
 }
 
-const ContactOtherDetails = ({ taxesDropDown, contactDetails }) => {
+const ContactCurrencyAndOtherDetails = ({
+  taxesDropDown,
+  paymentTermsDropDown,
+  currenciesDropDown,
+}) => {
   return (
     <div className={""}>
       <div className={"grid md:grid-cols-12 grid-cols-6 "}>
         <div className={"md:grid-cols-4 col-span-7 space-y-2.5 max-w-[900px]"}>
-          <div className={""}>
-            <FormField
-              name={"currency"}
-              render={() => (
-                <FormItem className={"grid grid-cols-4 items-center "}>
-                  <FormLabel
-                    htmlFor={"currency"}
-                    className={"capitalize label-required"}
-                  >
-                    Currency
-                  </FormLabel>
-                  <div className="col-span-2 flex-col">
-                    <FormControl>
-                      <ReactSelect
-                        classNames={reactSelectStyle}
-                        components={reactSelectComponentOverride}
-                        options={[]}
-                        placeholder={"select currency"}
-                      />
-                    </FormControl>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            name={"currency"}
+            render={({ field }) => (
+              <FormItem className={"grid grid-cols-4 items-center "}>
+                <FormLabel
+                  htmlFor={"currency"}
+                  className={"capitalize label-required"}
+                >
+                  Currency
+                </FormLabel>
+                <div className="col-span-2 flex-col">
+                  <FormControl>
+                    <ReactSelect
+                      {...field}
+                      inputId={"currency"}
+                      classNames={reactSelectStyle}
+                      components={reactSelectComponentOverride}
+                      options={currenciesDropDown}
+                      placeholder={"select currency"}
+                    />
+                  </FormControl>
+                </div>
+              </FormItem>
+            )}
+          />
 
-          <div className={""}>
-            <FormField
-              name={"tax"}
-              render={() => (
-                <FormItem className={"grid grid-cols-4 items-center "}>
-                  <FormLabel htmlFor={"tax"} className={"capitalize"}>
-                    Tax Rate
-                  </FormLabel>
-                  <div className="col-span-2 flex-col">
-                    <FormControl>
-                      <ReactSelect
-                        isClearable={true}
-                        placeholder={"select tax"}
-                        options={taxesDropDown}
-                        inputId={"selling_account"}
-                        classNames={reactSelectStyle}
-                        components={{
-                          ...reactSelectComponentOverride,
-                        }}
-                      />
-                    </FormControl>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className={""}>
-            <FormField
-              name={"currency"}
-              render={() => (
-                <FormItem className={"grid grid-cols-4 items-center "}>
-                  <FormLabel htmlFor={"currency"} className={"capitalize "}>
-                    Payment Terms
-                  </FormLabel>
-                  <div className="col-span-2 flex-col">
-                    <FormControl>
-                      <ReactSelect
-                        classNames={reactSelectStyle}
-                        components={reactSelectComponentOverride}
-                        options={[]}
-                        placeholder={"select payment terms"}
-                      />
-                    </FormControl>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            name={"tax"}
+            render={({ field }) => (
+              <FormItem className={"grid grid-cols-4 items-center "}>
+                <FormLabel htmlFor={"tax"} className={"capitalize"}>
+                  Tax Rate
+                </FormLabel>
+                <div className="col-span-2 flex-col">
+                  <FormControl>
+                    <ReactSelect
+                      {...field}
+                      isClearable={true}
+                      placeholder={"select tax"}
+                      options={taxesDropDown}
+                      inputId={"tax"}
+                      classNames={reactSelectStyle}
+                      components={{
+                        ...reactSelectComponentOverride,
+                      }}
+                    />
+                  </FormControl>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name={"payment_term"}
+            render={({ field }) => (
+              <FormItem className={"grid grid-cols-4 items-center "}>
+                <FormLabel htmlFor={"payment_term"} className={"capitalize "}>
+                  Payment Terms
+                </FormLabel>
+                <div className="col-span-2 flex-col">
+                  <FormControl>
+                    <ReactSelect
+                      {...field}
+                      inputId={"payment_term"}
+                      classNames={reactSelectStyle}
+                      components={reactSelectComponentOverride}
+                      options={paymentTermsDropDown}
+                      placeholder={"select payment terms"}
+                    />
+                  </FormControl>
+                </div>
+              </FormItem>
+            )}
+          />
         </div>
       </div>
+    </div>
+  );
+};
+
+type ContactPersonListProps = {
+  contactDetails?: Contact;
+  onContactPersonUpdate: (
+    contact_persons: (ContactPerson | ContactPersonCreatePayload)[],
+  ) => void;
+};
+
+const ContactPersonsList = ({
+  contactDetails,
+  onContactPersonUpdate,
+}: ContactPersonListProps) => {
+  const BLANK_CONTACT_PERSON: ContactPersonCreatePayload = {
+    salutation: "",
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    mobile: "",
+  };
+  const [contactPersons, setContactPersons] = useState<
+    (ContactPerson | ContactPersonCreatePayload)[]
+  >([BLANK_CONTACT_PERSON]);
+
+  useEffect(() => {
+    if (ValidityUtil.isNotEmpty(contactDetails?.contact_persons)) {
+      setContactPersons(contactDetails.contact_persons);
+    }
+  }, [contactDetails]);
+
+  const handleAddNewContactPerson = () => {
+    setContactPersons((prev) => [...prev, BLANK_CONTACT_PERSON]);
+  };
+
+  const handleRemoveContactPerson = (index: number) => {
+    if (contactPersons.length === 1) return;
+    setContactPersons((prev) => {
+      const newContactPersons = [...prev];
+      newContactPersons.splice(index, 1);
+      onContactPersonUpdate(newContactPersons);
+      return newContactPersons;
+    });
+  };
+
+  const handleFieldChange = (index: number, field: string, value: string) => {
+    setContactPersons((prev) => {
+      const newContactPersons = [...prev];
+      newContactPersons[index][field] = value;
+      return newContactPersons;
+    });
+  };
+
+  return (
+    <div>
+      <Table
+        className={
+          "divide-y  divide-gray-200 border-y border-gray-300 max-w-[900px] "
+        }
+      >
+        <TableHeader>
+          <TableRow>
+            <TableHead className={"text_thead"}>salutation</TableHead>
+            <TableHead className={"text_thead"}>first name</TableHead>
+            <TableHead className={"text_thead"}>last name</TableHead>
+            <TableHead className={"text_thead"}>email</TableHead>
+            <TableHead className={"text_thead"}>work phone</TableHead>
+            <TableHead className={"text_thead"}>mobile phone</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {contactPersons.map((contactPerson, index) => {
+            return (
+              <TableRow
+                key={index}
+                className="divide-x divide-gray-200 hover:bg-none!impotant"
+              >
+                <TableCell className="py-1 px-1">
+                  <AutoComplete
+                    options={SALUTATION}
+                    emptyMessage={""}
+                    placeholder={"Salutation"}
+                    textInputClassNames={"w-full"}
+                    onValueChange={(value) =>
+                      handleFieldChange(index, "salutation", value.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="py-1 px-1">
+                  <Input
+                    id={`first_name_${index}`}
+                    onBlur={(e) =>
+                      handleFieldChange(index, "first_name", e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="py-1 px-1">
+                  <Input
+                    id={`last_name_${index}`}
+                    onBlur={(e) =>
+                      handleFieldChange(index, "last_name", e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="py-1 px-1">
+                  <Input
+                    id={`email_${index}`}
+                    onBlur={(e) =>
+                      handleFieldChange(index, "email", e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="py-1 px-1">
+                  <Input
+                    id={`phone_${index}`}
+                    onBlur={(e) =>
+                      handleFieldChange(index, "phone", e.target.value)
+                    }
+                  />
+                </TableCell>
+
+                <TableCell className="text-right px-1 py-1">
+                  <Input
+                    id={`mobile_${index}`}
+                    onBlur={(e) =>
+                      handleFieldChange(index, "mobile", e.target.value)
+                    }
+                  />
+
+                  <div className={"relative break-words"}>
+                    {
+                      <div className={"absolute -top-[26px]  -right-[32px] "}>
+                        <XCircle
+                          type={"button"}
+                          className={"w-4 h-4 text-destructive cursor-pointer"}
+                          onClick={() => handleRemoveContactPerson(index)}
+                        />
+                      </div>
+                    }
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <Button
+        variant="secondary"
+        className={"border-r-0 rounded-r-none h-8 pl-2 mt-2.5"}
+        type={"button"}
+        aria-description={"Add new row at the end"}
+        onClick={handleAddNewContactPerson}
+      >
+        <PlusCircle className={"h-4 w-4 text-primary mr-1"} />
+        New Contact Person
+      </Button>
     </div>
   );
 };
