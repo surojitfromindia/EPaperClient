@@ -13,8 +13,9 @@ const invoiceLineItemSchema = z.object({
       required_error: "Please select an item",
     },
   ),
-  product_type: z.string({required_error:"item does not have a product type"}),
-
+  product_type: z.string({
+    required_error: "item does not have a product type",
+  }),
   account: z.object(
     {
       label: z.string(),
@@ -44,8 +45,30 @@ const invoiceLineItemSchema = z.object({
   discount_percentage: z.number().optional(),
 });
 
+type InvoiceLineItemCreatableFields = {
+  item?: {
+    value?: number;
+    label?: string;
+  };
+  product_type?: string;
+  account?: {
+    value?: number;
+  };
+  unit?: string;
+  unit_id?: number;
+  description?: string;
+  quantity?: number;
+  rate?: number;
+  discount_amount?: number;
+  tax?: {
+    value?: number;
+  } | string;
+  tax_percentage?: number;
+  discount_percentage?: number;
+};
+
 const invoiceLineItemRowToPayloadDTO = (
-  lineItem: LineItemRowType,
+  lineItem: InvoiceLineItemCreatableFields,
 ): InvoiceLineItemCreationPayloadType => {
   return {
     item_id: lineItem.item.value,
@@ -57,7 +80,7 @@ const invoiceLineItemRowToPayloadDTO = (
     quantity: lineItem.quantity,
     rate: lineItem.rate,
     discount_amount: lineItem.discount_amount,
-    tax_id: lineItem.tax?.value,
+    tax_id: typeof lineItem.tax !== "string" ? lineItem.tax?.value : null,
     tax_percentage: lineItem.tax_percentage,
     discount_percentage: lineItem.discount_percentage,
     account_id: lineItem.account.value,

@@ -1,7 +1,9 @@
 import { Alert, AlertDescription } from "@/components/ui/alert.tsx";
 import { XCircle } from "lucide-react";
 
-function FormValidationErrorAlert({ messages }) {
+function FormValidationErrorAlert({ messages }:{
+    messages: string[];
+}) {
   const hasError = messages.length > 0;
   if (!hasError) return null;
   return (

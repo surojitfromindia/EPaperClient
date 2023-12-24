@@ -3,14 +3,14 @@ import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 
-const mapPaymentTermToRSelect = (paymentTerm: PaymentTerm) => ({
+const mapPaymentTermToRSelect = (paymentTerm: Partial<PaymentTerm>) => ({
   label: `${paymentTerm.payment_term_name}`,
   value: paymentTerm.payment_term_id,
   is_default: paymentTerm.is_default,
   payment_term: paymentTerm.payment_term,
   interval: paymentTerm.interval,
 });
-const makeCurrencyRSelectOptions = (currency: Currency) => {
+const makeCurrencyRSelectOptions = (currency: Partial<Currency>) => {
   return {
     label: `${currency.currency_code}(${currency.currency_symbol}) - ${currency.currency_name}`,
     value: currency.currency_id,
@@ -24,7 +24,7 @@ const makeUnitRSelectOptions = (unit: ItemUnit) => {
     unit_id: unit.unit_id,
   };
 };
-const makeTaxRSelectOptions = (tax: TaxRate) => {
+const makeTaxRSelectOptions = (tax: Partial<TaxRate>) => {
   return {
     label: `${tax.tax_name} [${tax.tax_percentage}%]`,
     value: tax.tax_id,

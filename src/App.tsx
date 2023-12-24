@@ -8,6 +8,7 @@ import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
 import InvoicePage from "@/components/app/Invoices/InvoicePage.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ItemPage from "@/components/app/Items/ItemPage.tsx";
+import ContactAdd from "@/components/app/Contacts/ContactAdd.tsx";
 // make InvoiceAdd lazy
 const InvoiceAdd = React.lazy(
   () => import("@/components/app/Invoices/InvoiceAdd.tsx"),
@@ -171,6 +172,14 @@ function App() {
                 </LazyWrapper>
               ),
             },
+            {
+              path: ":contact_id_param/edit",
+              element: (
+                  <LazyWrapper>
+                    <CustomerAddWrapper />
+                  </LazyWrapper>
+              ),
+            },
           ],
         },
         {
@@ -189,7 +198,9 @@ function App() {
 
 export default App;
 
-const LazyWrapper = ({ children }) => {
+const LazyWrapper = ({ children }:{
+    children: React.ReactNode
+}) => {
   return (
     <Suspense
       fallback={

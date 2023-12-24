@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { PlusCircle, X, XCircle } from "lucide-react";
+import { X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -33,16 +33,10 @@ import {
   CurrencyRSelectOption,
   makeCurrencyRSelectOptions,
   makeTaxRSelectOptions,
-  mapPaymentTermToRSelect, PaymentTermRSelectOption, TaxRSelectOption,
+  mapPaymentTermToRSelect,
+  PaymentTermRSelectOption,
+  TaxRSelectOption,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table.tsx";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
 import { ContactPerson } from "@/API/Resources/v1/ContactPerson/ContactPerson";
 import { ContactPersonCreatePayload } from "@/API/Resources/v1/ContactPerson/ContactPersonCreate.Payload";
@@ -50,6 +44,9 @@ import { FormValidationErrorAlert } from "@/components/app/common/FormValidation
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
 import { ContactCreatePayload } from "@/API/Resources/v1/Contact/ContactCreate.Payload";
 import { toast } from "@/components/ui/use-toast.ts";
+import { ContactPersonUpdatePayloadType } from "@/API/Resources/v1/ContactPerson/ContactPersonUpdatePayloadTypes.ts";
+import { contactSchema } from "@/components/app/common/ValidationSchemas/ContactAndContactPersonSchema.ts";
+import { ContactPersonsList } from "@/components/app/Contacts/ContactPersonsList.tsx";
 
 const contactService = new ContactService();
 
@@ -67,72 +64,6 @@ type ContactAddConditionalProp = {
 };
 type ContactAddProp = ContactAddPropBasic | ContactAddConditionalProp;
 
-//-------------------validation schema-------------------
-const contactPersonSchema = z.object({
-  salutation: z.string().trim().optional(),
-  first_name: z.string().trim().optional(),
-  last_name: z.string().trim().optional(),
-  email: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
-  mobile: z.string().trim().optional(),
-});
-const basicSchema = z.object({
-  contact_name: z
-    .string({
-      invalid_type_error: "enter contact name",
-      required_error: "enter contact name",
-    })
-    .trim()
-    .nonempty({ message: "enter contact name" }),
-  contact_type: z.enum(["customer", "vendor"]),
-  company_name: z.string().trim().optional(),
-  currency: z.object(
-    { value: z.number(), label: z.string() },
-    {
-      invalid_type_error: "select a currency",
-      required_error: "select a currency",
-    },
-  ),
-  payment_term: z
-    .object(
-      { value: z.number(), label: z.string() },
-      {
-        invalid_type_error: "select a payment term",
-        required_error: "select a payment term",
-      },
-    )
-    .optional(),
-  tax: z
-    .object(
-      { value: z.number(), label: z.string() },
-      {
-        invalid_type_error: "select a tax",
-        required_error: "select a tax",
-      },
-    )
-    .optional(),
-  remarks: z.string().trim().optional(),
-
-  // treat these as first contact person
-  salutation: contactPersonSchema.shape.salutation,
-  first_name: contactPersonSchema.shape.first_name,
-  last_name: contactPersonSchema.shape.last_name,
-  email: contactPersonSchema.shape.email,
-  phone: contactPersonSchema.shape.phone,
-  mobile: contactPersonSchema.shape.mobile,
-  contact_persons: z.array(contactPersonSchema).optional(),
-});
-const customerSchema = z.object({
-  contact_type: z.literal("customer"),
-  contact_sub_type: z.enum(["business", "individual"]),
-});
-const vendorSchema = z.object({
-  contact_type: z.literal("vendor"),
-});
-const schema = basicSchema.and(
-  z.discriminatedUnion("contact_type", [customerSchema, vendorSchema]),
-);
-
 export default function ContactAdd(props: ContactAddProp) {
   const contact_type = props.contact_type;
   const redirect_sub_part =
@@ -140,11 +71,11 @@ export default function ContactAdd(props: ContactAddProp) {
 
   const { view_contact_id, isModal } = props;
 
-  const { item_id_param } = useParams();
-  const editItemId = useMemo(() => {
-    if (item_id_param) {
+  const { contact_id_param } = useParams();
+  const editContactId = useMemo(() => {
+    if (contact_id_param) {
       //try to parse the number, check the return if NaN then return nothing from this memo
-      const parseResult = Number.parseInt(item_id_param ?? "");
+      const parseResult = Number.parseInt(contact_id_param ?? "");
       if (!Number.isNaN(parseResult)) {
         return parseResult;
       }
@@ -153,13 +84,14 @@ export default function ContactAdd(props: ContactAddProp) {
       return view_contact_id;
     }
     return null;
-  }, [item_id_param, view_contact_id]);
-  const isEditMode = useMemo(() => !!editItemId, [editItemId]);
+  }, [contact_id_param, view_contact_id]);
+  const isEditMode = useMemo(() => !!editContactId, [editContactId]);
   const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update contact" : "new contact";
   const showCloseButton = !isModal;
-
   const navigate = useNavigate();
+
+  //-------------------states-------------------
   const [editPageContactDetails, setEditPageContactDetails] =
     useState<Contact>();
   const [editPageContent, setEditPageContent] =
@@ -170,23 +102,86 @@ export default function ContactAdd(props: ContactAddProp) {
     });
   const [isLoading, setIsLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState("other_details" as string);
-
   const [errorMessagesForBanner, setErrorMessagesForBanner] = useState<
     string[]
   >([]);
 
+  const form = useForm<z.infer<typeof contactSchema>>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      contact_type: contact_type,
+      contact_sub_type: contact_type === "customer" ? "business" : null,
+      contact_persons: [],
+    },
+  });
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = form;
+  const first_name = watch("first_name");
+  const last_name = watch("last_name");
+  const salutation = watch("salutation");
+
+  const setFormData = useCallback(
+    (data: typeof editPageContactDetails) => {
+      if (data) {
+        setValue("contact_type", data.contact_type);
+        setValue("contact_name", data.contact_name);
+        setValue("company_name", data.company_name);
+        setValue(
+          "currency",
+          makeCurrencyRSelectOptions({
+            currency_code: data.currency_code,
+            currency_id: data.currency_id,
+            currency_name: data.currency_name,
+            currency_symbol: data.currency_symbol,
+          }),
+        );
+        if (data.contact_type === "customer") {
+          setValue("contact_sub_type", data.contact_sub_type);
+        }
+        setValue("contact_persons", data.contact_persons);
+
+        setValue("remarks", data.remarks);
+
+        if (data.payment_term_id) {
+          setValue(
+            "payment_term",
+            mapPaymentTermToRSelect({
+              payment_term_id: data.payment_term_id,
+              payment_term_name: data.payment_term_name,
+            }),
+          );
+        }
+
+        setValue("first_name", data.first_name);
+        setValue("last_name", data.last_name);
+        setValue("salutation", data.salutation);
+        setValue("email", data.email);
+        setValue("phone", data.phone);
+        setValue("mobile", data.mobile);
+      }
+    },
+    [setValue],
+  );
   const loadEditPage = useCallback(() => {
     contactService
       .getContactEditPage({
-        contact_id: editItemId,
+        contact_id: editContactId,
       })
       .then((data) => {
+        if (data.contact) {
+          setFormData(data?.contact);
+          setEditPageContactDetails(data?.contact);
+        }
         setEditPageContent(data!);
-        setEditPageContactDetails(data?.contact);
       })
       .catch((error) => console.log(error))
       .finally(() => setIsLoading(false));
-  }, [editItemId]);
+  }, [editContactId, setFormData]);
 
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map(makeTaxRSelectOptions);
@@ -206,26 +201,59 @@ export default function ContactAdd(props: ContactAddProp) {
     navigate(`/app/${redirect_sub_part}`);
   };
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      contact_type: contact_type,
-      contact_sub_type: contact_type === "customer" ? "business" : null,
-      contact_persons: [],
-    },
-  });
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = form;
-  const first_name = watch("first_name");
-  const last_name = watch("last_name");
-  const salutation = watch("salutation");
+  const extractAndFormatContactPersons = useCallback(
+    (formData: z.infer<typeof contactSchema>) => {
 
-  const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
+      const already_existing_contact_persons = editPageContactDetails?.contact_persons ?? [];
+
+
+      const contactPersons = formData.contact_persons;
+      const nonPrimaryContactPersons: ContactPersonCreatePayload[] =
+        contactPersons
+          .filter((cp) => !cp.is_primary)
+          .map((cp) => ({ ...cp, is_primary: false }));
+
+
+      // check if a primary contact person is present
+      const primary_contact_person =
+        already_existing_contact_persons.find((cp) => cp.is_primary);
+
+      // store all contact persons in this array
+      const allContactPersons: (
+        | ContactPersonCreatePayload
+        | ContactPersonUpdatePayloadType
+      )[] = [];
+
+      const new_primary_contact_person: ContactPersonCreatePayload = {
+        salutation: formData.salutation,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        mobile: formData.mobile,
+        is_primary: true,
+      };
+      const isPrimaryContactPersonValid = ValidityUtil.isObjectEmpty(
+        primary_contact_person,
+        ["is_primary"],
+      );
+      // if a primary contact person is present and if it is valid, then we update
+      // else, we don't add it to the list of contact persons
+      if (isPrimaryContactPersonValid) {
+        allContactPersons.push({
+          ...new_primary_contact_person,
+          contact_person_id: primary_contact_person
+            ? primary_contact_person.contact_person_id
+            : undefined,
+        });
+      }
+      allContactPersons.push(...nonPrimaryContactPersons);
+      return allContactPersons;
+    },
+    [editPageContactDetails?.contact_persons],
+  );
+
+  const handleFormSubmit: SubmitHandler<z.infer<typeof contactSchema>> = async (
     data,
   ) => {
     const contactType: ContactType = contact_type;
@@ -247,6 +275,9 @@ export default function ContactAdd(props: ContactAddProp) {
       newContactBasic.contact_sub_type = data.contact_sub_type;
     }
 
+    // contact_persons
+    newContactBasic.contact_persons = extractAndFormatContactPersons(data);
+
     if (isEditMode) {
       return;
     } else {
@@ -265,53 +296,6 @@ export default function ContactAdd(props: ContactAddProp) {
     });
     navigate(`/app/${redirect_sub_part}`);
   };
-  // const setFormData = useCallback(
-  //   (data: typeof editPageContactDetails) => {
-  //     // reset the defaults when update
-  //     setValue("has_selling_price", false);
-  //     setValue("has_purchase_price", false);
-  //
-  //     if (data) {
-  //       setValue("name", data.name!);
-  //       setValue("product_type", data.product_type!);
-  //       setValue("tax", {
-  //         label: `${data.tax_name} [${data.tax_percentage!}%]`,
-  //         value: data.tax_id!,
-  //       });
-  //       setValue("selling_price", data.selling_price!);
-  //       setValue("purchase_price", data.purchase_price!);
-  //
-  //       if (data.unit_id && data.unit) {
-  //         setValue("unit", { label: data.unit!, value: data.unit! });
-  //       }
-  //       if (
-  //         data?.item_for === "sales_and_purchase" ||
-  //         data?.item_for === "sales"
-  //       ) {
-  //         setValue("has_selling_price", true);
-  //         setValue("sales_account", {
-  //           label: data?.sales_account_name ?? "",
-  //           value: data.sales_account_id!,
-  //           account_name: data?.sales_account_name ?? "",
-  //         });
-  //         setValue("selling_description", data.selling_description);
-  //       }
-  //       if (
-  //         data?.item_for === "sales_and_purchase" ||
-  //         data?.item_for === "purchase"
-  //       ) {
-  //         setValue("has_purchase_price", true);
-  //         setValue("purchase_account", {
-  //           label: data?.purchase_account_name ?? "",
-  //           value: data.purchase_account_id!,
-  //           account_name: data?.purchase_account_name ?? "",
-  //         });
-  //         setValue("purchase_description", data.purchase_description);
-  //       }
-  //     }
-  //   },
-  //   [setValue],
-  // );
 
   const onTabChange = (value: string) => {
     setCurrentTab(value);
@@ -329,12 +313,6 @@ export default function ContactAdd(props: ContactAddProp) {
       contactService.abortGetRequest();
     };
   }, [loadEditPage]);
-
-  // useEffect(() => {
-  //   if (editPageContactDetails) {
-  //     setFormData(editPageContactDetails);
-  //   }
-  // }, [editPageContactDetails, setFormData]);
 
   // update the error message banner
   useEffect(() => {
@@ -363,13 +341,6 @@ export default function ContactAdd(props: ContactAddProp) {
     ) {
       suggestions.push(`${firstName} ${lastName}`);
     }
-    if (
-      ValidityUtil.isNotEmpty(firstName) &&
-      ValidityUtil.isNotEmpty(lastName) &&
-      ValidityUtil.isNotEmpty(salutation)
-    ) {
-      suggestions.push(`${firstName} ${lastName} ${salutation}`);
-    }
 
     if (
       ValidityUtil.isNotEmpty(firstName) &&
@@ -378,12 +349,7 @@ export default function ContactAdd(props: ContactAddProp) {
     ) {
       suggestions.push(`${salutation} ${firstName} ${lastName}`);
     }
-    if (
-      ValidityUtil.isNotEmpty(firstName) &&
-      ValidityUtil.isNotEmpty(lastName)
-    ) {
-      suggestions.push(`${firstName}, ${lastName}`);
-    }
+
     if (
       ValidityUtil.isNotEmpty(firstName) &&
       ValidityUtil.isNotEmpty(salutation)
@@ -500,7 +466,7 @@ export default function ContactAdd(props: ContactAddProp) {
                             onValueChange={(option) => {
                               field.onChange(option.value);
                             }}
-                            value={field.value}
+                            value={{label: field.value, value: field.value}}
                           />
                           <FormControl>
                             <Input
@@ -567,7 +533,7 @@ export default function ContactAdd(props: ContactAddProp) {
                             onValueChange={(option) => {
                               field.onChange(option.value);
                             }}
-                            value={field.value}
+                            value={{ label: field.value, value: field.value }}
                             inputId={"contact_name"}
                           />
                         </FormControl>
@@ -709,13 +675,13 @@ export default function ContactAdd(props: ContactAddProp) {
 }
 
 const ContactCurrencyAndOtherDetails = ({
-  taxesDropDown,
+  // taxesDropDown,
   paymentTermsDropDown,
   currenciesDropDown,
-}:{
-    taxesDropDown: TaxRSelectOption[];
-    paymentTermsDropDown: PaymentTermRSelectOption[];
-    currenciesDropDown: CurrencyRSelectOption[];
+}: {
+  taxesDropDown: TaxRSelectOption[];
+  paymentTermsDropDown: PaymentTermRSelectOption[];
+  currenciesDropDown: CurrencyRSelectOption[];
 }) => {
   return (
     <div className={""}>
@@ -747,31 +713,31 @@ const ContactCurrencyAndOtherDetails = ({
             )}
           />
 
-          <FormField
-            name={"tax"}
-            render={({ field }) => (
-              <FormItem className={"grid grid-cols-4 items-center "}>
-                <FormLabel htmlFor={"tax"} className={"capitalize"}>
-                  Tax Rate
-                </FormLabel>
-                <div className="col-span-2 flex-col">
-                  <FormControl>
-                    <ReactSelect
-                      {...field}
-                      isClearable={true}
-                      placeholder={"Select tax"}
-                      options={taxesDropDown}
-                      inputId={"tax"}
-                      classNames={reactSelectStyle}
-                      components={{
-                        ...reactSelectComponentOverride,
-                      }}
-                    />
-                  </FormControl>
-                </div>
-              </FormItem>
-            )}
-          />
+          {/*<FormField*/}
+          {/*  name={"tax"}*/}
+          {/*  render={({ field }) => (*/}
+          {/*    <FormItem className={"grid grid-cols-4 items-center "}>*/}
+          {/*      <FormLabel htmlFor={"tax"} className={"capitalize"}>*/}
+          {/*        Tax Rate*/}
+          {/*      </FormLabel>*/}
+          {/*      <div className="col-span-2 flex-col">*/}
+          {/*        <FormControl>*/}
+          {/*          <ReactSelect*/}
+          {/*            {...field}*/}
+          {/*            isClearable={true}*/}
+          {/*            placeholder={"Select tax"}*/}
+          {/*            options={taxesDropDown}*/}
+          {/*            inputId={"tax"}*/}
+          {/*            classNames={reactSelectStyle}*/}
+          {/*            components={{*/}
+          {/*              ...reactSelectComponentOverride,*/}
+          {/*            }}*/}
+          {/*          />*/}
+          {/*        </FormControl>*/}
+          {/*      </div>*/}
+          {/*    </FormItem>*/}
+          {/*  )}*/}
+          {/*/>*/}
 
           <FormField
             name={"payment_term"}
@@ -798,206 +764,6 @@ const ContactCurrencyAndOtherDetails = ({
           />
         </div>
       </div>
-    </div>
-  );
-};
-
-type ContactPersonListProps = {
-  contactDetails?: Contact;
-  onContactPersonUpdate: (
-    contact_persons: (ContactPerson | ContactPersonCreatePayload)[],
-  ) => void;
-};
-
-const ContactPersonsList = ({
-  contactDetails,
-  onContactPersonUpdate,
-}: ContactPersonListProps) => {
-  const BLANK_CONTACT_PERSON: ContactPersonCreatePayload = {
-    salutation: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    mobile: "",
-  };
-  const [contactPersons, setContactPersons] = useState<
-    (ContactPerson | ContactPersonCreatePayload)[]
-  >([BLANK_CONTACT_PERSON]);
-
-  useEffect(() => {
-    if (ValidityUtil.isNotEmpty(contactDetails?.contact_persons)) {
-      setContactPersons(contactDetails.contact_persons);
-    }
-  }, [contactDetails]);
-
-  const handleAddNewContactPerson = () => {
-    setContactPersons((prev) => [...prev, BLANK_CONTACT_PERSON]);
-  };
-
-  const handleRemoveContactPerson = (index: number) => {
-    if (contactPersons.length === 1) return;
-    setContactPersons((prev) => {
-      const newContactPersons = [...prev];
-      newContactPersons.splice(index, 1);
-      onContactPersonUpdate(newContactPersons);
-      return newContactPersons;
-    });
-  };
-
-  type InputControlFieldName =
-    | "salutation"
-    | "first_name"
-    | "last_name"
-    | "email"
-    | "phone"
-    | "mobile";
-  const handleFieldChange = (
-    index: number,
-    field: InputControlFieldName,
-    value: string,
-  ) => {
-    setContactPersons((prev) => {
-      const newContactPersons = [...prev];
-      const modifiedContactPerson = newContactPersons[index];
-      switch (field) {
-        case "salutation":
-          modifiedContactPerson.salutation = value;
-          break;
-        case "first_name":
-          modifiedContactPerson.first_name = value;
-          break;
-        case "last_name":
-          modifiedContactPerson.last_name = value;
-          break;
-        case "email":
-          modifiedContactPerson.email = value;
-          break;
-        case "phone":
-          modifiedContactPerson.phone = value;
-          break;
-        case "mobile":
-          modifiedContactPerson.mobile = value;
-          break;
-      }
-
-      onContactPersonUpdate(newContactPersons);
-      return newContactPersons;
-    });
-  };
-
-  return (
-    <div>
-      <Table
-        className={
-          "divide-y  divide-gray-200 border-y border-gray-300 max-w-[900px] "
-        }
-      >
-        <TableHeader>
-          <TableRow>
-            <TableHead className={"text_thead w-[40px]"}>salutation</TableHead>
-            <TableHead className={"text_thead"}>first name</TableHead>
-            <TableHead className={"text_thead"}>last name</TableHead>
-            <TableHead className={"text_thead"}>email</TableHead>
-            <TableHead className={"text_thead"}>work phone</TableHead>
-            <TableHead className={"text_thead"}>mobile phone</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {contactPersons.map((contactPerson, index) => {
-            return (
-              <TableRow
-                key={index}
-                className="divide-x divide-gray-200 hover:bg-none!impotant"
-              >
-                <TableCell className="py-1 px-1">
-                  <AutoComplete
-                    options={SALUTATION}
-                    emptyMessage={""}
-                    placeholder={"Salutation"}
-                    textInputClassNames={"w-full"}
-                    onValueChange={(value) =>
-                      handleFieldChange(index, "salutation", value.value)
-                    }
-                    value={{
-                      label: contactPerson.salutation,
-                      value: contactPerson.salutation,
-                    }}
-                  />
-                </TableCell>
-                <TableCell className="py-1 px-1">
-                  <Input
-                    id={`first_name_${index}`}
-                    onBlur={(e) =>
-                      handleFieldChange(index, "first_name", e.target.value)
-                    }
-                    defaultValue={contactPerson.first_name}
-                  />
-                </TableCell>
-                <TableCell className="py-1 px-1">
-                  <Input
-                    id={`last_name_${index}`}
-                    onBlur={(e) =>
-                      handleFieldChange(index, "last_name", e.target.value)
-                    }
-                    defaultValue={contactPerson.last_name}
-                  />
-                </TableCell>
-                <TableCell className="py-1 px-1">
-                  <Input
-                    id={`email_${index}`}
-                    onBlur={(e) =>
-                      handleFieldChange(index, "email", e.target.value)
-                    }
-                    defaultValue={contactPerson.email}
-                  />
-                </TableCell>
-                <TableCell className="py-1 px-1">
-                  <Input
-                    id={`phone_${index}`}
-                    onBlur={(e) =>
-                      handleFieldChange(index, "phone", e.target.value)
-                    }
-                    defaultValue={contactPerson.phone}
-                  />
-                </TableCell>
-
-                <TableCell className="text-right px-1 py-1">
-                  <Input
-                    id={`mobile_${index}`}
-                    onBlur={(e) =>
-                      handleFieldChange(index, "mobile", e.target.value)
-                    }
-                    defaultValue={contactPerson.mobile}
-                  />
-
-                  <div className={"relative break-words"}>
-                    {
-                      <div className={"absolute -top-[26px]  -right-[32px] "}>
-                        <XCircle
-                          type={"button"}
-                          className={"w-4 h-4 text-destructive cursor-pointer"}
-                          onClick={() => handleRemoveContactPerson(index)}
-                        />
-                      </div>
-                    }
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-      <Button
-        variant="secondary"
-        className={"border-r-0 rounded-r-none h-8 pl-2 mt-2.5"}
-        type={"button"}
-        aria-description={"Add new row at the end"}
-        onClick={handleAddNewContactPerson}
-      >
-        <PlusCircle className={"h-4 w-4 text-primary mr-1"} />
-        New Contact Person
-      </Button>
     </div>
   );
 };

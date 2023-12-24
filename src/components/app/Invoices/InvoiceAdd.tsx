@@ -349,7 +349,9 @@ export default function InvoiceAdd() {
         due_date: data.due_date,
         payment_term_id: data.payment_term.value,
         is_inclusive_tax: data.is_inclusive_tax,
-        line_items: data.line_items.map(invoiceLineItemRowToPayloadDTO),
+        line_items: data.line_items.map((line_item) =>
+          invoiceLineItemRowToPayloadDTO(line_item),
+        ),
         notes: data.notes,
         transaction_status: with_status,
         exchange_rate: data.exchange_rate,
@@ -386,8 +388,10 @@ export default function InvoiceAdd() {
             setErrorMessagesForBanner([error.message]);
           });
       }
-    } catch (error) {
-      setErrorMessagesForBanner([error.message]);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrorMessagesForBanner([error.message]);
+      }
     } finally {
       setIsSavingActionInProgress(false);
     }
@@ -482,7 +486,7 @@ export default function InvoiceAdd() {
                               )}
                               defaultOptions={contactDefaultList}
                               {...field}
-                              onChange={(value: {
+                              onChange={(value:{
                                 label: string;
                                 value: number;
                               }) => {
@@ -706,4 +710,3 @@ function calculateDueDate({ issue_date, paymentTerm }) {
   }
   return { due_date: date };
 }
-

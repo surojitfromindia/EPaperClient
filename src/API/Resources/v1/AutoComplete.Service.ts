@@ -1,5 +1,7 @@
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
+import { ContactType } from "@/API/Resources/v1/Contact/Contact";
+import { ItemFor } from "@/API/Resources/v1/Item/Item.Service.ts";
 
 type AutoCompleteBasicType = {
   id: number;
@@ -19,8 +21,8 @@ type ContactAutoCompleteType = {
 };
 type ItemAutoCompleteType = {
   name: string;
-  selling_price: number,
-  purchase_price: number,
+  selling_price: number;
+  purchase_price: number;
 };
 
 class AutoCompleteService implements APIService {
@@ -33,8 +35,14 @@ class AutoCompleteService implements APIService {
     this.abortController = new AbortController();
   }
 
-  getContacts({ search_text, contact_type }) {
-    const url = this.urlFragment+"/contact";
+  getContacts({
+    search_text,
+    contact_type,
+  }: {
+    search_text: string;
+    contact_type: ContactType;
+  }) {
+    const url = this.urlFragment + "/contact";
     return this.#axiosConfig.APIGetRequestWrapper<
       AutoCompleteServiceReturnType<ContactAutoCompleteType>
     >(url, {
@@ -51,8 +59,14 @@ class AutoCompleteService implements APIService {
       abortController: this.abortController,
     });
   }
-  getItems({ search_text, item_for }) {
-    const url = this.urlFragment+"/item";
+  getItems({
+    search_text,
+    item_for,
+  }: {
+    search_text: string;
+    item_for: ItemFor;
+  }) {
+    const url = this.urlFragment + "/item";
     return this.#axiosConfig.APIGetRequestWrapper<
       AutoCompleteServiceReturnType<ItemAutoCompleteType>
     >(url, {

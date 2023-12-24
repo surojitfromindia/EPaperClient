@@ -7,11 +7,17 @@ import {
   CommandInput,
 } from "@/components/ui/command.tsx";
 import { Command as CommandPrimitive } from "cmdk";
-import { useState, useRef, useCallback, type KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useCallback,
+  type KeyboardEvent,
+  useEffect,
+} from "react";
 
 import { cn } from "@/lib/utils.ts";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import {ValidityUtil} from "@/util/ValidityUtil.ts";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
 
 export type Option = Record<"value" | "label", string> & Record<string, string>;
 
@@ -39,13 +45,20 @@ export default function AutoComplete({
   inputId,
 }: AutoCompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  if(inputRef.current && ValidityUtil.isNotEmpty(inputId)) {
+  if (inputRef.current && ValidityUtil.isNotEmpty(inputId)) {
     inputRef.current.id = inputId;
   }
 
   const [isOpen, setOpen] = useState(false);
   const [selected, setSelected] = useState<Option>(value as Option);
   const [inputValue, setInputValue] = useState<string>(value?.label || "");
+
+  useEffect(() => {
+    if (value) {
+      setInputValue(value.label);
+      setSelected(value);
+    }
+  }, [value]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -124,7 +137,7 @@ export default function AutoComplete({
         ></CommandInput>
       </div>
       <div className="relative">
-        {(isOpen && ValidityUtil.isNotEmpty(options)) ?  (
+        {isOpen && ValidityUtil.isNotEmpty(options) ? (
           <div className="absolute mt-3 top-0 z-50 w-full rounded-xl bg-stone-50 outline-none animate-in fade-in-0 zoom-in-95">
             <CommandList className="ring-1 ring-slate-200 rounded-sm max-h-28 overflow-y-auto">
               {isLoading ? (

@@ -9,5 +9,6 @@ interface ContactPerson extends ContactPersonGenerated {
     email: string;
     phone: string;
     mobile: string;
+    is_primary: boolean;
 }
 export type { ContactPerson };

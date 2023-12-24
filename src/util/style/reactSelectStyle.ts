@@ -28,7 +28,7 @@ const reactSelectStyle: ClassNamesConfig = {
   menuList: () => classNames("!p-2 !max-h-52 overflow-y-scroll"),
 };
 const reactSelectComponentOverride = {
-  IndicatorSeparator: () => null,
+  IndicatorSeparator: ():null => null,
 };
 
 const reactSelectStyleBorderLess: ClassNamesConfig = {
