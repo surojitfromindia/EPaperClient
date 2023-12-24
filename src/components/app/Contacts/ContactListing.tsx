@@ -19,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import {Contact} from "@/API/Resources/v1/Contact/Contact";
@@ -50,8 +49,8 @@ export default function ContactListing({
   isContactsFetching = true,
   onContactAddClick,
 }: ContactListingProps) {
-  const organizationCurrencyCode = useAppSelector(
-    ({ organization }) => organization.currency_symbol,
+  useAppSelector(
+      ({ organization }) => organization.currency_symbol,
   );
   const navigate = useNavigate();
   const isLoading = isContactsFetching;

@@ -1,9 +1,12 @@
 import {Currency} from "@/API/Resources/v1/Currency/Currency";
+import {TaxRate} from "@/API/Resources/v1/TaxRate.ts";
 
 interface ContactGenerated {
   contact_id: number;
   status: "active" | "deleted";
 }
+
+type ContactType = "vendor" | "customer";
 
 interface ContactBasic extends ContactGenerated {
   contact_name: string;
@@ -15,6 +18,8 @@ interface ContactBasic extends ContactGenerated {
   payment_term_id: number;
   remarks?: string;
   contact_persons?: ContactPerson[];
+  contact_type: ContactType;
+  tax_id?: TaxRate["tax_id"];
 }
 interface ContactVendor extends ContactBasic {
     contact_type: "vendor";
@@ -28,4 +33,4 @@ type Contact = ContactVendor | ContactCustomer;
 
 
 
-export { Contact };
+export { Contact, ContactType };

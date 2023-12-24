@@ -36,3 +36,15 @@ export {
   makeUnitRSelectOptions,
   mapPaymentTermToRSelect,
 };
+
+type TaxRSelectOption = ReturnType<typeof makeTaxRSelectOptions>;
+type CurrencyRSelectOption = ReturnType<typeof makeCurrencyRSelectOptions>;
+type UnitRSelectOption = ReturnType<typeof makeUnitRSelectOptions>;
+type PaymentTermRSelectOption = ReturnType<typeof mapPaymentTermToRSelect>;
+
+export type {
+  TaxRSelectOption,
+  CurrencyRSelectOption,
+  UnitRSelectOption,
+  PaymentTermRSelectOption,
+};

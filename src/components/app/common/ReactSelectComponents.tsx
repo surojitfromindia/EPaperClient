@@ -1,10 +1,10 @@
 import { components, OptionProps } from "react-select";
 import { Button } from "@/components/ui/button.tsx";
 import { Trash } from "lucide-react";
-import { makeUnitRSelectOptions } from "@/components/app/common/reactSelectOptionCompositions.ts";
+import {UnitRSelectOption} from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const ReactSelectOptionComponentsUnit = (
-  props: OptionProps<ReturnType<typeof makeUnitRSelectOptions>>,
+  props: OptionProps<UnitRSelectOption>,
 ) => {
   return (
     <components.Option {...props}>

@@ -10,9 +10,8 @@ import { Command as CommandPrimitive } from "cmdk";
 import { useState, useRef, useCallback, type KeyboardEvent } from "react";
 
 import { cn } from "@/lib/utils.ts";
-import { Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { Input } from "@/components/ui/input.tsx";
+import {ValidityUtil} from "@/util/ValidityUtil.ts";
 
 export type Option = Record<"value" | "label", string> & Record<string, string>;
 
@@ -25,6 +24,7 @@ type AutoCompleteProps = {
   disabled?: boolean;
   placeholder?: string;
   textInputClassNames?: string;
+  inputId?: string;
 };
 
 export default function AutoComplete({
@@ -36,8 +36,12 @@ export default function AutoComplete({
   disabled,
   isLoading = false,
   textInputClassNames,
+  inputId,
 }: AutoCompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  if(inputRef.current && ValidityUtil.isNotEmpty(inputId)) {
+    inputRef.current.id = inputId;
+  }
 
   const [isOpen, setOpen] = useState(false);
   const [selected, setSelected] = useState<Option>(value as Option);
@@ -55,7 +59,7 @@ export default function AutoComplete({
         setOpen(true);
       }
 
-      // This is not a default behaviour of the <input /> field
+      // This is not a default behavior of the <input /> field
       if (event.key === "Enter" && input.value !== "") {
         const optionToSelect = options.find(
           (option) => option.label === input.value,
@@ -78,7 +82,10 @@ export default function AutoComplete({
     const input_text = inputRef.current?.value;
     const last_selected_label = selected?.label;
     let new_selected: Option;
-    if (last_selected_label &&last_selected_label.toLowerCase() === input_text.toLowerCase()) {
+    if (
+      last_selected_label &&
+      last_selected_label.toLowerCase() === input_text.toLowerCase()
+    ) {
       setInputValue(last_selected_label);
       new_selected = selected;
     } else {
@@ -117,9 +124,9 @@ export default function AutoComplete({
         ></CommandInput>
       </div>
       <div className="relative">
-        {isOpen ? (
+        {(isOpen && ValidityUtil.isNotEmpty(options)) ?  (
           <div className="absolute mt-3 top-0 z-50 w-full rounded-xl bg-stone-50 outline-none animate-in fade-in-0 zoom-in-95">
-            <CommandList className="ring-1 ring-slate-200 rounded-sm max-h-40 overflow-y-scroll">
+            <CommandList className="ring-1 ring-slate-200 rounded-sm max-h-28 overflow-y-auto">
               {isLoading ? (
                 <CommandPrimitive.Loading>
                   <div className="p-1">
@@ -127,7 +134,7 @@ export default function AutoComplete({
                   </div>
                 </CommandPrimitive.Loading>
               ) : null}
-              {options.length > 0 && !isLoading ? (
+              {!isLoading ? (
                 <CommandGroup>
                   {options.map((option) => {
                     const isSelected = selected?.value === option.value;

@@ -20,7 +20,7 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
       }
       return "ghost";
     },
-    [pathname],
+    [],
   );
   return (
     <div

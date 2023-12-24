@@ -324,30 +324,6 @@ export default function ItemAdd(props: ItemAddProp) {
     }
   }, [editPageItemDetails, setFormData]);
 
-  const Option = (props: OptionProps<(typeof unitsDropDownOptions)[0]>) => {
-    return (
-      <components.Option {...props}>
-        <div className={"flex items-center justify-between"}>
-          <div>{props.children}</div>
-          <div>
-            <Button
-              size={"icon"}
-              variant={"ghost"}
-              className={"p-1 h-5 w-5"}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                console.log("Edit clicked: ", props.data.unit_id);
-              }}
-            >
-              <Trash className={"w-3 h-3"} />
-            </Button>
-          </div>
-        </div>
-      </components.Option>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>

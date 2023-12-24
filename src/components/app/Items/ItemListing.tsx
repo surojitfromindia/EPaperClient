@@ -105,7 +105,7 @@ export function ItemListing({
         type: "text",
       },
     }),
-    [],
+    [organizationCurrencyCode],
   );
   const dynamicHeadersAsArray = useMemo(
     () => objectEntries(dynamicHeaders),

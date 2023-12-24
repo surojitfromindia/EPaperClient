@@ -26,13 +26,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import AutoComplete from "@/components/app/common/AutoCompleteInputable.tsx";
 import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { ContactEditPageContent } from "@/API/Resources/v1/Contact/ContactEditPage.Payload";
-import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { Contact, ContactType } from "@/API/Resources/v1/Contact/Contact";
 import { SALUTATION } from "@/constants/Contact.Constants.ts";
 
 import {
+  CurrencyRSelectOption,
   makeCurrencyRSelectOptions,
   makeTaxRSelectOptions,
-  mapPaymentTermToRSelect,
+  mapPaymentTermToRSelect, PaymentTermRSelectOption, TaxRSelectOption,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import {
   Table,
@@ -47,6 +48,8 @@ import { ContactPerson } from "@/API/Resources/v1/ContactPerson/ContactPerson";
 import { ContactPersonCreatePayload } from "@/API/Resources/v1/ContactPerson/ContactPersonCreate.Payload";
 import { FormValidationErrorAlert } from "@/components/app/common/FormValidationErrorAlert.tsx";
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
+import { ContactCreatePayload } from "@/API/Resources/v1/Contact/ContactCreate.Payload";
+import { toast } from "@/components/ui/use-toast.ts";
 
 const contactService = new ContactService();
 
@@ -74,7 +77,13 @@ const contactPersonSchema = z.object({
   mobile: z.string().trim().optional(),
 });
 const basicSchema = z.object({
-  contact_name: z.string().trim().nonempty({ message: "enter contact name" }),
+  contact_name: z
+    .string({
+      invalid_type_error: "enter contact name",
+      required_error: "enter contact name",
+    })
+    .trim()
+    .nonempty({ message: "enter contact name" }),
   contact_type: z.enum(["customer", "vendor"]),
   company_name: z.string().trim().optional(),
   currency: z.object(
@@ -84,6 +93,15 @@ const basicSchema = z.object({
       required_error: "select a currency",
     },
   ),
+  payment_term: z
+    .object(
+      { value: z.number(), label: z.string() },
+      {
+        invalid_type_error: "select a payment term",
+        required_error: "select a payment term",
+      },
+    )
+    .optional(),
   tax: z
     .object(
       { value: z.number(), label: z.string() },
@@ -116,8 +134,9 @@ const schema = basicSchema.and(
 );
 
 export default function ContactAdd(props: ContactAddProp) {
+  const contact_type = props.contact_type;
   const redirect_sub_part =
-    props.contact_type === "customer" ? "customers" : "vendors";
+    contact_type === "customer" ? "customers" : "vendors";
 
   const { view_contact_id, isModal } = props;
 
@@ -190,8 +209,8 @@ export default function ContactAdd(props: ContactAddProp) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      contact_type: props.contact_type,
-      contact_sub_type: props.contact_type === "customer" ? "business" : null,
+      contact_type: contact_type,
+      contact_sub_type: contact_type === "customer" ? "business" : null,
       contact_persons: [],
     },
   });
@@ -199,61 +218,52 @@ export default function ContactAdd(props: ContactAddProp) {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = form;
+  const first_name = watch("first_name");
+  const last_name = watch("last_name");
+  const salutation = watch("salutation");
 
   const handleFormSubmit: SubmitHandler<z.infer<typeof schema>> = async (
     data,
   ) => {
-    console.log("data", data);
+    const contactType: ContactType = contact_type;
+    const newContactBasic: ContactCreatePayload = {
+      contact_type: contactType,
+      contact_name: data.contact_name,
+      company_name: data.company_name,
+      currency_id: data.currency.value,
+      remarks: data.remarks,
+      contact_persons: data.contact_persons,
+      payment_term_id: data.payment_term?.value,
+      tax_id: data.tax?.value,
+      contact_sub_type: null,
+    };
+    if (
+      data.contact_type === "customer" &&
+      newContactBasic.contact_type === "customer"
+    ) {
+      newContactBasic.contact_sub_type = data.contact_sub_type;
+    }
 
-    // let itemFor: ItemFor = "sales";
-    // const newItem: ItemCreatePayload = {
-    //   name: data.name,
-    //   product_type: data.product_type,
-    //   unit: data?.unit?.value ?? "",
-    //   item_for: itemFor,
-    //   tax_id: data.tax.value,
-    // };
-    // if (data.has_selling_price) {
-    //   itemFor = "sales";
-    //   newItem.selling_price = data.selling_price;
-    //   newItem.selling_description = data.selling_description;
-    //   newItem.sales_account_id = data.sales_account.value;
-    // }
-    // if (data.has_purchase_price) {
-    //   itemFor = "purchase";
-    //   newItem.purchase_price = data.purchase_price;
-    //   newItem.purchase_description = data.purchase_description;
-    //   newItem.purchase_account_id = data.purchase_account.value;
-    // }
-    // if (data.has_selling_price && data.has_purchase_price) {
-    //   itemFor = "sales_and_purchase";
-    // }
-    // newItem.item_for = itemFor;
-    //
-    // if (isEditMode) {
-    //   await itemService.updateItem({
-    //     payload: newItem,
-    //     params: {
-    //       item_id: editItemId,
-    //     },
-    //   });
-    // } else {
-    //   await itemService.addItem({
-    //     payload: newItem,
-    //   });
-    // }
-    //
-    // // show a success message
-    // const toastMessage = isEditMode
-    //   ? "Item is updated successfully"
-    //   : "Item is created successfully";
-    // toast({
-    //   title: "Success",
-    //   description: toastMessage,
-    // });
-    // navigate("/app/inventory/items");
+    if (isEditMode) {
+      return;
+    } else {
+      await contactService.addContact({
+        payload: newContactBasic,
+      });
+    }
+
+    // show a success message
+    const toastMessage = isEditMode
+      ? "Contact is updated successfully"
+      : "Contact is created successfully";
+    toast({
+      title: "Success",
+      description: toastMessage,
+    });
+    navigate(`/app/${redirect_sub_part}`);
   };
   // const setFormData = useCallback(
   //   (data: typeof editPageContactDetails) => {
@@ -309,7 +319,6 @@ export default function ContactAdd(props: ContactAddProp) {
   const handleContactPersonsUpdate = (
     contactPersons: (ContactPerson | ContactPersonCreatePayload)[],
   ) => {
-    console.log("contactPersons", contactPersons);
     setValue("contact_persons", contactPersons);
   };
 
@@ -336,6 +345,64 @@ export default function ContactAdd(props: ContactAddProp) {
     }
   }, [errors]);
 
+  const generateContactNameSuggestions = useMemo(() => {
+    // using given "first_name" and "last_name" generate a list of suggestions
+    // we combine them is various ways
+    // 1. first name + last name
+    // 2. first name + last name + salutation
+    // 3. salutation + first name + last name
+    // 4. first_name, last name
+    // 5. salutation, first name
+    // 6. salutation, last name
+    const firstName = first_name;
+    const lastName = last_name;
+    const suggestions = [];
+    if (
+      ValidityUtil.isNotEmpty(firstName) &&
+      ValidityUtil.isNotEmpty(lastName)
+    ) {
+      suggestions.push(`${firstName} ${lastName}`);
+    }
+    if (
+      ValidityUtil.isNotEmpty(firstName) &&
+      ValidityUtil.isNotEmpty(lastName) &&
+      ValidityUtil.isNotEmpty(salutation)
+    ) {
+      suggestions.push(`${firstName} ${lastName} ${salutation}`);
+    }
+
+    if (
+      ValidityUtil.isNotEmpty(firstName) &&
+      ValidityUtil.isNotEmpty(lastName) &&
+      ValidityUtil.isNotEmpty(salutation)
+    ) {
+      suggestions.push(`${salutation} ${firstName} ${lastName}`);
+    }
+    if (
+      ValidityUtil.isNotEmpty(firstName) &&
+      ValidityUtil.isNotEmpty(lastName)
+    ) {
+      suggestions.push(`${firstName}, ${lastName}`);
+    }
+    if (
+      ValidityUtil.isNotEmpty(firstName) &&
+      ValidityUtil.isNotEmpty(salutation)
+    ) {
+      suggestions.push(`${salutation} ${firstName}`);
+    }
+    if (
+      ValidityUtil.isNotEmpty(lastName) &&
+      ValidityUtil.isNotEmpty(salutation)
+    ) {
+      suggestions.push(`${salutation} ${lastName}`);
+    }
+
+    return suggestions.map((suggestion) => ({
+      label: suggestion,
+      value: suggestion,
+    }));
+  }, [first_name, last_name, salutation]);
+
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -360,7 +427,7 @@ export default function ContactAdd(props: ContactAddProp) {
         )}
       </div>
 
-      <div className={"flex-grow overflow-y-auto mt-5"}>
+      <div className={"flex-grow overflow-y-auto mb-12 mt-5"}>
         <div className={"px-5"}>
           <FormValidationErrorAlert messages={errorMessagesForBanner} />
         </div>
@@ -429,7 +496,7 @@ export default function ContactAdd(props: ContactAddProp) {
                             options={SALUTATION}
                             emptyMessage={""}
                             placeholder={"Salutation"}
-                            textInputClassNames={"w-40"}
+                            textInputClassNames={"w-[120px]"}
                             onValueChange={(option) => {
                               field.onChange(option.value);
                             }}
@@ -471,6 +538,7 @@ export default function ContactAdd(props: ContactAddProp) {
                       <div className="col-span-2 flex-col">
                         <FormControl>
                           <Input
+                            placeholder={"Company name"}
                             autoComplete={"off"}
                             id="company_name"
                             {...register("company_name")}
@@ -482,7 +550,7 @@ export default function ContactAdd(props: ContactAddProp) {
                 />
                 <FormField
                   name={"contact_name"}
-                  render={() => (
+                  render={({ field }) => (
                     <FormItem className={"grid grid-cols-4 items-center "}>
                       <FormLabel
                         htmlFor={"contact_name"}
@@ -492,10 +560,15 @@ export default function ContactAdd(props: ContactAddProp) {
                       </FormLabel>
                       <div className="col-span-2 flex-col">
                         <FormControl>
-                          <Input
-                            autoComplete={"off"}
-                            id="contact_name"
-                            {...register("contact_name")}
+                          <AutoComplete
+                            options={generateContactNameSuggestions}
+                            emptyMessage={"No suggestions"}
+                            placeholder={"Contact name"}
+                            onValueChange={(option) => {
+                              field.onChange(option.value);
+                            }}
+                            value={field.value}
+                            inputId={"contact_name"}
                           />
                         </FormControl>
                       </div>
@@ -512,6 +585,7 @@ export default function ContactAdd(props: ContactAddProp) {
                       <div className="col-span-2 flex-col">
                         <FormControl>
                           <Input
+                            placeholder={"Email"}
                             autoComplete={"off"}
                             id="email"
                             {...register("email")}
@@ -611,7 +685,6 @@ export default function ContactAdd(props: ContactAddProp) {
           </form>
         </Form>
       </div>
-      <div className={"h-32"}></div>
       <div
         className={
           "fixed bottom-0 bg-background w-full py-2 px-5 flex space-x-2 border-t-1 "
@@ -639,6 +712,10 @@ const ContactCurrencyAndOtherDetails = ({
   taxesDropDown,
   paymentTermsDropDown,
   currenciesDropDown,
+}:{
+    taxesDropDown: TaxRSelectOption[];
+    paymentTermsDropDown: PaymentTermRSelectOption[];
+    currenciesDropDown: CurrencyRSelectOption[];
 }) => {
   return (
     <div className={""}>
@@ -662,7 +739,7 @@ const ContactCurrencyAndOtherDetails = ({
                       classNames={reactSelectStyle}
                       components={reactSelectComponentOverride}
                       options={currenciesDropDown}
-                      placeholder={"select currency"}
+                      placeholder={"Select currency"}
                     />
                   </FormControl>
                 </div>
@@ -682,7 +759,7 @@ const ContactCurrencyAndOtherDetails = ({
                     <ReactSelect
                       {...field}
                       isClearable={true}
-                      placeholder={"select tax"}
+                      placeholder={"Select tax"}
                       options={taxesDropDown}
                       inputId={"tax"}
                       classNames={reactSelectStyle}
@@ -711,7 +788,8 @@ const ContactCurrencyAndOtherDetails = ({
                       classNames={reactSelectStyle}
                       components={reactSelectComponentOverride}
                       options={paymentTermsDropDown}
-                      placeholder={"select payment terms"}
+                      placeholder={"Select payment terms"}
+                      isClearable={true}
                     />
                   </FormControl>
                 </div>
@@ -767,10 +845,43 @@ const ContactPersonsList = ({
     });
   };
 
-  const handleFieldChange = (index: number, field: string, value: string) => {
+  type InputControlFieldName =
+    | "salutation"
+    | "first_name"
+    | "last_name"
+    | "email"
+    | "phone"
+    | "mobile";
+  const handleFieldChange = (
+    index: number,
+    field: InputControlFieldName,
+    value: string,
+  ) => {
     setContactPersons((prev) => {
       const newContactPersons = [...prev];
-      newContactPersons[index][field] = value;
+      const modifiedContactPerson = newContactPersons[index];
+      switch (field) {
+        case "salutation":
+          modifiedContactPerson.salutation = value;
+          break;
+        case "first_name":
+          modifiedContactPerson.first_name = value;
+          break;
+        case "last_name":
+          modifiedContactPerson.last_name = value;
+          break;
+        case "email":
+          modifiedContactPerson.email = value;
+          break;
+        case "phone":
+          modifiedContactPerson.phone = value;
+          break;
+        case "mobile":
+          modifiedContactPerson.mobile = value;
+          break;
+      }
+
+      onContactPersonUpdate(newContactPersons);
       return newContactPersons;
     });
   };
@@ -784,7 +895,7 @@ const ContactPersonsList = ({
       >
         <TableHeader>
           <TableRow>
-            <TableHead className={"text_thead"}>salutation</TableHead>
+            <TableHead className={"text_thead w-[40px]"}>salutation</TableHead>
             <TableHead className={"text_thead"}>first name</TableHead>
             <TableHead className={"text_thead"}>last name</TableHead>
             <TableHead className={"text_thead"}>email</TableHead>
@@ -808,6 +919,10 @@ const ContactPersonsList = ({
                     onValueChange={(value) =>
                       handleFieldChange(index, "salutation", value.value)
                     }
+                    value={{
+                      label: contactPerson.salutation,
+                      value: contactPerson.salutation,
+                    }}
                   />
                 </TableCell>
                 <TableCell className="py-1 px-1">
@@ -816,6 +931,7 @@ const ContactPersonsList = ({
                     onBlur={(e) =>
                       handleFieldChange(index, "first_name", e.target.value)
                     }
+                    defaultValue={contactPerson.first_name}
                   />
                 </TableCell>
                 <TableCell className="py-1 px-1">
@@ -824,6 +940,7 @@ const ContactPersonsList = ({
                     onBlur={(e) =>
                       handleFieldChange(index, "last_name", e.target.value)
                     }
+                    defaultValue={contactPerson.last_name}
                   />
                 </TableCell>
                 <TableCell className="py-1 px-1">
@@ -832,6 +949,7 @@ const ContactPersonsList = ({
                     onBlur={(e) =>
                       handleFieldChange(index, "email", e.target.value)
                     }
+                    defaultValue={contactPerson.email}
                   />
                 </TableCell>
                 <TableCell className="py-1 px-1">
@@ -840,6 +958,7 @@ const ContactPersonsList = ({
                     onBlur={(e) =>
                       handleFieldChange(index, "phone", e.target.value)
                     }
+                    defaultValue={contactPerson.phone}
                   />
                 </TableCell>
 
@@ -849,6 +968,7 @@ const ContactPersonsList = ({
                     onBlur={(e) =>
                       handleFieldChange(index, "mobile", e.target.value)
                     }
+                    defaultValue={contactPerson.mobile}
                   />
 
                   <div className={"relative break-words"}>
