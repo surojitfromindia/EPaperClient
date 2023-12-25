@@ -233,8 +233,8 @@ export default function ContactAdd(props: ContactAddProp) {
         is_primary: true,
       };
       const isPrimaryContactPersonValid = !ValidityUtil.isObjectEmpty(
-        primary_contact_person,
-        ["is_primary","salutation"],
+        new_primary_contact_person,
+        ["is_primary", "salutation"],
       );
 
       // if a primary contact person is present and if it is valid, then we update
@@ -279,7 +279,10 @@ export default function ContactAdd(props: ContactAddProp) {
     newContactBasic.contact_persons = extractAndFormatContactPersons(data);
 
     if (isEditMode) {
-      return;
+      await contactService.updateContact({
+        contact_id: editContactId!,
+        payload: newContactBasic,
+      });
     } else {
       await contactService.addContact({
         payload: newContactBasic,

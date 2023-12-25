@@ -3,6 +3,9 @@ import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { ContactCreatePayload } from "@/API/Resources/v1/Contact/ContactCreate.Payload";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { ContactEditPageContent } from "@/API/Resources/v1/Contact/ContactEditPage.Payload";
+import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
+import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { ContactUpdatePayload } from "@/API/Resources/v1/Contact/ContactUpdate.Payload.ts";
 
 type EditPageServiceParams = {
   contact_id?: number;
@@ -59,9 +62,25 @@ class ContactService implements APIService {
     });
   }
 
+  updateContact({
+    contact_id,
+    payload,
+  }: {
+    contact_id: number;
+    payload: ContactUpdatePayload;
+  }) {
+    const url = this.urlFragment + "/" + contact_id;
+    return this.#axiosConfig.APIPutRequestWrapper<
+      ContactUpdatePayload,
+      {
+        contact: Contact;
+      }
+    >(url, payload);
+  }
+
   abortGetRequest(): void {
     this.abortController.abort();
   }
 }
 
-export  { ContactService };
+export { ContactService };

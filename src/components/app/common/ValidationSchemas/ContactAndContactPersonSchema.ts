@@ -2,6 +2,7 @@
 import * as z from "zod";
 
 const contactPersonSchema = z.object({
+  contact_person_id: z.number().optional(),
   salutation: z.string().trim().optional(),
   first_name: z.string().trim().optional(),
   last_name: z.string().trim().optional(),
@@ -66,7 +67,4 @@ const vendorSchema = z.object({
 const contactSchema = basicSchema.and(
   z.discriminatedUnion("contact_type", [customerSchema, vendorSchema]),
 );
-export {
-    contactSchema,
-    contactPersonSchema
-}
+export { contactSchema, contactPersonSchema };

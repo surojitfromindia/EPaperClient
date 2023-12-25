@@ -1,7 +1,7 @@
 import { Currency } from "@/API/Resources/v1/Currency/Currency";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
-import {ContactPersonCreatePayload} from "@/API/Resources/v1/ContactPerson/ContactPersonCreate.Payload";
+import { ContactPersonCreatePayload } from "@/API/Resources/v1/ContactPerson/ContactPersonCreate.Payload";
 
 type ContactCreateCommonPayload = {
   contact_name: Contact["contact_name"];
@@ -11,7 +11,7 @@ type ContactCreateCommonPayload = {
   currency_symbol?: Currency["currency_symbol"];
   payment_term_id: number;
   remarks?: string;
-  contact_persons?: ContactPersonCreatePayload[]
+  contact_persons?: ContactPersonCreatePayload[];
   tax_id?: TaxRate["tax_id"];
   contact_type?: Contact["contact_type"];
 };
