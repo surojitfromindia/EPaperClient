@@ -23,7 +23,7 @@ class ValidityUtil {
    * @param value
    * @param ignore_keys
    */
-  static isObjectEmpty = <T>(value: T, ignore_keys?: [keyof T]) => {
+  static isObjectEmpty = <T>(value: T, ignore_keys?: (keyof T)[]) => {
     const object_copy = { ...value };
     ignore_keys?.forEach((key) => {
       delete object_copy[key];

@@ -203,9 +203,8 @@ export default function ContactAdd(props: ContactAddProp) {
 
   const extractAndFormatContactPersons = useCallback(
     (formData: z.infer<typeof contactSchema>) => {
-
-      const already_existing_contact_persons = editPageContactDetails?.contact_persons ?? [];
-
+      const already_existing_contact_persons =
+        editPageContactDetails?.contact_persons ?? [];
 
       const contactPersons = formData.contact_persons;
       const nonPrimaryContactPersons: ContactPersonCreatePayload[] =
@@ -213,10 +212,10 @@ export default function ContactAdd(props: ContactAddProp) {
           .filter((cp) => !cp.is_primary)
           .map((cp) => ({ ...cp, is_primary: false }));
 
-
       // check if a primary contact person is present
-      const primary_contact_person =
-        already_existing_contact_persons.find((cp) => cp.is_primary);
+      const primary_contact_person = already_existing_contact_persons.find(
+        (cp) => cp.is_primary,
+      );
 
       // store all contact persons in this array
       const allContactPersons: (
@@ -233,10 +232,11 @@ export default function ContactAdd(props: ContactAddProp) {
         mobile: formData.mobile,
         is_primary: true,
       };
-      const isPrimaryContactPersonValid = ValidityUtil.isObjectEmpty(
+      const isPrimaryContactPersonValid = !ValidityUtil.isObjectEmpty(
         primary_contact_person,
-        ["is_primary"],
+        ["is_primary","salutation"],
       );
+
       // if a primary contact person is present and if it is valid, then we update
       // else, we don't add it to the list of contact persons
       if (isPrimaryContactPersonValid) {
@@ -466,7 +466,7 @@ export default function ContactAdd(props: ContactAddProp) {
                             onValueChange={(option) => {
                               field.onChange(option.value);
                             }}
-                            value={{label: field.value, value: field.value}}
+                            value={{ label: field.value, value: field.value }}
                           />
                           <FormControl>
                             <Input
