@@ -52,6 +52,17 @@ export default function AutoComplete({
   const [isOpen, setOpen] = useState(false);
   const [selected, setSelected] = useState<Option>(value as Option);
   const [inputValue, setInputValue] = useState<string>(value?.label || "");
+  const [applyFilter, setApplyFilter] = useState(true);
+
+  const handleFocus = useCallback(() => {
+    setOpen(true);
+    setApplyFilter(false);
+  }, []);
+
+  const handleOnChange = useCallback((value) => {
+    setInputValue(value);
+    setApplyFilter(true);
+  }, []);
 
   useEffect(() => {
     if (value) {
@@ -123,14 +134,15 @@ export default function AutoComplete({
   );
 
   return (
-    <CommandPrimitive onKeyDown={handleKeyDown}>
+    <CommandPrimitive onKeyDown={handleKeyDown} shouldFilter={applyFilter}>
       <div>
+        {applyFilter}
         <CommandInput
           ref={inputRef}
           value={inputValue}
-          onValueChange={isLoading ? undefined : setInputValue}
+          onValueChange={handleOnChange}
           onBlur={handleBlur}
-          onFocus={() => setOpen(true)}
+          onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
           className={textInputClassNames}
@@ -172,11 +184,6 @@ export default function AutoComplete({
                     );
                   })}
                 </CommandGroup>
-              ) : null}
-              {!isLoading ? (
-                <CommandPrimitive.Empty className="select-none rounded-sm px-2 py-3 text-sm text-center">
-                  {emptyMessage}
-                </CommandPrimitive.Empty>
               ) : null}
             </CommandList>
           </div>

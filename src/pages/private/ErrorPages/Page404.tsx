@@ -1,8 +1,13 @@
-import { Link } from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 
 export default function Page404() {
-  // const error = useRouteError();
+  const navigate = useNavigate();
+
+
+  const goBack = () => {
+    navigate(-1);
+  }
 
   return (
     <div id="error-page">
@@ -21,7 +26,9 @@ export default function Page404() {
             </p>
 
             <div className="flex items-center mt-6 gap-x-3">
-              <Button variant={"secondary"}>
+              <Button variant={"secondary"}
+              onClick={goBack}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button.tsx";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
@@ -105,6 +105,8 @@ export default function ContactAdd(props: ContactAddProp) {
   const [errorMessagesForBanner, setErrorMessagesForBanner] = useState<
     string[]
   >([]);
+  const [isSavingActionInProgress, setIsSavingActionInProgress] =
+    useState<boolean>(false);
 
   const form = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -256,48 +258,58 @@ export default function ContactAdd(props: ContactAddProp) {
   const handleFormSubmit: SubmitHandler<z.infer<typeof contactSchema>> = async (
     data,
   ) => {
-    const contactType: ContactType = contact_type;
-    const newContactBasic: ContactCreatePayload = {
-      contact_type: contactType,
-      contact_name: data.contact_name,
-      company_name: data.company_name,
-      currency_id: data.currency.value,
-      remarks: data.remarks,
-      contact_persons: data.contact_persons,
-      payment_term_id: data.payment_term?.value,
-      tax_id: data.tax?.value,
-      contact_sub_type: null,
-    };
-    if (
-      data.contact_type === "customer" &&
-      newContactBasic.contact_type === "customer"
-    ) {
-      newContactBasic.contact_sub_type = data.contact_sub_type;
-    }
+    try {
+      setIsSavingActionInProgress(true);
 
-    // contact_persons
-    newContactBasic.contact_persons = extractAndFormatContactPersons(data);
+      const contactType: ContactType = contact_type;
+      const newContactBasic: ContactCreatePayload = {
+        contact_type: contactType,
+        contact_name: data.contact_name,
+        company_name: data.company_name,
+        currency_id: data.currency.value,
+        remarks: data.remarks,
+        contact_persons: data.contact_persons,
+        payment_term_id: data.payment_term?.value,
+        tax_id: data.tax?.value,
+        contact_sub_type: null,
+      };
+      if (
+        data.contact_type === "customer" &&
+        newContactBasic.contact_type === "customer"
+      ) {
+        newContactBasic.contact_sub_type = data.contact_sub_type;
+      }
 
-    if (isEditMode) {
-      await contactService.updateContact({
-        contact_id: editContactId!,
-        payload: newContactBasic,
+      // contact_persons
+      newContactBasic.contact_persons = extractAndFormatContactPersons(data);
+
+      if (isEditMode) {
+        await contactService.updateContact({
+          contact_id: editContactId!,
+          payload: newContactBasic,
+        });
+      } else {
+        await contactService.addContact({
+          payload: newContactBasic,
+        });
+      }
+
+      // show a success message
+      const toastMessage = isEditMode
+        ? "Contact is updated successfully"
+        : "Contact is created successfully";
+      toast({
+        title: "Success",
+        description: toastMessage,
       });
-    } else {
-      await contactService.addContact({
-        payload: newContactBasic,
-      });
+      navigate(`/app/${redirect_sub_part}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrorMessagesForBanner([error.message]);
+      }
+    } finally {
+      setIsSavingActionInProgress(false);
     }
-
-    // show a success message
-    const toastMessage = isEditMode
-      ? "Contact is updated successfully"
-      : "Contact is created successfully";
-    toast({
-      title: "Success",
-      description: toastMessage,
-    });
-    navigate(`/app/${redirect_sub_part}`);
   };
 
   const onTabChange = (value: string) => {
@@ -663,6 +675,9 @@ export default function ContactAdd(props: ContactAddProp) {
           className={"capitalize"}
           onClick={handleSubmit(handleFormSubmit)}
         >
+          {isSavingActionInProgress && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           {submitButtonText}
         </Button>
         <Button
