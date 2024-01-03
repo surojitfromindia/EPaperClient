@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import LoginPage from "@/pages/public/LoginPage.tsx";
+import WelcomePage from "@/pages/public/WelcomePage.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { default as PubicErrorPage } from "@/pages/public/ErrorPages/Page404.tsx";
 import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
@@ -8,7 +8,12 @@ import Dashboard from "@/components/app/Dashboard/Dashboard.tsx";
 import InvoicePage from "@/components/app/Invoices/InvoicePage.tsx";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import ItemPage from "@/components/app/Items/ItemPage.tsx";
-import ContactAdd from "@/components/app/Contacts/ContactAdd.tsx";
+import SignInForm from "@/components/login/SignInForm.tsx";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
+
+const SignUpFormLazy = React.lazy(
+  () => import("@/components/login/SignUpForm.tsx"),
+);
 // make InvoiceAdd lazy
 const InvoiceAdd = React.lazy(
   () => import("@/components/app/Invoices/InvoiceAdd.tsx"),
@@ -37,9 +42,26 @@ const CustomerAddWrapper = React.lazy(
 function App() {
   const router = createBrowserRouter([
     {
-      path: "/",
-      element: <LoginPage />,
+      path: AppURLPaths.HOME,
+      element: <WelcomePage />,
       errorElement: <PubicErrorPage />,
+      children: [
+        {
+          path: AppURLPaths.HOME,
+          element: <SignInForm />,
+          errorElement: <PubicErrorPage />,
+        },
+        {
+          path: AppURLPaths.SIGN_IN,
+          element: <SignInForm />,
+          errorElement: <PubicErrorPage />,
+        },
+        {
+          path: AppURLPaths.SIGN_UP,
+          element: <LazyWrapper>{<SignUpFormLazy />}</LazyWrapper>,
+          errorElement: <PubicErrorPage />,
+        },
+      ],
     },
     {
       path: "/404",
@@ -175,9 +197,9 @@ function App() {
             {
               path: ":contact_id_param/edit",
               element: (
-                  <LazyWrapper>
-                    <CustomerAddWrapper />
-                  </LazyWrapper>
+                <LazyWrapper>
+                  <CustomerAddWrapper />
+                </LazyWrapper>
               ),
             },
           ],
@@ -198,9 +220,7 @@ function App() {
 
 export default App;
 
-const LazyWrapper = ({ children }:{
-    children: React.ReactNode
-}) => {
+const LazyWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense
       fallback={

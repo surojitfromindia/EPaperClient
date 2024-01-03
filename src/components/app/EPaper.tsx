@@ -12,6 +12,7 @@ import { Provider } from "react-redux";
 import store from "@/redux/store.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { MenuIcon } from "lucide-react";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 export default function EPaper() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function EPaper() {
       .catch((error) => {
         console.log(error);
         setApplicationLoading(false);
-        navigate("/404");
+        navigate(AppURLPaths.SIGN_IN);
       });
   }, [loadApplicationState]);
 

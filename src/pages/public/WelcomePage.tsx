@@ -1,19 +1,9 @@
-import { UserAuthForm } from "@/components/login/UserAuthForm.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
-import { RocketIcon } from "lucide-react";
+import { Outlet } from "react-router-dom";
 
-export default function LoginPage() {
+export default function WelcomePage() {
   return (
     <>
       <div className=" flex h-screen flex-col">
-        <Alert>
-          <RocketIcon className="h-4 w-4" />
-          <AlertTitle>Heads up!</AlertTitle>
-          <AlertDescription>
-            You can add components to your app using the cli.
-          </AlertDescription>
-        </Alert>
         <div
           className={
             "flex-grow relative container  items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0"
@@ -47,15 +37,7 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="lg:p-8">
-            <div className="mx-auto flex flex-col justify-center space-y-6 w-[350px]">
-              <div className="flex flex-col space-y-2 text-center">
-                <h1 className="text-2xl font-semibold tracking-tight">Login</h1>
-                <p className="text-sm text-muted-foreground">
-                  Enter your email below to login in your account
-                </p>
-              </div>
-              <UserAuthForm />
-            </div>
+            <Outlet />
           </div>
         </div>
       </div>
