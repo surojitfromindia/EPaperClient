@@ -18,6 +18,9 @@ class AuthenticationService {
   static signUp = (payload: SignUpPayload) => {
     return PostRequestWrapper("/accounts", payload);
   };
+
+
+
 }
 
 export default AuthenticationService;

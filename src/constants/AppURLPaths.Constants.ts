@@ -18,6 +18,7 @@ class EPaperURL {
   static SIGN_UP = "/sign_up";
   static SIGN_IN = "/sign_in";
   static SIGN_OUT = "/sign_out";
+  static CREATE_ORGANIZATION = "/new_organization";
   static APP_PAGE = APP_PATH;
 }
 
@@ -26,6 +27,7 @@ const AppURLPaths = {
   SIGN_UP: EPaperURL.SIGN_UP,
   SIGN_IN: EPaperURL.SIGN_IN,
   SIGN_OUT: EPaperURL.SIGN_OUT,
+  CREATE_ORGANIZATION: EPaperURL.CREATE_ORGANIZATION,
   APP_PAGE: {
     INDEX: EPaperURL.APP_PAGE.INDEX,
     DASHBOARD: EPaperURL.APP_PAGE.DASHBOARD,

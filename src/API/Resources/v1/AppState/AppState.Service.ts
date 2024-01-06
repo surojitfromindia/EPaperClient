@@ -2,7 +2,7 @@ import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { APIService } from "@/API/Resources/v1/APIService.ts";
 
 type AppStateResponse = {
-  organization:{
+  organization: {
     name: string;
     primary_address: string;
     organization_id: number;
@@ -12,8 +12,9 @@ type AppStateResponse = {
     currency_symbol: string;
     currency_name: string;
     currency_id: number;
-  }
-
+  };
+  organizations: [];
+  no_organization?: boolean;
 };
 
 class AppStateService implements APIService {

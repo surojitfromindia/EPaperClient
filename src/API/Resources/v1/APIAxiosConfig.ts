@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import {LocalStorageAccess} from "@/util/LocalStorageAccess.ts";
 
 const baseURL = `${import.meta.env["VITE_API_BASE_URL"]}/v1`;
 const axiosInstance = () => {
@@ -43,7 +44,7 @@ class APIAxiosConfig {
   private readonly _commonQuery: APISearchParam[];
 
   constructor() {
-    const organizationId = localStorage.getItem("currentOrganization");
+    const organizationId = LocalStorageAccess.getOrganizationId();
     this._commonQuery = [];
     if (organizationId) {
       this._commonQuery.push({

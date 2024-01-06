@@ -13,6 +13,7 @@ import store from "@/redux/store.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { MenuIcon } from "lucide-react";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
+import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
 
 export default function EPaper() {
   const navigate = useNavigate();
@@ -21,23 +22,28 @@ export default function EPaper() {
   const [openSideDrawer, setOpenSideDrawer] = useState(false);
   const { pathname } = useLocation();
   // load app state.
+  // note: this is the primary function that will be called
   const loadApplicationState = useCallback(async (): Promise<boolean> => {
-    await ApplicationState.build();
-    setAppState(ApplicationState.getInstance().getAppState());
+    await ApplicationState.build().catch((error) => {
+      setApplicationLoading(false);
+      LocalStorageAccess.removeAccessInfo();
+      navigate(AppURLPaths.SIGN_IN);
+    });
+    setApplicationLoading(false);
+    try {
+      const stateInstance = ApplicationState.getInstance();
+      if (stateInstance) {
+        setAppState(stateInstance.getAppState());
+      }
+    } catch (error) {
+      /* empty */
+    }
     return true;
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
-    loadApplicationState()
-      .then(() => {
-        setApplicationLoading(false);
-      })
-      .catch((error) => {
-        console.log(error);
-        setApplicationLoading(false);
-        navigate(AppURLPaths.SIGN_IN);
-      });
-  }, [loadApplicationState]);
+    loadApplicationState().catch(() => false);
+  }, [loadApplicationState, navigate]);
 
   // header, navbar and side components will stay here,
   // as those must appear all the time.

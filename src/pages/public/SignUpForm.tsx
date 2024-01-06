@@ -24,7 +24,7 @@ import {
   FormLabel,
 } from "@/components/ui/form.tsx";
 import { FormValidationErrorAlert } from "@/components/app/common/FormValidationErrorAlert.tsx";
-import { LocalStorageAccess } from "@/util/LocalStorageAccess";
+import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
