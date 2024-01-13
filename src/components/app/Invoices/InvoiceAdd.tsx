@@ -109,7 +109,12 @@ export default function InvoiceAdd() {
       units: [],
       payment_terms: [],
       line_item_accounts_list: [],
+      invoice_settings: null,
     });
+  const invoiceSettings = useMemo(
+    () => editPageContent.invoice_settings,
+    [editPageContent],
+  );
 
   // loading states
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
@@ -159,7 +164,16 @@ export default function InvoiceAdd() {
         paymentTerm: defaultPaymentTerm!,
       }).due_date;
 
+      const invoiceSettings = data.invoice_settings;
+      const isAutoNumberEnabled =
+        invoiceSettings?.is_auto_number_enabled ?? false;
+
       if (isEditMode) return;
+      if (isAutoNumberEnabled) {
+        const { prefix_string, next_number } =
+          invoiceSettings.default_auto_number_group.auto_number;
+        setValue("invoice_number", prefix_string + next_number);
+      }
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
@@ -486,7 +500,7 @@ export default function InvoiceAdd() {
                               )}
                               defaultOptions={contactDefaultList}
                               {...field}
-                              onChange={(value:{
+                              onChange={(value: {
                                 label: string;
                                 value: number;
                               }) => {

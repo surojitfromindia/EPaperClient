@@ -8,6 +8,7 @@ import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCr
 import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
 
 import {Contact} from "@/API/Resources/v1/Contact/Contact";
+import {InvoiceSettings} from "@/API/Resources/v1/Invoice/invoice";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -77,6 +78,7 @@ type InvoiceEditPageContent = {
   payment_terms: PaymentTerm[];
   invoice?: Invoice;
   contact?: Contact;
+  invoice_settings : InvoiceSettings,
 };
 type InvoiceEditPageFromContactServiceParams = {
   contact_id?: number;

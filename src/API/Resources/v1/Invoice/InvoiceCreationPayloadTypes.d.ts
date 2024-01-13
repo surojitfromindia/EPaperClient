@@ -5,7 +5,7 @@ type InvoiceCreationPayloadType = {
   due_date: Date;
   payment_term_id?: number;
   contact_id: Contact["contact_id"];
-  invoice_number: string;
+  invoice_number?: string;
   is_inclusive_tax: boolean;
   line_items: InvoiceLineItemCreationPayloadType[];
   notes?: string;
