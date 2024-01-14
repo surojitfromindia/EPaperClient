@@ -3,6 +3,6 @@ import {AutoNumberGroup, AutoNumberGroupForSingleEntity} from "@/API/Resources/v
 interface InvoiceSettings {
   is_auto_number_enabled: boolean;
   default_auto_number_group: AutoNumberGroupForSingleEntity;
-  auto_number_groups: AutoNumberGroup[];
+  auto_number_groups: AutoNumberGroupForSingleEntity[];
 }
 export { InvoiceSettings };

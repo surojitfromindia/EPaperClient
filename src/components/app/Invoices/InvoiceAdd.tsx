@@ -368,6 +368,19 @@ export default function InvoiceAdd() {
     [setValue],
   );
 
+  const handleAutoNumberGroupChangeInvoiceNumberChange = useCallback(
+    (group_id: number) => {
+      const auto_number_group = invoiceSettings?.auto_number_groups.find(
+        (group) => group.auto_number_group_id === group_id,
+      );
+      if (auto_number_group) {
+        const { prefix_string, next_number } = auto_number_group.auto_number;
+        setValue("invoice_number", prefix_string + next_number);
+      }
+    },
+    [invoiceSettings, setValue],
+  );
+
   const handleFormSubmit = async (
     data: z.infer<typeof schema>,
     _event?: React.BaseSyntheticEvent,
@@ -583,6 +596,10 @@ export default function InvoiceAdd() {
                             classNames={reactSelectStyle}
                             components={{
                               ...reactSelectComponentOverride,
+                            }}
+                            onChange={(value: { value: number }) => {
+                              handleAutoNumberGroupChangeInvoiceNumberChange(value.value);
+                              field.onChange(value);
                             }}
                           />
                         </FormControl>
