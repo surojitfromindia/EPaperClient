@@ -45,7 +45,10 @@ import { ValidityUtil } from "@/util/ValidityUtil.ts";
 import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
-import { mapPaymentTermToRSelect } from "@/components/app/common/reactSelectOptionCompositions.ts";
+import {
+  makeAutoNumberGroupRSelect,
+  mapPaymentTermToRSelect,
+} from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -67,6 +70,12 @@ const schema = z.object({
     },
   ),
   is_inclusive_tax: z.boolean(),
+  auto_number_group: z
+    .object({
+      value: z.number(),
+      label: z.string().optional(),
+    })
+    .nullable(),
   invoice_number: z.string().trim().nonempty("Please enter an invoice number"),
   order_number: z.string().trim().optional(),
   issue_date: z.date(),
@@ -115,6 +124,10 @@ export default function InvoiceAdd() {
     () => editPageContent.invoice_settings,
     [editPageContent],
   );
+  const [
+    useManualNumberForThisTransaction,
+    setUseManualNumberForThisTransaction,
+  ] = useState(false);
 
   // loading states
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
@@ -172,6 +185,10 @@ export default function InvoiceAdd() {
       if (isAutoNumberEnabled) {
         const { prefix_string, next_number } =
           invoiceSettings.default_auto_number_group.auto_number;
+        const defaultAutoNumberGroupRSelect = makeAutoNumberGroupRSelect(
+          invoiceSettings.default_auto_number_group,
+        );
+        setValue("auto_number_group", defaultAutoNumberGroupRSelect);
         setValue("invoice_number", prefix_string + next_number);
       }
       setValue("issue_date", defaultIssueDate);
@@ -216,6 +233,11 @@ export default function InvoiceAdd() {
       tax_percentage: acc.tax_percentage,
     }));
   }, [editPageContent.taxes]);
+  const autoNumberGroupsDropDown = useMemo(() => {
+    return editPageContent.invoice_settings?.auto_number_groups.map(
+      makeAutoNumberGroupRSelect,
+    );
+  }, [editPageContent.invoice_settings?.auto_number_groups]);
 
   // ----------------- event handlers -----------------
   const handlePaymentTermChange = useCallback(
@@ -479,108 +501,88 @@ export default function InvoiceAdd() {
         </div>
         <Form {...form}>
           <form>
-            <div className={"grid py-4 md:grid-cols-12 grid-cols-6 p-5 my-6"}>
-              <div className={"md:grid-cols-4 col-span-5 space-y-2.5"}>
-                <div>
-                  <FormField
-                    name={"contact"}
-                    render={({ field }) => (
-                      <FormItem className={"grid grid-cols-4  items-baseline "}>
-                        <FormLabel htmlFor={"contact"} className=" capitalize">
-                          Customer
-                        </FormLabel>
-                        <div className="col-span-3 flex-col">
-                          <FormControl>
-                            <ReactAsyncSelect
-                              onFocus={handleContactAutoCompleteInitialFocus}
-                              className={"col-span-3"}
-                              loadOptions={debounce(
-                                handleContactAutoCompleteChange,
-                                600,
-                              )}
-                              defaultOptions={contactDefaultList}
-                              {...field}
-                              onChange={(value: {
-                                label: string;
-                                value: number;
-                              }) => {
-                                field.onChange(value);
-                                handleContactChange(value.value);
-                              }}
-                              inputId={"contact"}
-                              classNames={reactSelectStyle}
-                              components={{
-                                ...reactSelectComponentOverride,
-                              }}
-                              cacheOptions={true}
-                            />
-                          </FormControl>
-                          {ValidityUtil.isNotEmpty(contactDetails) && (
-                            <Badge
-                              className={
-                                "text-[10px] px-1 py-0.5 rounded-sm capitalize"
-                              }
-                            >
-                              {contactDetails?.currency_code}
-                            </Badge>
+            <div className={"grid py-4 grid-cols-12 space-y-4 p-5 my-6"}>
+              <FormField
+                name={"contact"}
+                render={({ field }) => (
+                  <FormItem
+                    className={
+                      "space-y-0 grid grid-cols-12 col-span-12 items-baseline "
+                    }
+                  >
+                    <FormLabel
+                      htmlFor={"contact"}
+                      className=" col-span-1 capitalize"
+                    >
+                      Customer
+                    </FormLabel>
+                    <div className="col-span-4 flex-col">
+                      <FormControl>
+                        <ReactAsyncSelect
+                          onFocus={handleContactAutoCompleteInitialFocus}
+                          className={"col-span-3"}
+                          loadOptions={debounce(
+                            handleContactAutoCompleteChange,
+                            600,
                           )}
-                        </div>
-                      </FormItem>
-                    )}
-                    control={control}
-                  />
-                </div>
+                          defaultOptions={contactDefaultList}
+                          {...field}
+                          onChange={(value: {
+                            label: string;
+                            value: number;
+                          }) => {
+                            field.onChange(value);
+                            handleContactChange(value.value);
+                          }}
+                          inputId={"contact"}
+                          classNames={reactSelectStyle}
+                          components={{
+                            ...reactSelectComponentOverride,
+                          }}
+                          cacheOptions={true}
+                        />
+                      </FormControl>
+                      {ValidityUtil.isNotEmpty(contactDetails) && (
+                        <Badge
+                          className={
+                            "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                          }
+                        >
+                          {contactDetails?.currency_code}
+                        </Badge>
+                      )}
+                    </div>
+                  </FormItem>
+                )}
+                control={control}
+              />
+
+              {/*Invoice Number*/}
+              <div className={"grid grid-cols-12 col-span-12"}>
                 <FormField
-                  name={"invoice_number"}
-                  render={() => (
-                    <FormItem className={"grid grid-cols-4 items-center "}>
+                  name={"auto_number_group"}
+                  render={({ field }) => (
+                    <FormItem
+                      className={
+                        "space-y-0 grid grid-cols-5 col-span-5 items-center "
+                      }
+                    >
                       <FormLabel
                         htmlFor={"invoice_number"}
-                        className={"capitalize"}
+                        className=" capitalize"
                       >
                         Invoice#
                       </FormLabel>
-                      <div className="col-span-3 flex-col">
+                      <div className="col-span-4 flex-col">
                         <FormControl>
-                          <div className="relative w-full max-w-sm">
-                            <Input
-                              className="pr-10 col-span-3"
-                              placeholder="Invoice number"
-                              type="text"
-                              id="invoice_number"
-                              {...register("invoice_number")}
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                              <Settings2Icon
-                                className={"w-4 h-4 text-primary"}
-                              />
-                            </div>
-                          </div>
-                        </FormControl>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  name={"issue_date"}
-                  render={({ field }) => (
-                    <FormItem className={"grid grid-cols-4 items-center "}>
-                      <FormLabel htmlFor={"issue_date"} className=" capitalize">
-                        Issue Date
-                      </FormLabel>
-                      <div className="col-span-3 flex-col">
-                        <FormControl>
-                          <Input
-                            type={"date"}
+                          <ReactSelect
+                            className={"col-span-3"}
+                            options={autoNumberGroupsDropDown}
                             {...field}
-                            id={"issue_date"}
-                            value={DateUtil.Formatter(field.value).format(
-                              "yyyy-MM-dd",
-                            )}
-                            onChange={(e) => {
-                              handleIssueDateChange(new Date(e.target.value));
-                              field.onChange(new Date(e.target.value));
+                            inputId={"auto_number_group"}
+                            classNames={reactSelectStyle}
+                            components={{
+                              ...reactSelectComponentOverride,
                             }}
                           />
                         </FormControl>
@@ -589,7 +591,71 @@ export default function InvoiceAdd() {
                   )}
                   control={control}
                 />
+
+                <div className={"ml-5 col-span-4"}>
+                  <FormField
+                    name={"invoice_number"}
+                    render={() => (
+                      <FormItem className={"grid grid-cols-4 items-center "}>
+                        <div className="col-span-3 flex-col">
+                          <FormControl>
+                            <div className="relative w-full max-w-sm">
+                              <Input
+                                className="pr-10 col-span-3"
+                                placeholder="Invoice number"
+                                type="text"
+                                id="invoice_number"
+                                {...register("invoice_number")}
+                              />
+                              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <Settings2Icon
+                                  className={"w-4 h-4 text-primary"}
+                                />
+                              </div>
+                            </div>
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
+
+              {/**Issue Date*/}
+              <FormField
+                name={"issue_date"}
+                render={({ field }) => (
+                  <FormItem
+                    className={
+                      "space-y-0 grid grid-cols-12 col-span-12 items-center "
+                    }
+                  >
+                    <FormLabel
+                      htmlFor={"issue_date"}
+                      className=" capitalize col-span-`"
+                    >
+                      Issue Date
+                    </FormLabel>
+                    <div className="col-span-4 flex-col">
+                      <FormControl>
+                        <Input
+                          type={"date"}
+                          {...field}
+                          id={"issue_date"}
+                          value={DateUtil.Formatter(field.value).format(
+                            "yyyy-MM-dd",
+                          )}
+                          onChange={(e) => {
+                            handleIssueDateChange(new Date(e.target.value));
+                            field.onChange(new Date(e.target.value));
+                          }}
+                        />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
+                control={control}
+              />
 
               <div
                 className={"grid grid-cols-12 col-span-12 space-x-5 mt-2.5 "}
@@ -598,14 +664,14 @@ export default function InvoiceAdd() {
                   <FormField
                     name={"payment_term"}
                     render={({ field }) => (
-                      <FormItem className={"grid grid-cols-4 items-center "}>
+                      <FormItem className={"grid grid-cols-5 items-center "}>
                         <FormLabel
                           htmlFor={"payment_term"}
                           className=" capitalize"
                         >
                           Terms
                         </FormLabel>
-                        <div className="col-span-3 flex-col">
+                        <div className="col-span-4 flex-col">
                           <FormControl>
                             <ReactSelect
                               className={"col-span-3"}

@@ -2,6 +2,7 @@ import { Currency } from "@/API/Resources/v1/Currency/Currency";
 import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
+import {AutoNumberGroup} from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
 
 const mapPaymentTermToRSelect = (paymentTerm: Partial<PaymentTerm>) => ({
   label: `${paymentTerm.payment_term_name}`,
@@ -30,11 +31,19 @@ const makeTaxRSelectOptions = (tax: Partial<TaxRate>) => {
     value: tax.tax_id,
   };
 };
+
+const makeAutoNumberGroupRSelect = (autoNumberGroup: Pick<AutoNumberGroup,"auto_number_group_name"|"auto_number_group_id">) => {
+    return {
+        label: `${autoNumberGroup.auto_number_group_name}`,
+        value: autoNumberGroup.auto_number_group_id,
+    };
+}
 export {
   makeCurrencyRSelectOptions,
   makeTaxRSelectOptions,
   makeUnitRSelectOptions,
   mapPaymentTermToRSelect,
+  makeAutoNumberGroupRSelect,
 };
 
 type TaxRSelectOption = ReturnType<typeof makeTaxRSelectOptions>;
