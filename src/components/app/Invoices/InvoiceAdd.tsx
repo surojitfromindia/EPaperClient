@@ -124,9 +124,16 @@ export default function InvoiceAdd() {
     () => editPageContent.invoice_settings,
     [editPageContent],
   );
+  const showAutoNumberSelection = useMemo(
+    () =>
+      ValidityUtil.isNotEmpty(invoiceSettings)
+        ? invoiceSettings.is_auto_number_enabled && !isEditMode
+        : false,
+    [invoiceSettings, isEditMode],
+  );
   const [
-    useManualNumberForThisTransaction,
-    setUseManualNumberForThisTransaction,
+    isUseManualNumberForThisTransaction,
+    setIsUseManualNumberForThisTransaction,
   ] = useState(false);
 
   // loading states
@@ -393,8 +400,8 @@ export default function InvoiceAdd() {
       setIsSavingActionInProgress(true);
       const newInvoice: InvoiceCreationPayloadType = {
         contact_id: data.contact.value,
-        invoice_number: data.invoice_number,
         issue_date: data.issue_date,
+        auto_number_group_id: data.auto_number_group?.value,
         due_date: data.due_date,
         payment_term_id: data.payment_term.value,
         is_inclusive_tax: data.is_inclusive_tax,
@@ -405,6 +412,11 @@ export default function InvoiceAdd() {
         transaction_status: with_status,
         exchange_rate: data.exchange_rate,
       };
+
+      if (isUseManualNumberForThisTransaction) {
+        newInvoice.invoice_number = data.invoice_number;
+      }
+
       if (isEditMode) {
         await invoiceService
           .updateInvoice({
@@ -577,7 +589,7 @@ export default function InvoiceAdd() {
                   render={({ field }) => (
                     <FormItem
                       className={
-                        "space-y-0 grid grid-cols-5 col-span-5 items-center "
+                        "space-y-0 grid grid-cols-12 col-span-12 items-center"
                       }
                     >
                       <FormLabel
@@ -586,56 +598,49 @@ export default function InvoiceAdd() {
                       >
                         Invoice#
                       </FormLabel>
-                      <div className="col-span-4 flex-col">
-                        <FormControl>
-                          <ReactSelect
-                            className={"col-span-3"}
-                            options={autoNumberGroupsDropDown}
-                            {...field}
-                            inputId={"auto_number_group"}
-                            classNames={reactSelectStyle}
-                            components={{
-                              ...reactSelectComponentOverride,
-                            }}
-                            onChange={(value: { value: number }) => {
-                              handleAutoNumberGroupChangeInvoiceNumberChange(value.value);
-                              field.onChange(value);
-                            }}
+                      {showAutoNumberSelection && (
+                        <div className="col-span-4 flex-col mr-3">
+                          <FormControl>
+                            <ReactSelect
+                              className={"col-span-3"}
+                              options={autoNumberGroupsDropDown}
+                              {...field}
+                              inputId={"auto_number_group"}
+                              classNames={reactSelectStyle}
+                              components={{
+                                ...reactSelectComponentOverride,
+                              }}
+                              onChange={(value: { value: number }) => {
+                                handleAutoNumberGroupChangeInvoiceNumberChange(
+                                  value.value,
+                                );
+                                field.onChange(value);
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+                      )}
+                      {/**Invoice Number*/}
+                      <FormControl>
+                        <div className="relative col-span-4">
+                          <Input
+                            className="pr-10"
+                            placeholder="Invoice number"
+                            type="text"
+                            id="invoice_number"
+                            {...register("invoice_number")}
                           />
-                        </FormControl>
-                      </div>
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <Settings2Icon className={"w-4 h-4 text-primary"} />
+                          </div>
+                        </div>
+                      </FormControl>
                     </FormItem>
                   )}
                   control={control}
                 />
 
-                <div className={"ml-5 col-span-4"}>
-                  <FormField
-                    name={"invoice_number"}
-                    render={() => (
-                      <FormItem className={"grid grid-cols-4 items-center "}>
-                        <div className="col-span-3 flex-col">
-                          <FormControl>
-                            <div className="relative w-full max-w-sm">
-                              <Input
-                                className="pr-10 col-span-3"
-                                placeholder="Invoice number"
-                                type="text"
-                                id="invoice_number"
-                                {...register("invoice_number")}
-                              />
-                              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <Settings2Icon
-                                  className={"w-4 h-4 text-primary"}
-                                />
-                              </div>
-                            </div>
-                          </FormControl>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <div className={"ml-5 col-span-4"}></div>
               </div>
 
               {/**Issue Date*/}

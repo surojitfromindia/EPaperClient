@@ -6,6 +6,7 @@ type InvoiceCreationPayloadType = {
   payment_term_id?: number;
   contact_id: Contact["contact_id"];
   invoice_number?: string;
+  auto_number_group_id: number;
   is_inclusive_tax: boolean;
   line_items: InvoiceLineItemCreationPayloadType[];
   notes?: string;
