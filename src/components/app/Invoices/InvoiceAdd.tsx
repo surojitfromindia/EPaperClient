@@ -49,6 +49,7 @@ import {
   makeAutoNumberGroupRSelect,
   mapPaymentTermToRSelect,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
+import AutoNumberConfigModal from "@/components/app/common/AutoNumberConfigModal.tsx";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -72,10 +73,11 @@ const schema = z.object({
   is_inclusive_tax: z.boolean(),
   auto_number_group: z
     .object({
-      value: z.number(),
+      value: z.number().optional(),
       label: z.string().optional(),
     })
-    .nullable(),
+    .nullable()
+    .optional(),
   invoice_number: z.string().trim().nonempty("Please enter an invoice number"),
   order_number: z.string().trim().optional(),
   issue_date: z.date(),
@@ -153,6 +155,10 @@ export default function InvoiceAdd() {
     string[]
   >([]);
 
+  // open the auto number modal
+  const [isAutoNumberModalOpen, setIsAutoNumberModalOpen] =
+    useState<boolean>(false);
+
   const handleCloseClick = () => {
     navigate("/app/invoices");
   };
@@ -211,6 +217,7 @@ export default function InvoiceAdd() {
       })
       .then((data) => {
         if (ValidityUtil.isNotEmpty(data.invoice)) {
+          setIsUseManualNumberForThisTransaction(true);
           setFormData(data?.invoice);
           setEditPageInvoiceDetails(data?.invoice);
           setExchangeRate(data?.invoice?.exchange_rate ?? 1);
@@ -457,6 +464,14 @@ export default function InvoiceAdd() {
       setIsSavingActionInProgress(false);
     }
   };
+
+  const handleAutoNumberModalClose = () => {
+    setIsAutoNumberModalOpen(false);
+  };
+  const handleAutoNumberModalOpen = () => {
+    setIsAutoNumberModalOpen(true);
+  };
+
   const setFormData = useCallback(
     (data: typeof editPageInvoiceDetails) => {
       setValue("contact", {
@@ -622,7 +637,7 @@ export default function InvoiceAdd() {
                       )}
                       {/**Invoice Number*/}
                       <FormControl>
-                        <div className="relative col-span-4">
+                        <div className="relative col-span-2">
                           <Input
                             className="pr-10"
                             placeholder="Invoice number"
@@ -631,7 +646,10 @@ export default function InvoiceAdd() {
                             {...register("invoice_number")}
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <Settings2Icon className={"w-4 h-4 text-primary"} />
+                            <Settings2Icon
+                              className={"w-4 h-4 text-primary"}
+                              onClick={handleAutoNumberModalOpen}
+                            />
                           </div>
                         </div>
                       </FormControl>
@@ -786,6 +804,18 @@ export default function InvoiceAdd() {
           cancel
         </Button>
       </div>
+      {/**Auto Number Modal*/}
+      {getValues("auto_number_group").value && (
+        <AutoNumberConfigModal
+          openModal={isAutoNumberModalOpen}
+          onClose={handleAutoNumberModalClose}
+          autoNumberFor={"invoice"}
+          autoNumberGroups={invoiceSettings.auto_number_groups}
+          selected_auto_number_group_id={
+            getValues("auto_number_group").value ?? null
+          }
+        />
+      )}
     </div>
   );
 }

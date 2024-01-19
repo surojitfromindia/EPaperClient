@@ -25,7 +25,7 @@ const reactSelectStyle: ClassNamesConfig = {
       state.isDisabled && "!cursor-not-allowed !pointer-events-auto",
     ),
 
-  menuList: () => classNames("!p-2 !max-h-52 overflow-y-scroll"),
+  menuList: () => classNames("!p-1 !max-h-52 overflow-y-scroll"),
 };
 const reactSelectComponentOverride = {
   IndicatorSeparator: ():null => null,
@@ -55,7 +55,7 @@ const reactSelectStyleBorderLess: ClassNamesConfig = {
       state.isDisabled && "!cursor-not-allowed !pointer-events-auto",
     ),
 
-  menuList: () => classNames("!p-2 !max-h-52 overflow-y-scroll"),
+  menuList: () => classNames("!p-1 !max-h-52 overflow-y-scroll"),
 };
 
 export {
