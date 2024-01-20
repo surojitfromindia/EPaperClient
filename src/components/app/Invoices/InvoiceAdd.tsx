@@ -50,6 +50,8 @@ import {
   mapPaymentTermToRSelect,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import AutoNumberConfigModal from "@/components/app/common/AutoNumberConfigModal.tsx";
+import { InvoiceSettings } from "@/API/Resources/v1/Invoice/invoice";
+import { data } from "autoprefixer";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -179,19 +181,8 @@ export default function InvoiceAdd() {
     getValues,
   } = form;
 
-  const handleEditPageDetailsLoad = useCallback(
-    (data: InvoiceEditPageContent) => {
-      const paymentTerms = data.payment_terms;
-      const defaultPaymentTerm = paymentTerms.find((term) => term.is_default);
-      const defaultPaymentTermRSelect = mapPaymentTermToRSelect(
-        defaultPaymentTerm!,
-      );
-      const defaultDueDate = calculateDueDate({
-        issue_date: defaultIssueDate,
-        paymentTerm: defaultPaymentTerm!,
-      }).due_date;
-
-      const invoiceSettings = data.invoice_settings;
+  const handleInvoiceSettingsLoad = useCallback(
+    (invoiceSettings: InvoiceSettings) => {
       const isAutoNumberEnabled =
         invoiceSettings?.is_auto_number_enabled ?? false;
       const { prefix_string, next_number } =
@@ -206,12 +197,33 @@ export default function InvoiceAdd() {
         setValue("invoice_number", prefix_string + next_number);
         setValue("generated_invoice_number", prefix_string + next_number);
       }
+    },
+    [isEditMode, setValue],
+  );
+
+  const handleEditPageDetailsLoad = useCallback(
+    (data: InvoiceEditPageContent) => {
+      const paymentTerms = data.payment_terms;
+      const defaultPaymentTerm = paymentTerms.find((term) => term.is_default);
+      const defaultPaymentTermRSelect = mapPaymentTermToRSelect(
+        defaultPaymentTerm!,
+      );
+      const defaultDueDate = calculateDueDate({
+        issue_date: defaultIssueDate,
+        paymentTerm: defaultPaymentTerm!,
+      }).due_date;
+
+      const invoiceSettings = data.invoice_settings;
+      handleInvoiceSettingsLoad(invoiceSettings!);
+
+      if (isEditMode) return;
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
       setValue("payment_term", defaultPaymentTermRSelect);
     },
-    [isEditMode, setValue],
+    [handleInvoiceSettingsLoad, isEditMode, setValue],
   );
+
   const loadEditPage = useCallback(() => {
     invoiceService
       .getInvoiceEditPage({
@@ -391,7 +403,7 @@ export default function InvoiceAdd() {
       );
       if (auto_number_group) {
         // reset the manual flag
-        setIsUseManualNumberForThisTransaction(false)
+        setIsUseManualNumberForThisTransaction(false);
         const { prefix_string, next_number } = auto_number_group.auto_number;
         setValue("invoice_number", prefix_string + next_number);
         setValue("generated_invoice_number", prefix_string + next_number);
@@ -420,6 +432,17 @@ export default function InvoiceAdd() {
       }
     },
     [setValue, isEditMode, getValues],
+  );
+
+  const handleInvoiceSettingsUpdate = useCallback(
+    ({ settings }: { settings: InvoiceSettings }) => {
+      setEditPageContent((prev) => ({
+        ...prev,
+        invoice_settings: settings,
+      }));
+      handleInvoiceSettingsLoad(settings);
+    },
+    [handleInvoiceSettingsLoad],
   );
 
   const handleFormSubmit = async (
@@ -845,6 +868,8 @@ export default function InvoiceAdd() {
         selected_auto_number_group_id={
           getValues("auto_number_group")?.value ?? null
         }
+        onPreferenceUpdate={handleInvoiceSettingsUpdate}
+        isAutoNumberEnabled={invoiceSettings.is_auto_number_enabled}
       />
     </div>
   );

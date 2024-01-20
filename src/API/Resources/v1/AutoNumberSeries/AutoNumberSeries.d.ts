@@ -22,4 +22,4 @@ interface AutoNumber extends AutoNumberGenerated {
   next_number: number;
 }
 
-export { AutoNumberGroup, AutoNumberGroupForSingleEntity };
+export { AutoNumberGroup, AutoNumberGroupForSingleEntity, AutoNumber };

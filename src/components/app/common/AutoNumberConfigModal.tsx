@@ -23,6 +23,8 @@ import {
   AutoNumberGroup,
   AutoNumberGroupForSingleEntity,
 } from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
+import InvoiceService from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { InvoiceSettings } from "@/API/Resources/v1/Invoice/invoice";
 interface AutoNumberConfigModalProps {
   openModal: boolean;
   onClose: () => void;
@@ -33,13 +35,22 @@ interface AutoNumberConfigModalProps {
     | "vendor_payment";
   autoNumberGroups: AutoNumberGroupForSingleEntity[];
   selected_auto_number_group_id: AutoNumberGroup["auto_number_group_id"];
+  onPreferenceUpdate: ({ settings }: { settings: InvoiceSettings }) => void;
+  isAutoNumberEnabled?: boolean;
 }
+const AutoNumberOptions = {
+  auto_number: "auto_number",
+  manual_number: "manual_number",
+};
+const invoiceService = new InvoiceService();
 function AutoNumberConfigModal({
   openModal,
   onClose,
   autoNumberFor,
   autoNumberGroups,
   selected_auto_number_group_id,
+  onPreferenceUpdate,
+  isAutoNumberEnabled,
 }: AutoNumberConfigModalProps) {
   const labels = {
     l1: {
@@ -54,11 +65,7 @@ function AutoNumberConfigModal({
     },
   };
 
-  const AutoNumberOptions = {
-    auto_number: "auto_number",
-    manual_number: "manual_number",
-  };
-  const [isButtonLoading] = useState(false);
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
 
   const selectedAutoNumberGroup = autoNumberGroups.find(
     (autoNumberGroup) =>
@@ -67,7 +74,7 @@ function AutoNumberConfigModal({
 
   const form = useForm({
     defaultValues: {
-      auto_number_option: AutoNumberOptions.auto_number,
+      auto_number_option: AutoNumberOptions.manual_number,
       name: selectedAutoNumberGroup.auto_number_group_name,
       prefix_string: selectedAutoNumberGroup.auto_number.prefix_string,
       next_number: selectedAutoNumberGroup?.auto_number?.next_number,
@@ -82,11 +89,58 @@ function AutoNumberConfigModal({
       selectedAutoNumberGroup?.auto_number?.prefix_string,
     );
     setValue("next_number", selectedAutoNumberGroup?.auto_number?.next_number);
-  }, [selectedAutoNumberGroup, setValue]);
+    setValue(
+      "auto_number_option",
+      isAutoNumberEnabled
+        ? AutoNumberOptions.auto_number
+        : AutoNumberOptions.manual_number,
+    );
+  }, [isAutoNumberEnabled, selectedAutoNumberGroup, setValue]);
 
   const handleClose = () => {
     form.reset();
     onClose();
+  };
+
+  const handleSave = async () => {
+    setIsButtonLoading(true);
+
+    const data = form.getValues();
+    const auto_number_option = data.auto_number_option;
+    const prefix_string = data.prefix_string;
+    const next_number = data.next_number;
+    const auto_number_group_id = selected_auto_number_group_id;
+
+    const update_payload = {
+      is_auto_number_enabled: true,
+      auto_number_option,
+      prefix_string,
+      next_number,
+      auto_number_group_id,
+    };
+
+    if (auto_number_option === AutoNumberOptions.manual_number) {
+      update_payload.is_auto_number_enabled = false;
+    }
+    try {
+      const result = await invoiceService.updateInvoiceAutoNumberSettings({
+        payload: update_payload,
+      });
+
+      const settings = result.invoice_settings;
+      if (settings.is_auto_number_enabled) {
+        setValue("auto_number_option", AutoNumberOptions.auto_number);
+      } else {
+        setValue("auto_number_option", AutoNumberOptions.manual_number);
+      }
+
+      onPreferenceUpdate({ settings });
+      handleClose();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsButtonLoading(false);
+    }
   };
 
   return (
@@ -208,7 +262,7 @@ function AutoNumberConfigModal({
           <Button variant={"secondary"} onClick={handleClose}>
             Cancel
           </Button>
-          <Button>
+          <Button onClick={handleSave}>
             {isButtonLoading && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}

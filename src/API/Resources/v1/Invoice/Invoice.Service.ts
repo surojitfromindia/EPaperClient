@@ -7,8 +7,11 @@ import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { InvoiceCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
 import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
 
-import {Contact} from "@/API/Resources/v1/Contact/Contact";
-import {InvoiceSettings} from "@/API/Resources/v1/Invoice/invoice";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import {
+  InvoiceAutoNumberSettingsUpdatePayload,
+  InvoiceSettings,
+} from "@/API/Resources/v1/Invoice/invoice";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -78,7 +81,7 @@ type InvoiceEditPageContent = {
   payment_terms: PaymentTerm[];
   invoice?: Invoice;
   contact?: Contact;
-  invoice_settings : InvoiceSettings,
+  invoice_settings: InvoiceSettings;
 };
 type InvoiceEditPageFromContactServiceParams = {
   contact_id?: number;
@@ -90,6 +93,7 @@ type InvoiceEditPageFromContactContent = {
 
 class InvoiceService implements APIService {
   readonly urlFragment: string = "/invoices";
+  readonly urlSettingsFragment: string = "/settings/invoice";
   #axiosConfig: typeof APIAxiosConfig;
   private readonly abortController: AbortController;
 
@@ -158,6 +162,20 @@ class InvoiceService implements APIService {
       InvoiceUpdatePayloadType,
       {
         invoice: Invoice;
+      }
+    >(url, payload);
+  }
+
+  updateInvoiceAutoNumberSettings({
+    payload,
+  }: {
+    payload: InvoiceAutoNumberSettingsUpdatePayload;
+  }) {
+    const url = this.urlSettingsFragment + "/auto_number";
+    return this.#axiosConfig.APIPutRequestWrapper<
+      InvoiceAutoNumberSettingsUpdatePayload,
+      {
+        invoice_settings: InvoiceSettings;
       }
     >(url, payload);
   }
