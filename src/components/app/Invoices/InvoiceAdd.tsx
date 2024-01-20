@@ -79,6 +79,7 @@ const schema = z.object({
     .nullable()
     .optional(),
   invoice_number: z.string().trim().nonempty("Please enter an invoice number"),
+  generated_invoice_number: z.string().optional(),
   order_number: z.string().trim().optional(),
   issue_date: z.date(),
   payment_term: z.object({
@@ -193,16 +194,17 @@ export default function InvoiceAdd() {
       const invoiceSettings = data.invoice_settings;
       const isAutoNumberEnabled =
         invoiceSettings?.is_auto_number_enabled ?? false;
+      const { prefix_string, next_number } =
+        invoiceSettings.default_auto_number_group.auto_number;
+      const defaultAutoNumberGroupRSelect = makeAutoNumberGroupRSelect(
+        invoiceSettings.default_auto_number_group,
+      );
+      setValue("auto_number_group", defaultAutoNumberGroupRSelect);
 
       if (isEditMode) return;
       if (isAutoNumberEnabled) {
-        const { prefix_string, next_number } =
-          invoiceSettings.default_auto_number_group.auto_number;
-        const defaultAutoNumberGroupRSelect = makeAutoNumberGroupRSelect(
-          invoiceSettings.default_auto_number_group,
-        );
-        setValue("auto_number_group", defaultAutoNumberGroupRSelect);
         setValue("invoice_number", prefix_string + next_number);
+        setValue("generated_invoice_number", prefix_string + next_number);
       }
       setValue("issue_date", defaultIssueDate);
       setValue("due_date", defaultDueDate);
@@ -388,11 +390,36 @@ export default function InvoiceAdd() {
         (group) => group.auto_number_group_id === group_id,
       );
       if (auto_number_group) {
+        // reset the manual flag
+        setIsUseManualNumberForThisTransaction(false)
         const { prefix_string, next_number } = auto_number_group.auto_number;
         setValue("invoice_number", prefix_string + next_number);
+        setValue("generated_invoice_number", prefix_string + next_number);
       }
     },
     [invoiceSettings, setValue],
+  );
+  const handleInvoiceNumberOnBlur = useCallback(
+    (value: string) => {
+      // value before the change
+      const inv_number_prev_value = getValues("invoice_number");
+      // set the new value
+      setValue("invoice_number", value);
+      const inv_number_new_value = getValues("invoice_number");
+      if (isEditMode) return;
+
+      // if the new value is the same as the previous value, do nothing
+      if (inv_number_new_value === inv_number_prev_value) return;
+
+      // if the new value is different from the generated invoice number, then
+      // set the isUseManualNumberForThisTransaction to true and open the modal
+      if (inv_number_new_value !== getValues("generated_invoice_number")) {
+        setIsUseManualNumberForThisTransaction(true);
+        handleAutoNumberModalOpen();
+        return;
+      }
+    },
+    [setValue, isEditMode, getValues],
   );
 
   const handleFormSubmit = async (
@@ -637,13 +664,17 @@ export default function InvoiceAdd() {
                       )}
                       {/**Invoice Number*/}
                       <FormControl>
-                        <div className="relative col-span-2">
+                        <div className="relative col-span-3">
                           <Input
                             className="pr-10"
                             placeholder="Invoice number"
                             type="text"
                             id="invoice_number"
                             {...register("invoice_number")}
+                            onBlur={(event) => {
+                              handleInvoiceNumberOnBlur(event.target.value);
+                            }}
+                            onChange={(event) => {}}
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <Settings2Icon
@@ -805,17 +836,16 @@ export default function InvoiceAdd() {
         </Button>
       </div>
       {/**Auto Number Modal*/}
-      {getValues("auto_number_group").value && (
-        <AutoNumberConfigModal
-          openModal={isAutoNumberModalOpen}
-          onClose={handleAutoNumberModalClose}
-          autoNumberFor={"invoice"}
-          autoNumberGroups={invoiceSettings.auto_number_groups}
-          selected_auto_number_group_id={
-            getValues("auto_number_group").value ?? null
-          }
-        />
-      )}
+
+      <AutoNumberConfigModal
+        openModal={isAutoNumberModalOpen}
+        onClose={handleAutoNumberModalClose}
+        autoNumberFor={"invoice"}
+        autoNumberGroups={invoiceSettings.auto_number_groups}
+        selected_auto_number_group_id={
+          getValues("auto_number_group")?.value ?? null
+        }
+      />
     </div>
   );
 }
