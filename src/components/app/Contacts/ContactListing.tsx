@@ -21,8 +21,10 @@ import {
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { useAppSelector } from "@/redux/hooks.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
-import {Contact} from "@/API/Resources/v1/Contact/Contact";
-import {ContactTableView} from "@/API/Resources/v1/Contact/Contact.TableView";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { ContactTableView } from "@/API/Resources/v1/Contact/Contact.TableView";
+import { JSX } from "react/jsx-runtime";
+import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
 
 interface ContactListingProps extends React.HTMLAttributes<HTMLDivElement> {
   contact_type: "customer" | "vendor";
@@ -49,9 +51,7 @@ export default function ContactListing({
   isContactsFetching = true,
   onContactAddClick,
 }: ContactListingProps) {
-  useAppSelector(
-      ({ organization }) => organization.currency_symbol,
-  );
+  useAppSelector(({ organization }) => organization.currency_symbol);
   const navigate = useNavigate();
   const isLoading = isContactsFetching;
   // highlight row after coming from the details page
@@ -83,6 +83,16 @@ export default function ContactListing({
         removable: true,
         type: "text",
       },
+      email: {
+        label: "email",
+        removable: true,
+        type: "text",
+      },
+      phone: {
+        label: "phone",
+        removable: true,
+        type: "text",
+      },
       currency_code: {
         label: "currency",
         removable: true,
@@ -95,6 +105,56 @@ export default function ContactListing({
     () => objectEntries(dynamicHeaders),
     [dynamicHeaders],
   );
+
+  const DynamicRowElement = ({ contact }: { contact: Contact }) => {
+    // for each dynamic header, create a React element <TableCell>
+    // and append it to the TableRow
+    const tableCells = [];
+    dynamicHeadersAsArray.forEach(([col_key, col_data]) => {
+      let content:
+        | string
+        | number
+        | boolean
+        | JSX.Element
+        | Iterable<React.ReactNode>;
+
+      if (col_data.type === "numeric") {
+        content = (
+          <RNumberFormatAsText
+            value={contact[col_key] ?? 0}
+            thousandSeparator={true}
+          />
+        );
+      } else {
+        content = contact[col_key];
+      }
+      const tableCell = React.createElement(
+        TableCell,
+        {
+          key: col_key,
+          onClick: () => {
+            handleRowClick(contact.contact_id);
+          },
+          className: classNames(
+            "align-top",
+            col_data.type === "numeric" && "text-right",
+          ),
+        },
+        content,
+      );
+      tableCells.push(tableCell);
+    });
+
+    // create a react element <TableRow>
+    return React.createElement(
+      React.Fragment,
+      {
+        key: contact.contact_id,
+      },
+      tableCells,
+    );
+  };
+
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -169,24 +229,7 @@ export default function ContactListing({
                       <span className={"w-36"}>{contact.contact_name}</span>
                     </TableCell>
                     <>
-                      {!shrinkTable &&
-                        dynamicHeadersAsArray.map(([col_key, col_data]) => (
-                          <TableCell
-                            key={col_key}
-                            onClick={() => {
-                              handleRowClick(contact.contact_id);
-                            }}
-                            className={classNames(
-                              "align-top",
-                              col_data.type === "numeric" && "text-right",
-                            )}
-                          >
-                            <div className={"max-h-24 overflow-hidden"}>
-                              {col_data.type === "text" &&
-                                (contact[col_key] ?? "")}
-                            </div>
-                          </TableCell>
-                        ))}
+                      {!shrinkTable && <DynamicRowElement contact={contact} />}
                     </>
                     {!shrinkTable && (
                       <TableCell className={"align-top"}>

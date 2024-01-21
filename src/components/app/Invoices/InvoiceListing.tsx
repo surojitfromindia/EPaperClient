@@ -165,7 +165,7 @@ export function InvoiceListing({
         }
 
         content = (
-          <Badge className={`${color} uppercase rounded-sm`}>
+          <Badge className={`${color} uppercase rounded-md`}>
             {invoice[col_key]}
           </Badge>
         );

@@ -41,6 +41,9 @@ const CustomerAddWrapper = React.lazy(
   () => import("@/components/app/Contacts/CustomerAddWrapper.tsx"),
 );
 
+const ContactDetails = React.lazy(
+  () => import("@/components/app/Contacts/ContactDetails.tsx"),
+);
 const LazyWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense
@@ -224,6 +227,16 @@ const router = createBrowserRouter([
                 <ContactPage />
               </LazyWrapper>
             ),
+            children: [
+              {
+                path: ":contact_id_param",
+                element: (
+                  <LazyWrapper>
+                    <ContactDetails />
+                  </LazyWrapper>
+                ),
+              },
+            ],
           },
           {
             path: "new",
@@ -243,6 +256,7 @@ const router = createBrowserRouter([
           },
         ],
       },
+
       {
         path: "*",
         element: <Page404 />,

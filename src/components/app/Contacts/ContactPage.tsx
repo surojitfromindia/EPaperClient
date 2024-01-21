@@ -4,7 +4,7 @@ import { toast } from "@/components/ui/use-toast.ts";
 import classNames from "classnames";
 import ContactListing from "@/components/app/Contacts/ContactListing.tsx";
 import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
-import {Contact} from "@/API/Resources/v1/Contact/Contact";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
 
 type OnItemsDeleteSuccess = (action_type: "delete", item_ids: number[]) => void;
 type OnItemAddOrEditSuccess = (
@@ -78,7 +78,7 @@ export default function ContactPage() {
         <div
           className={classNames(
             "col-span-8",
-            isDetailsPageOpen && ` hidden lg:block lg:col-span-3`,
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-2`,
           )}
         >
           <ContactListing
@@ -91,7 +91,7 @@ export default function ContactPage() {
           />
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-8 lg:col-span-5"}>
+          <div className={"col-span-8 lg:col-span-6"}>
             <Outlet />
           </div>
         )}
