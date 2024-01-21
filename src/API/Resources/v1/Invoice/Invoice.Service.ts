@@ -20,6 +20,9 @@ interface InvoiceGenerated {
   tax_total: number;
   sub_total: number;
   total: number;
+  due_days: number;
+  due_days_formatted: string;
+  transaction_status_formatted: string;
 }
 interface InvoiceLineItemGenerated {
   line_item_id: number;

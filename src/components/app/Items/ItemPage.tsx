@@ -75,7 +75,7 @@ export default function ItemPage() {
         <div
           className={classNames(
             "col-span-8",
-            isDetailsPageOpen && ` hidden lg:block lg:col-span-3`,
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-2`,
           )}
         >
           <ItemListing
@@ -87,7 +87,7 @@ export default function ItemPage() {
           />
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-8 lg:col-span-5"}>
+          <div className={"col-span-8 lg:col-span-6"}>
             <Outlet />
           </div>
         )}

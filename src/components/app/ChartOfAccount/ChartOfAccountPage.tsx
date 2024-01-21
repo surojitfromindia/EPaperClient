@@ -112,7 +112,7 @@ export default function ChartOfAccountPage() {
         <div
           className={classNames(
             "col-span-8",
-            isDetailsPageOpen && ` hidden lg:block lg:col-span-3`,
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-2`,
           )}
         >
           <ChartOfAccountListing
@@ -126,7 +126,7 @@ export default function ChartOfAccountPage() {
           />
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-8 lg:col-span-5"}>
+          <div className={"col-span-8 lg:col-span-6"}>
             <Outlet context={{ onAccountEditClick }} />
           </div>
         )}

@@ -51,7 +51,6 @@ import {
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import AutoNumberConfigModal from "@/components/app/common/AutoNumberConfigModal.tsx";
 import { InvoiceSettings } from "@/API/Resources/v1/Invoice/invoice";
-import { data } from "autoprefixer";
 
 const invoiceService = new InvoiceService();
 const autoCompleteService = new AutoCompleteService();
@@ -108,7 +107,6 @@ export default function InvoiceAdd() {
     }
   }, [invoice_id_param]);
   const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
-  const submitButtonText = isEditMode ? "update" : "save";
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
   const navigate = useNavigate();
 
@@ -125,6 +123,13 @@ export default function InvoiceAdd() {
       line_item_accounts_list: [],
       invoice_settings: null,
     });
+  const showSaveAsDraftButton = useMemo(() => {
+    if (ValidityUtil.isNotEmpty(editPageInvoiceDetails)) {
+      return editPageInvoiceDetails.transaction_status !== "sent";
+    }
+    return true;
+  }, [editPageInvoiceDetails]);
+
   const invoiceSettings = useMemo(
     () => editPageContent.invoice_settings,
     [editPageContent],
@@ -839,16 +844,30 @@ export default function InvoiceAdd() {
         </Form>
       </div>
       <div className={"h-16 mb-12 py-2 px-5 flex space-x-2 border-t-1 "}>
+        {showSaveAsDraftButton && (
+          <Button
+            variant={"outline"}
+            className={"capitalize"}
+            onClick={handleSubmit((data) =>
+              handleFormSubmit(data, undefined, "draft"),
+            )}
+          >
+            {isSavingActionInProgress && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Save as draft
+          </Button>
+        )}
         <Button
           className={"capitalize"}
           onClick={handleSubmit((data) =>
-            handleFormSubmit(data, undefined, "draft"),
+            handleFormSubmit(data, undefined, "sent"),
           )}
         >
           {isSavingActionInProgress && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          {submitButtonText}
+          Save and send
         </Button>
         <Button
           className={"capitalize"}

@@ -24,6 +24,8 @@ import { useAppSelector } from "@/redux/hooks.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { OnInvoiceModification } from "@/components/app/Invoices/InvoicePage.tsx";
 import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
+import { Badge } from "@/components/ui/badge.tsx";
+import { JSX } from "react/jsx-runtime";
 
 interface InvoiceTableView
   extends Pick<
@@ -32,7 +34,7 @@ interface InvoiceTableView
     | "invoice_number"
     | "contact_name"
     | "due_date_formatted"
-    // | "order_number"
+    | "due_days_formatted"
     | "total"
   > {}
 
@@ -55,10 +57,10 @@ interface InvoiceListingProps extends React.HTMLAttributes<HTMLDivElement> {
 type TableHeaderBody = {
   label: string;
   removable: boolean;
-  type: "numeric" | "text";
+  type: "numeric" | "text" | "enum";
   prefix?: string;
   suffix?: string;
-    isCurrency?: boolean;
+  isCurrency?: boolean;
   currencyPrefix?: (value: string) => string;
 };
 
@@ -69,9 +71,7 @@ export function InvoiceListing({
   isFetching = true,
   onInvoiceAddClick,
 }: InvoiceListingProps) {
-  useAppSelector(
-      ({ organization }) => organization.currency_code,
-  );
+  useAppSelector(({ organization }) => organization.currency_code);
   const navigate = useNavigate();
   const isLoading = isFetching;
   // highlight row after coming from the details page
@@ -99,22 +99,22 @@ export function InvoiceListing({
         removable: true,
         type: "text",
       },
+      due_days_formatted: {
+        label: "status",
+        removable: true,
+        type: "enum",
+      },
       contact_name: {
         label: "customer name",
         removable: true,
         type: "text",
       },
-      // order_number: {
-      //   label: "order number",
-      //   removable: true,
-      //   type: "text",
-      // },
       total: {
         label: "total",
         removable: true,
         type: "numeric",
         isCurrency: true,
-        currencyPrefix: (value:string) => value
+        currencyPrefix: (value: string) => value,
       },
     }),
     [],
@@ -123,6 +123,82 @@ export function InvoiceListing({
     () => objectEntries(dynamicHeaders),
     [dynamicHeaders],
   );
+
+  const DynamicRowElement = ({ invoice }: { invoice: Invoice }) => {
+    // for each dynamic header, create a React element <TableCell>
+    // and append it to the TableRow
+    const tableCells = [];
+    dynamicHeadersAsArray.forEach(([col_key, col_data]) => {
+      let content:
+        | string
+        | number
+        | boolean
+        | JSX.Element
+        | Iterable<React.ReactNode>;
+
+      if (col_data.type === "numeric" && col_data.currencyPrefix) {
+        content = (
+          <RNumberFormatAsText
+            prefix={col_data.currencyPrefix(invoice.currency_symbol)}
+            value={invoice[col_key] ?? 0}
+            thousandSeparator={true}
+          />
+        );
+      } else if (col_data.type === "numeric") {
+        content = (
+          <RNumberFormatAsText
+            value={invoice[col_key] ?? 0}
+            thousandSeparator={true}
+          />
+        );
+      } else if (col_data.type === "enum" && col_key === "due_days_formatted") {
+        const due_days = invoice["due_days"];
+        let color: string;
+        if (invoice.transaction_status === "draft") {
+          color = "bg-yellow-100 text-yellow-500 hover:bg-yellow-200";
+        } else if (invoice.transaction_status === "sent" && due_days === 0) {
+          color = "bg-green-100 text-green-500 hover:bg-green-200";
+        } else if (invoice.transaction_status === "sent" && due_days > 0) {
+          color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
+        } else if (invoice.transaction_status === "sent" && due_days < 0) {
+          color = "bg-red-100 text-red-500 hover:bg-red-200";
+        }
+
+        content = (
+          <Badge className={`${color} uppercase rounded-sm`}>
+            {invoice[col_key]}
+          </Badge>
+        );
+      } else {
+        content = invoice[col_key];
+      }
+      const tableCell = React.createElement(
+        TableCell,
+        {
+          key: col_key,
+          onClick: () => {
+            handleRowClick(invoice.invoice_id);
+          },
+          className: classNames(
+            "align-top",
+            col_data.type === "numeric" && "text-right",
+          ),
+        },
+        content,
+      );
+      tableCells.push(tableCell);
+    });
+
+    // create a react element <TableRow>
+    return React.createElement(
+      React.Fragment,
+      {
+        key: invoice.invoice_id,
+      },
+      tableCells,
+    );
+  };
+
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -210,35 +286,7 @@ export function InvoiceListing({
                       <span className={"w-36"}>{invoice.invoice_number}</span>
                     </TableCell>
                     <>
-                      {!shrinkTable &&
-                        dynamicHeadersAsArray.map(([col_key, col_data]) => (
-                          <TableCell
-                            key={col_key}
-                            onClick={() => {
-                              handleRowClick(invoice.invoice_id);
-                            }}
-                            className={classNames(
-                              "align-top",
-                              col_data.type === "numeric" && "text-right",
-                            )}
-                          >
-                            <div className={"max-h-24 overflow-hidden"}>
-                              {col_data.type === "text" &&
-                                (invoice[col_key] ?? "")}
-                              {col_data.type === "numeric" && (
-                                <RNumberFormatAsText
-                                  prefix={
-                                    (col_data.isCurrency && invoice[col_key] !== 0)
-                                      ? col_data.currencyPrefix(invoice.currency_symbol)
-                                      : ""
-                                  }
-                                  value={invoice[col_key] ?? 0}
-                                  thousandSeparator={true}
-                                />
-                              )}
-                            </div>
-                          </TableCell>
-                        ))}
+                      {!shrinkTable && <DynamicRowElement invoice={invoice} />}
                     </>
                     {!shrinkTable && (
                       <TableCell className={"align-top"}>

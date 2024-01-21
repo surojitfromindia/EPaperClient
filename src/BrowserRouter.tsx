@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import WelcomePage from "@/pages/public/WelcomePage.tsx";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import { default as PubicErrorPage } from "@/pages/public/ErrorPages/Page404.tsx";
 import Page404 from "@/pages/private/ErrorPages/Page404.tsx";
 import EPaper from "@/components/app/EPaper.tsx";
@@ -12,6 +12,7 @@ import SignInForm from "@/pages/public/SignInForm.tsx";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 import HomePageWrapper from "@/pages/public/HomePageWrapper.tsx";
 import FormPageWrapper from "@/pages/public/FormPageWrapper.tsx";
+import ArrivingSoon from "@/components/app/common/ArrivingSoon.tsx";
 
 const SignUpFormLazy = React.lazy(
   () => import("@/pages/public/SignUpForm.tsx"),
@@ -151,7 +152,11 @@ const router = createBrowserRouter([
                 children: [
                   {
                     path: "transactions",
-                    element: <div className={"px-5"}>all transactions</div>,
+                    element: (
+                      <div className={"px-5"}>
+                        <ArrivingSoon />
+                      </div>
+                    ),
                   },
                 ],
               },
