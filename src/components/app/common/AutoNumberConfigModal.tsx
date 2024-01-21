@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Separator } from "@/components/ui/separator.tsx";
 import {
   Form,
@@ -37,11 +37,26 @@ interface AutoNumberConfigModalProps {
   selected_auto_number_group_id: AutoNumberGroup["auto_number_group_id"];
   onPreferenceUpdate: ({ settings }: { settings: InvoiceSettings }) => void;
   isAutoNumberEnabled?: boolean;
+  currentTransactionNumber?: string;
 }
 const AutoNumberOptions = {
   auto_number: "auto_number",
   manual_number: "manual_number",
+  manual_only_for_this: "manual_only_for_this",
 };
+const DynamicTextFragment = {
+  l1: {
+    invoice: "invoice",
+    credit_note: "credit note",
+    customer_payment: "customer payment",
+  },
+  modal_title: {
+    invoice: "Configure Invoice Number Preferences",
+    credit_note: "Configure Credit Note Number Preferences",
+    customer_payment: "Configure Customer Payment Number Preferences",
+  },
+};
+
 const invoiceService = new InvoiceService();
 function AutoNumberConfigModal({
   openModal,
@@ -51,30 +66,34 @@ function AutoNumberConfigModal({
   selected_auto_number_group_id,
   onPreferenceUpdate,
   isAutoNumberEnabled,
+  currentTransactionNumber,
 }: AutoNumberConfigModalProps) {
-  const labels = {
-    l1: {
-      invoice: "invoice",
-      credit_note: "credit note",
-      customer_payment: "customer payment",
-    },
-    modal_title: {
-      invoice: "Configure Invoice Number Preferences",
-      credit_note: "Configure Credit Note Number Preferences",
-      customer_payment: "Configure Customer Payment Number Preferences",
-    },
-  };
-
   const [isButtonLoading, setIsButtonLoading] = useState(false);
 
   const selectedAutoNumberGroup = autoNumberGroups.find(
     (autoNumberGroup) =>
       autoNumberGroup.auto_number_group_id === selected_auto_number_group_id,
   );
+  const currentAutoNumber =
+    selectedAutoNumberGroup?.auto_number?.prefix_string +
+    selectedAutoNumberGroup?.auto_number?.next_number;
+  const defaultAutoNumberOption = useMemo(() => {
+    if (currentAutoNumber === currentTransactionNumber) {
+      return AutoNumberOptions.manual_only_for_this;
+    }
+    if (isAutoNumberEnabled) {
+      return AutoNumberOptions.auto_number;
+    }
+    return AutoNumberOptions.manual_number;
+  }, [currentAutoNumber, currentTransactionNumber, isAutoNumberEnabled]);
+  const isNumberManuallyChanged = useMemo(
+    () => currentAutoNumber !== currentTransactionNumber,
+    [currentAutoNumber, currentTransactionNumber],
+  );
 
   const form = useForm({
     defaultValues: {
-      auto_number_option: AutoNumberOptions.manual_number,
+      auto_number_option: defaultAutoNumberOption,
       name: selectedAutoNumberGroup.auto_number_group_name,
       prefix_string: selectedAutoNumberGroup.auto_number.prefix_string,
       next_number: selectedAutoNumberGroup?.auto_number?.next_number,
@@ -110,6 +129,10 @@ function AutoNumberConfigModal({
     const prefix_string = data.prefix_string;
     const next_number = data.next_number;
     const auto_number_group_id = selected_auto_number_group_id;
+    // no action required if user want to give this number manually
+    if (auto_number_option === AutoNumberOptions.manual_only_for_this) {
+      return handleClose();
+    }
 
     const update_payload = {
       is_auto_number_enabled: true,
@@ -118,7 +141,6 @@ function AutoNumberConfigModal({
       next_number,
       auto_number_group_id,
     };
-
     if (auto_number_option === AutoNumberOptions.manual_number) {
       update_payload.is_auto_number_enabled = false;
     }
@@ -147,7 +169,9 @@ function AutoNumberConfigModal({
     <Dialog open={openModal} onOpenChange={handleClose}>
       <DialogContent className="bg-background fixed top-0 translate-y-0 !rounded-t-none p-5">
         <DialogHeader>
-          <DialogTitle>{labels.modal_title[autoNumberFor]}</DialogTitle>
+          <DialogTitle>
+            {DynamicTextFragment.modal_title[autoNumberFor]}
+          </DialogTitle>
         </DialogHeader>
         <div>
           <div className={"flex flex-col mb-4"}>
@@ -162,9 +186,9 @@ function AutoNumberConfigModal({
           <div>
             <p className={"text-sm mt-4 mb-3"}>
               {autoNumberOption === AutoNumberOptions.auto_number &&
-                `Your ${labels.l1[autoNumberFor]} numbers are set on auto-generate mode to save your time. Are you sure about changing this setting?`}
+                `Your ${DynamicTextFragment.l1[autoNumberFor]} numbers are set on auto-generate mode to save your time. Are you sure about changing this setting?`}
               {autoNumberOption === AutoNumberOptions.manual_number &&
-                `You have selected manual ${labels.l1[autoNumberFor]} numbering. Do you want us to auto-generate it for you?`}
+                `You have selected manual ${DynamicTextFragment.l1[autoNumberFor]} numbering. Do you want us to auto-generate it for you?`}
             </p>
             <Form {...form}>
               <div>
@@ -188,7 +212,7 @@ function AutoNumberConfigModal({
                               </FormControl>
                               <FormLabel className="font-normal">
                                 Continue auto-generating{" "}
-                                {labels.l1[autoNumberFor]} numbers
+                                {DynamicTextFragment.l1[autoNumberFor]} numbers
                               </FormLabel>
                             </div>
                             {/*auto number input*/}
@@ -237,7 +261,6 @@ function AutoNumberConfigModal({
                               </div>
                             )}
                           </FormItem>
-
                           {/*turn off auto number*/}
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
@@ -246,9 +269,28 @@ function AutoNumberConfigModal({
                               />
                             </FormControl>
                             <FormLabel className="font-normal">
-                              Enter {labels.l1[autoNumberFor]} numbers manually
+                              Enter {DynamicTextFragment.l1[autoNumberFor]}{" "}
+                              numbers manually
                             </FormLabel>
                           </FormItem>
+                          {/*use manual number only for this*/}
+                          {isNumberManuallyChanged &&
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem
+                                  value={AutoNumberOptions.manual_only_for_this}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Enter the{" "}
+                                {DynamicTextFragment.l1[autoNumberFor]} number
+                                manually for this{" "}
+                                {DynamicTextFragment.l1[autoNumberFor]} and
+                                continue auto-generating them from the next{" "}
+                                {DynamicTextFragment.l1[autoNumberFor]}.
+                              </FormLabel>
+                            </FormItem>
+                          }
                         </RadioGroup>
                       </FormControl>
                     </FormItem>

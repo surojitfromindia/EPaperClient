@@ -870,6 +870,7 @@ export default function InvoiceAdd() {
         }
         onPreferenceUpdate={handleInvoiceSettingsUpdate}
         isAutoNumberEnabled={invoiceSettings.is_auto_number_enabled}
+        currentTransactionNumber={getValues("invoice_number")}
       />
     </div>
   );
