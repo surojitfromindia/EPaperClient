@@ -54,7 +54,7 @@ import {
   ExchangeInputComponent,
   onExchangeInfoSave,
 } from "@/components/app/common/ExchangeInputComponent.tsx";
-import {Contact} from "@/API/Resources/v1/Contact/Contact";
+import { Contact } from "@/API/Resources/v1/Contact/Contact";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -671,7 +671,6 @@ export function LineItemInputTable({
                         align={"end"}
                         className="w-36"
                       >
-
                         <DropdownMenuItem
                           onClick={() => {
                             setShowDiscountColumn((prev) => !prev);
@@ -710,8 +709,20 @@ export function LineItemInputTable({
                             }
                           >
                             <div className="text-sm">{lineItem.item.label}</div>
+
                             <div className="text-xs text-gray-500">
-                              <div className={"flex space-x-1"}>
+                              <div className={"flex space-x-1 items-center"}>
+                                {lineItem.item && (
+                                  <div className={"w-auto"}>
+                                    <Badge
+                                      className={
+                                        "text-[10px] px-1 py-0.5 bg-teal-600 capitalize"
+                                      }
+                                    >
+                                      {lineItem.product_type}
+                                    </Badge>
+                                  </div>
+                                )}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <CircleEllipsis
@@ -777,6 +788,7 @@ export function LineItemInputTable({
                             }}
                             isLoading={isInitialLoadingInProgress}
                             hideSelectedOptions={true}
+                            noOptionsMessage={() => "No item found"}
                           />
                         </div>
 
@@ -790,17 +802,6 @@ export function LineItemInputTable({
                               handleDescriptionChange(ev, index);
                             }}
                           />
-                        )}
-                        {lineItem.item && (
-                          <div className={"w-auto"}>
-                            <Badge
-                              className={
-                                "text-[10px] px-1 py-0.5 rounded-none bg-teal-600 capitalize"
-                              }
-                            >
-                              {lineItem.product_type}
-                            </Badge>
-                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -824,7 +825,7 @@ export function LineItemInputTable({
                           {lineItem.unit && (
                             <Badge
                               className={
-                                "text-[10px] px-1 py-0.5 rounded-sm capitalize"
+                                "text-[10px] rounded-none px-1 py-0.5 capitalize"
                               }
                             >
                               {lineItem.unit}
