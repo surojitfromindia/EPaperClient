@@ -235,6 +235,24 @@ const router = createBrowserRouter([
                     <ContactDetails />
                   </LazyWrapper>
                 ),
+                children: [
+                  {
+                    path: "comments",
+                    element: (
+                      <div className={"px-5"}>
+                        <ArrivingSoon />
+                      </div>
+                    ),
+                  },
+                  {
+                    path: "transactions",
+                    element: (
+                      <div className={"px-5"}>
+                        <ArrivingSoon />
+                      </div>
+                    ),
+                  },
+                ],
               },
             ],
           },

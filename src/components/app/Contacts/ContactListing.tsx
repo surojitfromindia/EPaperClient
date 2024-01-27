@@ -73,11 +73,7 @@ export default function ContactListing({
     Record<keyof ContactTableView, TableHeaderBodyType>
   > = useMemo(
     () => ({
-      contact_name: {
-        label: "name",
-        removable: false,
-        type: "text",
-      },
+
       company_name: {
         label: "company name",
         removable: true,
@@ -173,7 +169,8 @@ export default function ContactListing({
         >
           <h1 className={"text-md"}>Contacts</h1>
           <Button size={"sm"} onClick={onContactAddClick}>
-            <Plus className="h-4 w-4" /> New
+            <Plus className="h-4 w-4" />
+            {shrinkTable ? "" : "New"}
           </Button>
         </section>
         <section

@@ -148,7 +148,7 @@ export default function ItemDetails() {
         defaultValue={currentActiveTab}
         className="mt-3 overflow-y-scroll flex-1 flex-grow"
       >
-        <div className={"w-full ml-4 top-0  sticky bg-background"}>
+        <div className={"w-full pl-4 top-0  sticky bg-background"}>
           <TabsList className={" "}>
             <TabsTrigger
               onClick={handleOverViewTabClick}

@@ -6,11 +6,26 @@ class INVENTORY {
   static ITEM_EDIT = (id: string) => `${this.basicPath}/items/${id}/edit`;
   static ITEM_DETAIL = (id: string) => `${this.basicPath}/items/${id}`;
 }
+
+class CUSTOMER {
+  static basicPath = "/app/customers";
+  static INDEX = this.basicPath;
+  static CUSTOMER_CREATE = this.basicPath + "/create";
+  static CUSTOMER_EDIT = (id: string) => `${this.basicPath}/${id}/edit`;
+  static CUSTOMER_DETAIL = (id: string) => `${this.basicPath}/${id}`;
+  static CUSTOMER_DETAIL_COMMENTS = (id: string) =>
+    `${this.basicPath}/${id}/comments`;
+
+  static CUSTOMER_DETAIL_TRANSACTIONS = (id: string) =>
+    `${this.basicPath}/${id}/transactions`;
+}
+
 class APP_PATH {
   static basicPath = "/app";
   static INDEX = this.basicPath;
   static DASHBOARD = "/app/dashboard";
   static INVENTORY = INVENTORY;
+  static CUSTOMERS = CUSTOMER;
 }
 
 class EPaperURL {
@@ -37,6 +52,16 @@ const AppURLPaths = {
       ITEM_CREATE: EPaperURL.APP_PAGE.INVENTORY.ITEM_CREATE,
       ITEM_EDIT: EPaperURL.APP_PAGE.INVENTORY.ITEM_EDIT,
       ITEM_DETAIL: EPaperURL.APP_PAGE.INVENTORY.ITEM_DETAIL,
+    },
+    CUSTOMERS: {
+      INDEX: EPaperURL.APP_PAGE.CUSTOMERS.INDEX,
+      CUSTOMER_CREATE: EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_CREATE,
+      CUSTOMER_EDIT: EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_EDIT,
+      CUSTOMER_DETAIL: EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL,
+      CUSTOMER_DETAIL_COMMENTS:
+        EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL_COMMENTS,
+      CUSTOMER_DETAIL_TRANSACTIONS:
+        EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL_TRANSACTIONS,
     },
   },
 };
