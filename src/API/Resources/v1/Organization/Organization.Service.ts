@@ -2,19 +2,7 @@ import { APIService } from "@/API/Resources/v1/APIService.ts";
 import APIAxiosConfig from "@/API/Resources/v1/APIAxiosConfig.ts";
 import { Currency } from "@/API/Resources/v1/Currency/Currency";
 import { OrganizationCreationPayloadType } from "@/API/Resources/v1/Organization/OrganizationCreationPayloadTypes";
-
-interface Organization {
-  country_code: string;
-  created_by_id: number;
-  currency_code: string;
-  currency_id: Currency["currency_id"];
-  currency_name: Currency["currency_name"];
-  currency_symbol: Currency["currency_symbol"];
-  name: string;
-  organization_id: number;
-  primary_address: string;
-  sector: string;
-}
+import {Organization, OrganizationsUser} from "@/API/Resources/v1/Organization/Organization";
 
 class OrganizationService implements APIService {
   readonly urlFragment: string = "/organizations";
@@ -38,6 +26,16 @@ class OrganizationService implements APIService {
         organization: Organization;
       }
     >(url, payload);
+  }
+
+  getOrganizationsOfUser() {
+    const url = "/users/organizations"
+    return this.#axiosConfig.APIGetRequestWrapper<{
+      organizations: OrganizationsUser[];
+    }>(url, {
+      searchParameters: [],
+      abortController: this.abortController,
+    });
   }
 
   abortGetRequest(): void {

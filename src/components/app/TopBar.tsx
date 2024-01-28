@@ -1,30 +1,42 @@
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import { CircleDollarSign, LucideSettings } from "lucide-react";
-// import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
+import { CheckCircle, CircleDollarSign, LucideSettings } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
-import * as React from "react";
-import { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { AppStateOrganization } from "@/API/Resources/v1/AppState/AppState.ts";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet.tsx";
+import { useAppSelector } from "@/redux/hooks.ts";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
+import {
+  Organization,
+  OrganizationsUser,
+} from "@/API/Resources/v1/Organization/Organization";
+import OrganizationService from "@/API/Resources/v1/Organization/Organization.Service.ts";
+import { CheckCircledIcon } from "@radix-ui/react-icons";
+
+const organizationService = new OrganizationService();
 
 interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
-  organization?: AppStateOrganization;
   isSideBarCollapsed?: boolean;
 }
 
-export default function TopBar({ organization }: TopBarProps) {
-  const organizationName: string = useMemo(
-    () => organization?.name ?? "<No Name>",
-    [organization],
+export default function TopBar() {
+  const organization = useAppSelector(({ organization }) => organization);
+  const [organizations, setOrganizations] = React.useState<OrganizationsUser[]>(
+    [],
   );
-  const organizationAddress: string = useMemo(
-    () => organization?.primary_address ?? "<No Address>",
-    [organization],
-  );
+  useEffect(() => {
+    organizationService.getOrganizationsOfUser().then((response) => {
+      setOrganizations(response.organizations);
+    });
+  }, [organization]);
+
   return (
     <div
       className={
@@ -44,37 +56,65 @@ export default function TopBar({ organization }: TopBarProps) {
       <div className={"left_top_band mx-2 flex-grow"}></div>
       <div className={"flex items-center"}>
         <div className={"p-2 cursor-pointer"}>
-          <Popover>
-            <PopoverTrigger asChild>
-              <span
-                className={
-                  "text-xs mx-2 max-w-[90px] block overflow-hidden whitespace-nowrap overflow-ellipsis"
-                }
-              >
-                {organizationName}
-              </span>
-            </PopoverTrigger>
-            <PopoverContent
-              className={
-                "p-2 shadow-md mt-2.5 border-0 h-screen rounded-0.5 rounded-r-none"
-              }
-            >
-              <div className={"flex flex-col space-y-2"}>
-                <span className={"text-md"}>{organizationName}</span>
-                <span className={"text-xs"}>{organizationAddress}</span>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Sheet>
+            <SheetTrigger>{organization.name}</SheetTrigger>
+            <SheetContent className={"p-0"}>
+              <SheetHeader className={"p-3 border-b shadow-sm"}>
+                <SheetTitle>My Organizations</SheetTitle>
+              </SheetHeader>
+              <OrganizationList organizationsUser={organizations} />
+            </SheetContent>
+          </Sheet>
         </div>
         <div className={"p-2  flex items-center space-x-3"}>
           <Button size={"icon"}>
             <LucideSettings className={"h-4"} />
           </Button>
-          {/*<Avatar className={"h-8 w-8"}>*/}
-          {/*  <AvatarFallback className={"text-primary"}>S</AvatarFallback>*/}
-          {/*</Avatar>*/}
+          <Avatar className={"h-8 w-8"}>
+            <AvatarFallback className={"text-primary"}>S</AvatarFallback>
+          </Avatar>
         </div>
       </div>
+    </div>
+  );
+}
+
+function OrganizationList({
+  organizationsUser,
+}: {
+  organizationsUser: OrganizationsUser[];
+}) {
+  const primaryOrganization = useAppSelector(({ organization }) => organization);
+
+  return (
+    <div className={"flex flex-col"}>
+      {organizationsUser.map((organization) => (
+        <React.Fragment key={organization.organization_id}>
+          <Link
+            to={`/app/organization/${organization.organization_id}`}
+            className={
+              "flex items-center space-x-2  rounded hover:bg-gray-100 p-3 border-b"
+            }
+          >
+            <Avatar className={"h-8 w-8"}>
+              <AvatarFallback className={"text-primary"}>
+                {organization.organization.name[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className={"flex-grow"}>
+              <div className={"font-semibold"}>
+                {organization.organization.name}
+              </div>
+              <div className={"text-gray-500"}>
+                {organization.organization.primary_address}
+              </div>
+            </div>
+            {
+              organization.organization_id === primaryOrganization.organization_id &&
+              <CheckCircledIcon className={"h-5 w-5 text-primary"} />}
+          </Link>
+        </React.Fragment>
+      ))}
     </div>
   );
 }
