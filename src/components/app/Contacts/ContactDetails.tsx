@@ -194,12 +194,14 @@ function ContactDetails() {
         </div>
       </section>
 
+
+
       <Tabs
         defaultValue={currentActiveTab}
-        className="mt-3 overflow-y-scroll flex-1 flex-grow pl-4"
+        className="mt-3 overflow-y-scroll flex-1 flex-grow z-50"
       >
-        <div className={"w-full top-0  sticky bg-background"}>
-          <TabsList className={" w-1/3 "}>
+        <div className={"w-full pl-4 top-0  sticky bg-background"}>
+          <TabsList >
             <TabsTrigger
               onClick={handleOverViewTabClick}
               value="overview"
@@ -248,8 +250,8 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
   }, [contactDetails.contact_persons]);
 
   return (
-    <div className={"flex min-h-full text-sm"}>
-      <div className={"w-1/3 bg-gray-50 bg-opacity-70 p-4"}>
+    <div className={"  flex flex-col sm:flex-row min-h-full text-sm px-4"}>
+      <div className={"md:w-1/3 bg-gray-50 bg-opacity-70 p-4"}>
         <div>{contactDetails.company_name}</div>
         <hr className={"my-3"} />
         <ContactPersonCard contactPerson={primaryContactPerson} />
@@ -258,7 +260,7 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
           <Accordion
             type="multiple"
             className="w-full"
-            defaultValue={["overview"]}
+            defaultValue={["overview","contact_persons"]}
           >
             <AccordionItem value="contact_persons">
               <AccordionTrigger className={"hover:no-underline uppercase"}>
@@ -442,22 +444,23 @@ function BalanceReceivableOrPayableTable({
   contactDetails: Contact;
   balanceType: "receivable" | "payable";
 }) {
-  const { currency_id } = useAppSelector(({ organization }) => organization);
+  const { currency_id, currency_code, currency_symbol,currency_name  } = useAppSelector(({ organization }) => organization);
 
   const balances = contactDetails.balances;
   const isMultipleCurrency =
     currency_id !== contactDetails.currency_id || balances.length > 1;
-  const defaultCurrencyCode = contactDetails.currency_code;
-  const defaultCurrencySymbol = contactDetails.currency_symbol;
-  const defaultCurrencyName = contactDetails.currency_name;
+
+  const defaultCurrencyCode = currency_code;
+  const defaultCurrencySymbol = currency_symbol;
+  const defaultCurrencyName = currency_name;
   return (
     <div>
-      <div className={"text-lg font-medium"}>
+      <div className={"text-lg font-medium mb-2"}>
         {balanceType === "receivable" ? "Receivables" : "Payables"}
       </div>
       <Table>
         <TableHeader>
-          <TableRow className={"uppercase text-xs"}>
+          <TableRow className={"uppercase text-xs bg-gray-50 bg-opacity-70"}>
             <TableHead>Currency</TableHead>
             <TableHead className={"text-right"}>
               {balanceType === "receivable"
