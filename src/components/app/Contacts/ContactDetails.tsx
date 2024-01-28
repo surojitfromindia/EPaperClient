@@ -16,7 +16,7 @@ import {
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { Contact, ContactBalance } from "@/API/Resources/v1/Contact/Contact";
 import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { mergePathNameAndSearchParams } from "@/util/urlUtil.ts";
@@ -37,6 +37,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion.tsx";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.tsx";
+import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
+import { useAppSelector } from "@/redux/hooks.ts";
 const contactService = new ContactService();
 function ContactDetails() {
   const navigate = useNavigate();
@@ -189,7 +199,7 @@ function ContactDetails() {
         className="mt-3 overflow-y-scroll flex-1 flex-grow pl-4"
       >
         <div className={"w-full top-0  sticky bg-background"}>
-          <TabsList className={" "}>
+          <TabsList className={" w-1/3 "}>
             <TabsTrigger
               onClick={handleOverViewTabClick}
               value="overview"
@@ -286,7 +296,9 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
           </Accordion>
         </div>
       </div>
-      <div className={"w-2/3 p-4"}>Right side</div>
+      <div className={"w-2/3 p-4"}>
+        <RightSide contactDetails={contactDetails} />
+      </div>
     </div>
   );
 }
@@ -394,6 +406,147 @@ function OtherDetails({ contactDetails }: { contactDetails: Contact }) {
         )}
         {<div>{contactDetails.currency_code}</div>}
       </div>
+    </div>
+  );
+}
+
+function RightSide({ contactDetails }: { contactDetails: Contact }) {
+  const balanceType = useMemo(
+    () =>
+      contactDetails.contact_type === "customer" ? "receivable" : "payable",
+    [contactDetails?.contact_type],
+  );
+  return (
+    <div>
+      <div className={"flex"}>
+        <div>
+          <div className={"text-muted-foreground"}> Payment Terms</div>
+          <div className={""}>{contactDetails.payment_term_name}</div>
+        </div>
+
+      </div>
+      <div className={"mt-5"}>
+        <BalanceReceivableOrPayableTable
+          balanceType={balanceType}
+          contactDetails={contactDetails}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BalanceReceivableOrPayableTable({
+  contactDetails,
+  balanceType,
+}: {
+  contactDetails: Contact;
+  balanceType: "receivable" | "payable";
+}) {
+  const { currency_id } = useAppSelector(({ organization }) => organization);
+
+  const balances = contactDetails.balances;
+  const isMultipleCurrency =
+    currency_id !== contactDetails.currency_id || balances.length > 1;
+  const defaultCurrencyCode = contactDetails.currency_code;
+  const defaultCurrencySymbol = contactDetails.currency_symbol;
+  const defaultCurrencyName = contactDetails.currency_name;
+  return (
+    <div>
+      <div className={"text-lg font-medium"}>
+        {balanceType === "receivable" ? "Receivables" : "Payables"}
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className={"uppercase text-xs"}>
+            <TableHead>Currency</TableHead>
+            <TableHead className={"text-right"}>
+              {balanceType === "receivable"
+                ? "Outstanding Receivable"
+                : "Outstanding Payable"}
+            </TableHead>
+            <TableHead className={"text-right"}>Unused credit</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {balances.map((balance) => (
+            <TableRow key={balance.currency_code}>
+              <TableCell>
+                {balance.currency_code}- {balance.currency_name}
+              </TableCell>
+              <TableCell className={"text-right"}>
+                <RNumberFormatAsText
+                  value={
+                    balanceType === "receivable"
+                      ? balance.outstanding_credits_receivable_amount
+                      : balance.outstanding_credits_payable_amount
+                  }
+                  thousandSeparator={true}
+                  prefix={balance.currency_symbol}
+                />
+              </TableCell>
+              <TableCell className={"text-right"}>
+                <RNumberFormatAsText
+                  value={
+                    balanceType === "receivable"
+                      ? balance.unused_credits_receivable_amount
+                      : balance.unused_credits_payable_amount
+                  }
+                  thousandSeparator={true}
+                  prefix={balance.currency_symbol}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+          {
+            // if multiple currency
+            isMultipleCurrency && (
+              <TableRow>
+                <TableCell className={"uppercase"}>
+                  Total ({defaultCurrencyCode})
+                </TableCell>
+                <TableCell className={"text-right"}>
+                  <RNumberFormatAsText
+                    value={
+                      balanceType === "receivable"
+                        ? balances.reduce(
+                            (prev, curr) =>
+                              prev + curr.outstanding_credits_receivable_amount,
+                            0,
+                          )
+                        : balances.reduce(
+                            (prev, curr) =>
+                              prev + curr.outstanding_credits_payable_amount,
+                            0,
+                          )
+                    }
+                    thousandSeparator={true}
+                    prefix={defaultCurrencySymbol}
+                  />
+                </TableCell>
+                <TableCell className={"text-right"}>
+                  <RNumberFormatAsText
+                    value={
+                      balanceType === "receivable"
+                        ? balances.reduce(
+                            (prev, curr) =>
+                              prev + curr.unused_credits_receivable_amount_bcy,
+                            0,
+                          )
+                        : balances.reduce(
+                            (prev, curr) =>
+                              prev + curr.unused_credits_payable_amount_bcy,
+                            0,
+                          )
+                    }
+                    thousandSeparator={true}
+                    prefix={defaultCurrencySymbol}
+                  />
+                </TableCell>
+              </TableRow>
+            )
+          }
+        </TableBody>
+      </Table>
     </div>
   );
 }
