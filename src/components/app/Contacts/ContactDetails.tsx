@@ -1,11 +1,8 @@
 import { Button } from "@/components/ui/button.tsx";
 import {
   ChevronDown,
-  CogIcon,
   Edit,
-  MoreVertical,
   Pencil,
-  PhoneCall,
   PhoneIcon,
   Settings,
   X,
@@ -14,8 +11,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu.tsx";
-import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -39,6 +36,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion.tsx";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
 const contactService = new ContactService();
 function ContactDetails() {
   const navigate = useNavigate();
@@ -238,6 +236,7 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
   const primaryContactPerson: ContactPerson = useMemo(() => {
     return contactDetails.contact_persons.find((cp) => cp.is_primary === true);
   }, [contactDetails.contact_persons]);
+
   return (
     <div className={"flex min-h-full text-sm"}>
       <div className={"w-1/3 bg-gray-50 bg-opacity-70 p-4"}>
@@ -245,20 +244,42 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
         <hr className={"my-3"} />
         <ContactPersonCard contactPerson={primaryContactPerson} />
 
-        <div>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger className={"hover:no-underline"}>
-                Contact Persons ({nonPrimaryContactPersons.length})
+        <div className={"mt-2"}>
+          <Accordion
+            type="multiple"
+            className="w-full"
+            defaultValue={["overview"]}
+          >
+            <AccordionItem value="contact_persons">
+              <AccordionTrigger className={"hover:no-underline uppercase"}>
+                {ValidityUtil.isNotEmpty(nonPrimaryContactPersons)
+                  ? `Contact Persons (${nonPrimaryContactPersons.length})`
+                  : "Contact Persons"}
               </AccordionTrigger>
               <AccordionContent>
-                <div className={"flex space-y-2 flex-col"}>
-                  {nonPrimaryContactPersons.map((contactPerson) => (
-                    <ContactPersonCard
-                      key={contactPerson.contact_person_id}
-                      contactPerson={contactPerson}
-                    />
-                  ))}
+                <div className={"flex space-y-6 flex-col"}>
+                  {ValidityUtil.isEmpty(nonPrimaryContactPersons) ? (
+                    <div className={"text-center text-gray-500"}>
+                      No Contact Person Found
+                    </div>
+                  ) : (
+                    nonPrimaryContactPersons.map((contactPerson) => (
+                      <ContactPersonCard
+                        key={contactPerson.contact_person_id}
+                        contactPerson={contactPerson}
+                      />
+                    ))
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="overview">
+              <AccordionTrigger className={"hover:no-underline uppercase"}>
+                Other Details
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className={"flex space-y-6 flex-col"}>
+                  <OtherDetails contactDetails={contactDetails} />
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -276,31 +297,39 @@ function ContactPersonCard({
 }) {
   return (
     <div className={"flex justify-between group"}>
-      <div>
-        <strong>
-          {contactPerson.first_name} {contactPerson.last_name}
-        </strong>
-        {ValidityUtil.isNotEmpty(contactPerson.email) && (
-          <>
-            <br />
-            {contactPerson.email}
-          </>
-        )}
-        <br />
-        {ValidityUtil.isNotEmpty(contactPerson.phone) && (
-          <div className={"flex"}>
-            <br />
-            <PhoneIcon className={"align-baseline h-4 w-4 mr-1 mt-0.5"} />
-            {contactPerson.phone}
-          </div>
-        )}
-        {ValidityUtil.isNotEmpty(contactPerson.mobile) && (
-          <div className={"flex"}>
-            <br />
-            <MobileIcon className={"align-baseline h-4 w-4 mr-1 mt-0.5"} />
-            {contactPerson.mobile}
-          </div>
-        )}
+      <div className={"flex"}>
+        <Avatar className={"h-8 w-8 mr-3 static"}>
+          <AvatarFallback className={"text-primary"}>
+            {contactPerson.first_name[0]}
+            {contactPerson.last_name[0]}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <strong>
+            {contactPerson.first_name} {contactPerson.last_name}
+          </strong>
+          {ValidityUtil.isNotEmpty(contactPerson.email) && (
+            <>
+              <br />
+              {contactPerson.email}
+            </>
+          )}
+          <br />
+          {ValidityUtil.isNotEmpty(contactPerson.phone) && (
+            <div className={"flex"}>
+              <br />
+              <PhoneIcon className={"align-baseline h-4 w-4 mr-1 mt-0.5"} />
+              {contactPerson.phone}
+            </div>
+          )}
+          {ValidityUtil.isNotEmpty(contactPerson.mobile) && (
+            <div className={"flex"}>
+              <br />
+              <MobileIcon className={"align-baseline h-4 w-4 mr-1 mt-0.5"} />
+              {contactPerson.mobile}
+            </div>
+          )}
+        </div>
       </div>
       <div>
         <DropdownMenu modal={false}>
@@ -320,7 +349,6 @@ function ContactPersonCard({
               role={"button"}
               onClick={() => {}}
             >
-              <Edit className={"h-4 w-4"} />
               <span>Edit</span>
             </DropdownMenuItem>
             {contactPerson.is_primary !== true && (
@@ -329,7 +357,6 @@ function ContactPersonCard({
                 role={"button"}
                 onClick={() => {}}
               >
-                <Edit className={"h-4 w-4"} />
                 <span>Mark As Primary</span>
               </DropdownMenuItem>
             )}
@@ -342,6 +369,30 @@ function ContactPersonCard({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+    </div>
+  );
+}
+function OtherDetails({ contactDetails }: { contactDetails: Contact }) {
+  return (
+    <div className={"flex"}>
+      <div className={"w-1/2 flex flex-col space-y-3 text-gray-500"}>
+        {contactDetails.contact_type === "customer" && <div>Customer Type</div>}
+        {ValidityUtil.isNotEmpty(contactDetails.payment_term_id) && (
+          <div>Payment Terms</div>
+        )}
+        {<div>Default Currency</div>}
+      </div>
+      <div className={"flex flex-col space-y-3"}>
+        {contactDetails.contact_type === "customer" && (
+          <div className={"first-letter:uppercase"}>
+            {contactDetails.contact_sub_type}
+          </div>
+        )}
+        {ValidityUtil.isNotEmpty(contactDetails.payment_term_id) && (
+          <div>{contactDetails.payment_term_name}</div>
+        )}
+        {<div>{contactDetails.currency_code}</div>}
       </div>
     </div>
   );
