@@ -62,8 +62,7 @@ export default function EPaper() {
               }
             >
               <TopBar
-                organization={appState?.organization}
-                isSideBarCollapsed
+
               />
               <div className={"flex grid-cols-6 relative"}>
                 <Sidebar sideBarFloat={openSideDrawer} />
