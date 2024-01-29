@@ -20,12 +20,26 @@ class CUSTOMER {
     `${this.basicPath}/${id}/transactions`;
 }
 
+class INVOICE {
+    static basicPath = "/app/invoices";
+    static INDEX = this.basicPath;
+    static INVOICE_CREATE=(params?:string) => this.basicPath + "/new"+params;
+    static INVOICE_EDIT = (id: string) => `${this.basicPath}/${id}/edit`;
+    static INVOICE_DETAIL = (id: string) => `${this.basicPath}/${id}`;
+    static INVOICE_DETAIL_COMMENTS = (id: string) =>
+        `${this.basicPath}/${id}/comments`;
+
+    static INVOICE_DETAIL_TRANSACTIONS = (id: string) =>
+        `${this.basicPath}/${id}/transactions`;
+}
+
 class APP_PATH {
   static basicPath = "/app";
   static INDEX = this.basicPath;
   static DASHBOARD = "/app/dashboard";
   static INVENTORY = INVENTORY;
   static CUSTOMERS = CUSTOMER;
+    static INVOICE = INVOICE;
 }
 
 class EPaperURL {
@@ -63,6 +77,16 @@ const AppURLPaths = {
       CUSTOMER_DETAIL_TRANSACTIONS:
         EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL_TRANSACTIONS,
     },
+    INVOICES: {
+        INDEX: EPaperURL.APP_PAGE.INVOICE.INDEX,
+        INVOICE_CREATE: EPaperURL.APP_PAGE.INVOICE.INVOICE_CREATE,
+        INVOICE_EDIT: EPaperURL.APP_PAGE.INVOICE.INVOICE_EDIT,
+        INVOICE_DETAIL: EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL,
+        INVOICE_DETAIL_COMMENTS:
+            EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_COMMENTS,
+        INVOICE_DETAIL_TRANSACTIONS:
+            EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_TRANSACTIONS,
+    }
   },
 };
 

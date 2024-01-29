@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Loader2, Settings2Icon, X } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -99,6 +99,9 @@ const defaultIssueDate = new Date();
 
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+
   const editInvoiceId = useMemo(() => {
     //try to parse the number, check the return if NaN then return nothing from this memo
     const parseResult = Number.parseInt(invoice_id_param ?? "");
@@ -106,6 +109,7 @@ export default function InvoiceAdd() {
       return parseResult;
     }
   }, [invoice_id_param]);
+  const contact_id_search_param = searchParams.get("contact_id");
   const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
   const pageHeaderText = isEditMode ? "update invoice" : "new invoice";
   const navigate = useNavigate();
@@ -229,29 +233,6 @@ export default function InvoiceAdd() {
     [handleInvoiceSettingsLoad, isEditMode, setValue],
   );
 
-  const loadEditPage = useCallback(() => {
-    invoiceService
-      .getInvoiceEditPage({
-        invoice_id: editInvoiceId,
-      })
-      .then((data) => {
-        if (ValidityUtil.isNotEmpty(data.invoice)) {
-          setIsUseManualNumberForThisTransaction(true);
-          setFormData(data?.invoice);
-          setEditPageInvoiceDetails(data?.invoice);
-          setExchangeRate(data?.invoice?.exchange_rate ?? 1);
-        }
-        if (ValidityUtil.isNotEmpty(data.contact)) {
-          setContactDetails(data?.contact);
-        }
-
-        setEditPageContent(data!);
-        handleEditPageDetailsLoad(data);
-      })
-      .catch((error) => console.log(error))
-      .finally(() => setIsInitialLoading(false));
-  }, [editInvoiceId]);
-
   // ----------------- dropdowns -----------------
   const paymentTermsDropDown = useMemo(() => {
     const cratedPaymentTerms = editPageContent.payment_terms.map(
@@ -354,45 +335,82 @@ export default function InvoiceAdd() {
     [setValue],
   );
 
+  // load edit pages
+  const loadEditPage = useCallback(() => {
+    invoiceService
+      .getInvoiceEditPage({
+        invoice_id: editInvoiceId,
+      })
+      .then((data) => {
+        if (ValidityUtil.isNotEmpty(data.invoice)) {
+          setIsUseManualNumberForThisTransaction(true);
+          setFormData(data?.invoice);
+          setEditPageInvoiceDetails(data?.invoice);
+          setExchangeRate(data?.invoice?.exchange_rate ?? 1);
+        }
+        if (ValidityUtil.isNotEmpty(data.contact)) {
+          setContactDetails(data?.contact);
+        }
+
+        setEditPageContent(data!);
+        handleEditPageDetailsLoad(data);
+      })
+      .catch((error) => console.log(error))
+      .finally(() => setIsInitialLoading(false));
+  }, [editInvoiceId, handleEditPageDetailsLoad]);
+  const loadEditPageContact = useCallback(
+    (contact_id: number) => {
+      invoiceService
+        .getInvoiceEditPageFromContact({
+          contact_id: contact_id,
+        })
+        .then((data) => {
+
+          // all default values are set here
+          setEditPageContent(data!);
+          handleEditPageDetailsLoad(data);
+
+          const paymentTerms = data.payment_terms;
+
+          //----contact specific details
+          const contact = data.contact;
+          setContactDetails(contact);
+          // update exchange rate if the currency is different
+          if (contact.currency_code !== contact?.currency_code) {
+            setExchangeRate(1);
+          }
+          // update the payment term using the contact payment term
+          const contactPaymentTerm = paymentTerms.find(
+            (term) => term.payment_term_id === contact.payment_term_id,
+          );
+          const defaultDueDate = calculateDueDate({
+            issue_date: getValues("issue_date"),
+            paymentTerm: contactPaymentTerm!,
+          }).due_date;
+          handlePaymentTermChange(contactPaymentTerm!);
+
+          setValue("contact", {
+            label: contact.contact_name,
+            value: contact.contact_id,
+          });
+          setValue("due_date", defaultDueDate);
+          setValue(
+            "payment_term",
+            mapPaymentTermToRSelect(contactPaymentTerm!),
+          );
+        })
+        .finally(() => setIsInitialLoading(false));
+    },
+    [getValues, handleEditPageDetailsLoad, handlePaymentTermChange, setValue],
+  );
+
   const handleContactChange = useCallback(
     (contact_id: number) => {
-      if (contact_id)
-        invoiceService
-          .getInvoiceEditPageFromContact({
-            contact_id: contact_id,
-          })
-          .then((data) => {
-            const contact = data.contact;
-            setContactDetails(contact);
-
-            // update exchange rate if the currency is different
-            if (contact.currency_code !== contactDetails?.currency_code) {
-              setExchangeRate(1);
-            }
-
-            // update the payment term using the contact payment term
-            const contactPaymentTerm = editPageContent.payment_terms.find(
-              (term) => term.payment_term_id === contact.payment_term_id,
-            );
-            const defaultDueDate = calculateDueDate({
-              issue_date: getValues("issue_date"),
-              paymentTerm: contactPaymentTerm!,
-            }).due_date;
-            handlePaymentTermChange(contactPaymentTerm!);
-            setValue("due_date", defaultDueDate);
-            setValue(
-              "payment_term",
-              mapPaymentTermToRSelect(contactPaymentTerm!),
-            );
-          });
+      if (contact_id) {
+        loadEditPageContact(contact_id);
+      }
     },
-    [
-      contactDetails?.currency_code,
-      editPageContent.payment_terms,
-      getValues,
-      handlePaymentTermChange,
-      setValue,
-    ],
+    [loadEditPageContact],
   );
   const handleOnlyExchangeRateChange = useCallback(
     (exchange_rate: number) => {
@@ -553,11 +571,15 @@ export default function InvoiceAdd() {
 
   // effects
   useEffect(() => {
-    loadEditPage();
+    if (contact_id_search_param) {
+      loadEditPageContact(Number.parseInt(contact_id_search_param));
+    } else {
+      loadEditPage();
+    }
     return () => {
       invoiceService.abortGetRequest();
     };
-  }, [loadEditPage]);
+  }, [contact_id_search_param, loadEditPage, loadEditPageContact]);
 
   // update the error message banner
   useEffect(() => {

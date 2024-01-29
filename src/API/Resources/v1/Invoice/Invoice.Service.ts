@@ -92,6 +92,11 @@ type InvoiceEditPageFromContactServiceParams = {
 
 type InvoiceEditPageFromContactContent = {
   contact: Contact;
+  taxes: TaxRate[];
+  units: ItemUnit[];
+  line_item_accounts_list: ChartOfAccount[];
+  payment_terms: PaymentTerm[];
+  invoice_settings: InvoiceSettings;
 };
 
 class InvoiceService implements APIService {

@@ -131,6 +131,17 @@ function ContactDetails() {
     );
   };
 
+  const handleCreateInvoiceClick = () => {
+    navigate(
+      mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.INVOICES.INVOICE_CREATE(
+          "?contact_id=" + contactId.toString(),
+        ),
+        search_params: search,
+      }),
+    );
+  };
+
   // effects
   useEffect(() => {
     loadPage();
@@ -166,6 +177,22 @@ function ContactDetails() {
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant={"outline"}>
+                    New transaction
+                    <ChevronDown className={"w-4 h-4 ml-1"} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="text-sm  bg-gray-50 outline-none  p-1"
+                  align={"end"}
+                >
+                  <DropdownMenuItem className={"menu-item-ok"} role={"button"} onClick={handleCreateInvoiceClick}>
+                    <span>Invoice</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant={"outline"}>
                     More
                     <ChevronDown className={"w-4 h-4 ml-1"} />
                   </Button>
@@ -194,14 +221,12 @@ function ContactDetails() {
         </div>
       </section>
 
-
-
       <Tabs
         defaultValue={currentActiveTab}
         className="mt-3 overflow-y-scroll flex-1 flex-grow z-50"
       >
         <div className={"w-full pl-4 top-0  sticky bg-background"}>
-          <TabsList >
+          <TabsList>
             <TabsTrigger
               onClick={handleOverViewTabClick}
               value="overview"
@@ -260,7 +285,7 @@ function ContactOverview({ contactDetails }: { contactDetails: Contact }) {
           <Accordion
             type="multiple"
             className="w-full"
-            defaultValue={["overview","contact_persons"]}
+            defaultValue={["overview", "contact_persons"]}
           >
             <AccordionItem value="contact_persons">
               <AccordionTrigger className={"hover:no-underline uppercase"}>
@@ -425,7 +450,6 @@ function RightSide({ contactDetails }: { contactDetails: Contact }) {
           <div className={"text-muted-foreground"}> Payment Terms</div>
           <div className={""}>{contactDetails.payment_term_name}</div>
         </div>
-
       </div>
       <div className={"mt-5"}>
         <BalanceReceivableOrPayableTable
@@ -444,7 +468,8 @@ function BalanceReceivableOrPayableTable({
   contactDetails: Contact;
   balanceType: "receivable" | "payable";
 }) {
-  const { currency_id, currency_code, currency_symbol,currency_name  } = useAppSelector(({ organization }) => organization);
+  const { currency_id, currency_code, currency_symbol, currency_name } =
+    useAppSelector(({ organization }) => organization);
 
   const balances = contactDetails.balances;
   const isMultipleCurrency =
