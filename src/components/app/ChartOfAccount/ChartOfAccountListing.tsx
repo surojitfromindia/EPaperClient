@@ -11,7 +11,7 @@ import ChartOfAccountService, {
   AccountType,
   ChartOfAccount,
 } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
-import { Edit, FolderIcon, MoreVertical, Plus } from "lucide-react";
+import {Edit, FolderIcon, Lock, MoreVertical, Plus} from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import {
   DropdownMenu,
@@ -190,7 +190,11 @@ export function ChartOfAccountListing({
                   )}
                 >
                   <TableCell>
-                    <Checkbox />
+                    {account.is_system_account ? (
+                      <Lock className={"h-4 w-4 text-gray-400"} />
+                    ) : (
+                      <Checkbox />
+                    )}
                   </TableCell>
                   <TableCell
                     onClick={() => {
@@ -262,15 +266,20 @@ export function ChartOfAccountListing({
                               <Edit className={"h-4 w-4"} />
                               <span>Configure</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className={"menu-item-danger"}
-                              role={"button"}
-                              onClick={() =>
-                                handleAccountDeleteAction([account.account_id])
-                              }
-                            >
-                              <span>Delete</span>
-                            </DropdownMenuItem>
+                            {
+                              account.is_system_account===false &&
+                              <DropdownMenuItem
+                                className={"menu-item-danger"}
+                                role={"button"}
+                                onClick={() =>
+                                  handleAccountDeleteAction([
+                                    account.account_id,
+                                  ])
+                                }
+                              >
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            }
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

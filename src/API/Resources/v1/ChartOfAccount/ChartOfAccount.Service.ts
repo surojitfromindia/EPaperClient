@@ -7,6 +7,7 @@ type ChartOfAccount = {
   account_code: string;
   depth: number;
   no_of_children: number;
+  is_system_account: boolean;
   // account parent
   account_parent_name?: string;
   account_parent_id?: number;
