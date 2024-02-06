@@ -320,6 +320,7 @@ export default function ChartOfAccountAdd({
                               </FormLabel>
                               <FormControl>
                                 <ReactSelect
+                                    isDisabled={editPageAccountDetails.is_system_account}
                                   className={"col-span-3"}
                                   options={accountTypeDropDownOptions}
                                   {...field}
