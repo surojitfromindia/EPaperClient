@@ -41,6 +41,8 @@ type TableHeaderBodyType = {
   type: "numeric" | "text";
   prefix?: string;
   suffix?: string;
+  isCurrency?: boolean;
+  currencyPrefix?: (value: string) => string;
 };
 
 export default function ContactListing({
@@ -51,7 +53,9 @@ export default function ContactListing({
   isContactsFetching = true,
   onContactAddClick,
 }: ContactListingProps) {
-  useAppSelector(({ organization }) => organization.currency_symbol);
+  const organizationCurrencySymbol = useAppSelector(
+    ({ organization }) => organization.currency_symbol,
+  );
   const navigate = useNavigate();
   const isLoading = isContactsFetching;
   // highlight row after coming from the details page
@@ -73,7 +77,6 @@ export default function ContactListing({
     Record<keyof ContactTableView, TableHeaderBodyType>
   > = useMemo(
     () => ({
-
       company_name: {
         label: "company name",
         removable: true,
@@ -89,10 +92,33 @@ export default function ContactListing({
         removable: true,
         type: "text",
       },
-      currency_code: {
-        label: "currency",
+      outstanding_credits_receivable_amount: {
+        label: "receivable",
         removable: true,
-        type: "text",
+        type: "numeric",
+        isCurrency: true,
+        currencyPrefix: (value: string) => value,
+      },
+      unused_credits_receivable_amount: {
+        label: "unused credits",
+        removable: true,
+        type: "numeric",
+        isCurrency: true,
+        currencyPrefix: (value: string) => value,
+      },
+      outstanding_credits_receivable_amount_bcy: {
+        label: "receivable bcy",
+        removable: true,
+        type: "numeric",
+        isCurrency: true,
+        currencyPrefix: (value: string) => value,
+      },
+      unused_credits_receivable_amount_bcy: {
+        label: "unused credits bcy",
+        removable: true,
+        type: "numeric",
+        isCurrency: true,
+        currencyPrefix: (value: string) => value,
       },
     }),
     [],
@@ -114,7 +140,31 @@ export default function ContactListing({
         | JSX.Element
         | Iterable<React.ReactNode>;
 
-      if (col_data.type === "numeric") {
+      if (col_data.type === "numeric" && col_data.currencyPrefix) {
+        let currencySymbol = "";
+        switch (col_key) {
+          case "outstanding_credits_receivable_amount":
+            currencySymbol = contact.currency_symbol;
+            break;
+          case "unused_credits_receivable_amount":
+            currencySymbol = contact.currency_symbol;
+            break;
+          case "outstanding_credits_receivable_amount_bcy":
+            currencySymbol = organizationCurrencySymbol;
+            break;
+          case "unused_credits_receivable_amount_bcy":
+            currencySymbol = organizationCurrencySymbol;
+            break;
+        }
+
+        content = (
+          <RNumberFormatAsText
+            prefix={col_data.currencyPrefix(currencySymbol)}
+            value={contact[col_key] ?? 0}
+            thousandSeparator={true}
+          />
+        );
+      } else if (col_data.type === "numeric") {
         content = (
           <RNumberFormatAsText
             value={contact[col_key] ?? 0}
