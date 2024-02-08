@@ -26,6 +26,15 @@ import { OnInvoiceModification } from "@/components/app/Invoices/InvoicePage.tsx
 import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import { JSX } from "react/jsx-runtime";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select.tsx";
 
 interface InvoiceTableView
   extends Pick<
@@ -215,7 +224,21 @@ export function InvoiceListing({
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
           }
         >
-          <h1 className={"text-md"}>Invoices</h1>
+          <div>
+            <h1 className={"text-lg"}>Invoices</h1>
+            <Select value={"All"}>
+              <SelectTrigger className="w-[50px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
+                <SelectValue placeholder="Select filter" />
+              </SelectTrigger>
+              <SelectContent>
+                  <SelectItem value="All" showTick={false}>All</SelectItem>
+                  <SelectItem value="Draft" showTick={false}>Draft</SelectItem>
+                  <SelectItem value="Sent" showTick={false}>Sent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+
           <Button size={"sm"} onClick={onInvoiceAddClick}>
             <Plus className="h-4 w-4" /> New
           </Button>
