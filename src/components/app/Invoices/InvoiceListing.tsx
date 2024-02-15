@@ -33,8 +33,9 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select.tsx";
+import { selectCustomViewStateOfInvoice } from "@/redux/features/customView/customViewSlice.ts";
 
 interface InvoiceTableView
   extends Pick<
@@ -80,7 +81,11 @@ export function InvoiceListing({
   isFetching = true,
   onInvoiceAddClick,
 }: InvoiceListingProps) {
-  useAppSelector(({ organization }) => organization.currency_code);
+  const {
+    entity_views: { default_filters },
+    entity_select_columns,
+  } = useAppSelector(selectCustomViewStateOfInvoice);
+
   const navigate = useNavigate();
   const isLoading = isFetching;
   // highlight row after coming from the details page
@@ -226,18 +231,19 @@ export function InvoiceListing({
         >
           <div>
             <h1 className={"text-lg"}>Invoices</h1>
-            <Select value={"All"}>
-              <SelectTrigger className="w-[50px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
+            <Select>
+              <SelectTrigger className="w-[100px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
                 <SelectValue placeholder="Select filter" />
               </SelectTrigger>
               <SelectContent>
-                  <SelectItem value="All" showTick={false}>All</SelectItem>
-                  <SelectItem value="Draft" showTick={false}>Draft</SelectItem>
-                  <SelectItem value="Sent" showTick={false}>Sent</SelectItem>
+                {default_filters.map((filter, index) => (
+                  <SelectItem key={index} value={filter.value} showTick={false}>
+                    {filter.title}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-
 
           <Button size={"sm"} onClick={onInvoiceAddClick}>
             <Plus className="h-4 w-4" /> New
@@ -255,18 +261,18 @@ export function InvoiceListing({
                 >
                   <TableRow className={"uppercase text-xs"}>
                     <TableHead className={"w-12"}>&nbsp;</TableHead>
-                    <TableHead>issue date</TableHead>
-                    <TableHead>invoice#</TableHead>
-                    {dynamicHeadersAsArray.map(([col_key, col]) => (
-                      <TableHead
-                        key={col_key}
-                        className={classNames(
-                          col.type === "numeric" && "text-right",
-                        )}
-                      >
-                        <div className={""}>{col.label}</div>
-                      </TableHead>
-                    ))}
+                    {entity_select_columns
+                      .filter((col) => col.default_filter_order > -1)
+                      .map((col) => (
+                        <TableHead
+                          key={col.key}
+                          className={classNames(
+                            col.align === "right" && "text-right",
+                          )}
+                        >
+                          <div className={""}>{col.value}</div>
+                        </TableHead>
+                      ))}
                     <TableHead>&nbsp;</TableHead>
                   </TableRow>
                 </TableHeader>

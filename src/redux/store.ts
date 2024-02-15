@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import OrganizationReducer from "./features/organization/organizationSlice.ts"
+import customViewReducer from "./features/customView/customViewSlice.ts"
 
 const store = configureStore({
     reducer: {
         organization: OrganizationReducer,
+        customView: customViewReducer,
     },
 })
 

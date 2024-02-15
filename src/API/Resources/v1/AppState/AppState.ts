@@ -7,6 +7,8 @@ import store from "../../../../redux/store.ts";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 import router from "@/BrowserRouter.tsx";
 import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
+import { CustomViewService } from "@/API/Resources/v1/CustomView/CustomView.Service.ts";
+import {setCustomViewState} from "@/redux/features/customView/customViewSlice.ts";
 
 interface AppStateOrganization {
   name: string;
@@ -55,6 +57,10 @@ class ApplicationState {
           appStateResponse.app_state,
         );
         this.applicationState.setCurrentOrganization();
+
+        // note: now we can call other services to load data
+        // e.g.: load custom views and other global data
+        this.applicationState.loadCustomViews();
       }
       return;
     }
@@ -72,6 +78,14 @@ class ApplicationState {
     LocalStorageAccess.saveOrganizationId(
       this.appState.organization.organization_id.toString(),
     );
+  }
+
+  loadCustomViews() {
+    const customViewService = new CustomViewService();
+    customViewService.getFullCustomView().then((response) => {
+      console.log("CustomViewService response", response);
+      reduxStore.dispatch(setCustomViewState(response.custom_view));
+    });
   }
 }
 

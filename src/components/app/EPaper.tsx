@@ -17,7 +17,6 @@ import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
 
 export default function EPaper() {
   const navigate = useNavigate();
-  const [appState, setAppState] = useState<AppState>();
   const [applicationLoading, setApplicationLoading] = useState(true);
   const [openSideDrawer, setOpenSideDrawer] = useState(false);
   const { pathname } = useLocation();
@@ -30,14 +29,6 @@ export default function EPaper() {
       navigate(AppURLPaths.SIGN_IN);
     });
     setApplicationLoading(false);
-    try {
-      const stateInstance = ApplicationState.getInstance();
-      if (stateInstance) {
-        setAppState(stateInstance.getAppState());
-      }
-    } catch (error) {
-      /* empty */
-    }
     return true;
   }, [navigate]);
 
