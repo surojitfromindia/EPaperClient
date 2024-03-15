@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { LineItemRowType } from "@/components/app/common/LineItemInputTable.tsx";
 import { InvoiceLineItemCreationPayloadType } from "@/API/Resources/v1/Invoice/InvoiceCreationPayloadTypes";
+import {InvoiceLineItemUpdatePayloadType} from "@/API/Resources/v1/Invoice/InvoiceUpdatePayloadTypes";
 
 const invoiceLineItemSchema = z.object({
   item: z.object(
@@ -13,6 +14,7 @@ const invoiceLineItemSchema = z.object({
       required_error: "Please select an item",
     },
   ),
+  line_item_id: z.number().optional(),
   product_type: z.string({
     required_error: "item does not have a product type",
   }),
@@ -46,6 +48,7 @@ const invoiceLineItemSchema = z.object({
 });
 
 type InvoiceLineItemCreatableFields = {
+  line_item_id?: number;
   item?: {
     value?: number;
     label?: string;
@@ -68,9 +71,10 @@ type InvoiceLineItemCreatableFields = {
 };
 
 const invoiceLineItemRowToPayloadDTO = (
-  lineItem: InvoiceLineItemCreatableFields,
-): InvoiceLineItemCreationPayloadType => {
+  lineItem: InvoiceLineItemCreatableFields
+): InvoiceLineItemCreationPayloadType| InvoiceLineItemUpdatePayloadType => {
   return {
+    line_item_id: lineItem.line_item_id,
     item_id: lineItem.item.value,
     product_type: lineItem.product_type,
     name: lineItem.item.label,

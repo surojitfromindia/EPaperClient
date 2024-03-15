@@ -224,6 +224,7 @@ export function LineItemInputTable({
           value: line_item.item_id,
           rate: line_item.rate,
         },
+        line_item_id: line_item.line_item_id,
         product_type: line_item.product_type,
         unit: line_item.unit,
         unit_id: line_item.unit_id,
@@ -257,6 +258,7 @@ export function LineItemInputTable({
 
       setIsInclusiveTax(isTransactionInclusiveTax);
       setLineItems(mapped_line_items);
+      console.log("mapped_line_items", mapped_line_items);
       onLineItemsUpdate?.({
         line_items: mapped_line_items,
         is_inclusive_tax: isTransactionInclusiveTax,

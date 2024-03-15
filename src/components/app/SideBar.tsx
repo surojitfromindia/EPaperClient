@@ -1,27 +1,60 @@
 import { Button } from "@/components/ui/button.tsx";
-import { useCallback } from "react";
+import {useCallback, useEffect, useState} from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   BookMarked,
-  ChevronLeft,
+  ChevronLeft, ChevronRight,
   Gauge,
   Receipt,
-  ShoppingCart, UserCircle,
+  ShoppingCart,
+  UserCircle,
 } from "lucide-react";
 import classNames from "classnames";
+import { cn } from "@/lib/utils.ts";
 
 export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
   const { pathname } = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isActiveLink = useCallback(
-    (is_active: boolean) => {
-      if (is_active) {
-        return "default";
-      }
-      return "ghost";
+  const isActiveLink = useCallback((is_active: boolean) => {
+    if (is_active) {
+      return "default";
+    }
+    return "ghost";
+  }, []);
+
+  const navOptions = [
+    {
+      label: "Dashboard",
+      icon: <Gauge className={"h-4 w-4 "} />,
+      path: "/app/dashboard",
     },
-    [],
-  );
+    {
+      label: "Item",
+      icon: <ShoppingCart className={"h-4 w-4 "} />,
+      path: "/app/inventory/items",
+    },
+    {
+      label: "Customer",
+      icon: <UserCircle className={"h-4 w-4 "} />,
+      path: "/app/customers",
+    },
+    {
+      label: "Invoice",
+      icon: <Receipt className={"h-4 w-4 "} />,
+      path: "/app/invoices",
+    },
+    {
+      label: "Chart Of Accounts",
+      icon: <BookMarked className={"h-4 w-4 "} />,
+      path: "/app/chart_of_accounts",
+    },
+  ];
+
+  useEffect(() => {
+    setIsCollapsed(false);
+  }, [pathname]);
+
   return (
     <div
       className={classNames(
@@ -32,70 +65,40 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
     >
       <div
         className={classNames(
-          "col-span-1 flex-shrink-0 w-[220px] flex flex-col justify-between border-r-1 h-screen max-h-screen ",
+          cn(
+            "col-span-1 flex-shrink-0 flex flex-col justify-between border-r-1 h-screen max-h-screen ",
+            isCollapsed ? "w-[70px]" : "w-[200px]",
+          ),
         )}
       >
         <div className="px-2 flex-shrink overflow-y-auto   py-2">
           <div className="space-y-1 font-light">
-            <NavLink to={"/app/dashboard"}>
-              {({ isActive }) => (
-                <Button
-                  variant={isActiveLink(isActive)}
-                  className="w-full justify-start"
-                >
-                  <Gauge className={"h-4 w-4 mr-2"} />
-                  Dashboard
-                </Button>
-              )}
-            </NavLink>
-
-            <NavLink to={"/app/inventory/items"}>
-              {({ isActive }) => (
-                <Button
-                  variant={isActiveLink(isActive)}
-                  className="w-full  justify-start"
-                >
-                  <ShoppingCart className={"h-4 w-4 mr-2"} />
-                  Item
-                </Button>
-              )}
-            </NavLink>
-
-            <NavLink to={"/app/customers"}>
-              {({ isActive }) => (
-                <Button
-                  variant={isActiveLink(isActive)}
-                  className="w-full  justify-start"
-                >
-                  <UserCircle className={"h-4 w-4 mr-2"} />
-                  Customer
-                </Button>
-              )}
-            </NavLink>
-
-            <NavLink to={"/app/invoices"}>
-              {({ isActive }) => (
-                <Button
-                  variant={isActiveLink(isActive)}
-                  className="w-full  justify-start"
-                >
-                  <Receipt className={"h-4 w-4 mr-2"} />
-                  Invoice
-                </Button>
-              )}
-            </NavLink>
-
-            <NavLink to={"/app/chart_of_accounts"}>
-              {({ isActive }) => (
-                <Button
-                  variant={isActiveLink(isActive)}
-                  className="w-full justify-start"
-                >
-                  <BookMarked className={"h-4 w-4 mr-2"} />
-                  Chart Of Accounts
-                </Button>
-              )}
-            </NavLink>
+            {navOptions.map((navOption, index) => {
+              return isCollapsed ? (
+                <NavLink to={navOption.path} key={index}>
+                  {({ isActive }) => (
+                    <Button
+                      variant={isActiveLink(isActive)}
+                      className="w-full items-center"
+                    >
+                      {navOption.icon}
+                    </Button>
+                  )}
+                </NavLink>
+              ) : (
+                <NavLink to={navOption.path} key={index}>
+                  {({ isActive }) => (
+                    <Button
+                      variant={isActiveLink(isActive)}
+                      className="w-full  justify-start"
+                    >
+                      {navOption.icon}
+                      <span className={"ml-2"}>{navOption.label}</span>
+                    </Button>
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
         </div>
         <div className={"h-10 mb-12  "}>
@@ -103,8 +106,13 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
             className={"rounded-none w-full bg-transparent"}
             variant={"ghost_primary"}
             size={"icon"}
+            onClick={() => {
+              setIsCollapsed((prev: boolean) => !prev);
+            }}
           >
-            <ChevronLeft />
+            {
+              isCollapsed ? <ChevronRight/> : <ChevronLeft />
+            }
           </Button>
         </div>
       </div>
