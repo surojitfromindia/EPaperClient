@@ -240,13 +240,6 @@ export default function InvoiceAdd() {
     );
     return [...cratedPaymentTerms, CUSTOM_PAYMENT_TERM];
   }, [editPageContent.payment_terms]);
-  const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map((acc) => ({
-      label: `${acc.tax_name} [${acc.tax_percentage}%]`,
-      value: acc.tax_id,
-      tax_percentage: acc.tax_percentage,
-    }));
-  }, [editPageContent.taxes]);
   const autoNumberGroupsDropDown = useMemo(() => {
     return editPageContent.invoice_settings?.auto_number_groups.map(
       makeAutoNumberGroupRSelect,
@@ -365,7 +358,6 @@ export default function InvoiceAdd() {
           contact_id: contact_id,
         })
         .then((data) => {
-
           // all default values are set here
           setEditPageContent(data!);
           handleEditPageDetailsLoad(data);
@@ -724,7 +716,7 @@ export default function InvoiceAdd() {
                             onBlur={(event) => {
                               handleInvoiceNumberOnBlur(event.target.value);
                             }}
-                            onChange={(event) => {}}
+                            onChange={() => {}}
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <Settings2Icon
@@ -849,7 +841,6 @@ export default function InvoiceAdd() {
               <Separator className={"col-span-12 my-5"} />
               <div className={"mt-5 flex flex-col space-y-6 col-span-12"}>
                 <LineItemInputTable
-                  taxesDropDown={taxesDropDown}
                   itemFor={"sales"}
                   onLineItemsUpdate={handleLineItemsUpdate}
                   isCreateMode={!isEditMode}
@@ -858,6 +849,8 @@ export default function InvoiceAdd() {
                   contactDetails={contactDetails}
                   transactionExchangeRate={exchangeRate}
                   onOnlyExchangeRateChange={handleOnlyExchangeRateChange}
+                  lineItemAccountsList={editPageContent.line_item_accounts_list}
+                  taxesList={editPageContent.taxes}
                 />
               </div>
             </div>

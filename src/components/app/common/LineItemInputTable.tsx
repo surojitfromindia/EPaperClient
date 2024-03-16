@@ -55,16 +55,25 @@ import {
   onExchangeInfoSave,
 } from "@/components/app/common/ExchangeInputComponent.tsx";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import {
+  makeAccountRSelectOptions,
+  makeTaxRSelectOptions,
+} from "@/components/app/common/reactSelectOptionCompositions.ts";
+import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
+import { Simulate } from "react-dom/test-utils";
+import select = Simulate.select;
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
 const mathLib = new MathLib({ precision: 2 });
 
 type LineItemInputTableProps = {
-  taxesDropDown: { label: string; value: number; tax_percentage: number }[]; // Replace 'any' with the actual type
+  taxesList: TaxRate[];
+  lineItemAccountsList: ChartOfAccount[];
   itemFor: "sales" | "purchase";
   line_items?: InvoiceLineItem[];
-  onLineItemsUpdate: (line_items: {
+  onLineItemsUpdate: (arg0: {
     is_inclusive_tax: boolean;
     line_items: LineItemRowType[];
     exchange_rate: number;
@@ -80,11 +89,6 @@ type LINE_ITEM_OPTION_TYPE = {
   value: number;
   rate: number;
 };
-type LineItemTaxRowType = {
-  label: string;
-  value: number;
-  tax_percentage: number;
-} | null;
 type LineItemRowType = {
   item: LINE_ITEM_OPTION_TYPE | null;
   product_type: string;
@@ -94,7 +98,11 @@ type LineItemRowType = {
   quantity: number;
   rate: number;
   rate_base: number;
-  tax: LineItemTaxRowType;
+  tax: {
+    label: string;
+    value: number;
+    tax_percentage: number;
+  } | null;
   tax_percentage: number;
   tax_amount: number;
   discount_percentage: number;
@@ -128,7 +136,8 @@ const BLANK_ROW: LineItemRowType = Object.freeze({
 });
 
 export function LineItemInputTable({
-  taxesDropDown,
+  taxesList = [],
+  lineItemAccountsList = [],
   itemFor,
   line_items = [],
   onLineItemsUpdate,
@@ -165,6 +174,14 @@ export function LineItemInputTable({
     return contactDetails.currency_code !== organizationDetails.currency_code;
   }, [contactDetails, organizationDetails]);
 
+  const lineItemAccountsDropDown = useMemo(() => {
+    return lineItemAccountsList.map(makeAccountRSelectOptions);
+  }, [lineItemAccountsList]);
+  const taxesDropDown = useMemo(() => {
+    return taxesList.map(makeTaxRSelectOptions);
+  }, [taxesList]);
+
+  // ---- states
   const [lineItems, setLineItems] = useState([]);
   const [isInclusiveTax, setIsInclusiveTax] = useState(
     isTransactionInclusiveTax,
@@ -172,11 +189,22 @@ export function LineItemInputTable({
   const [exchangeRateValue, setExchangeRateValue] = useState(
     transactionExchangeRate,
   );
-  const [showDiscountColumn, setShowDiscountColumn] = useState(false);
+  const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =
+    useState(false);
+  const [isInitialLoadingInProgress, setIsInitialLoadingInProgress] =
+    useState(false);
+  const [itemDefaultList, setItemDefaultList] = useState<
+    { label: string; value: number }[]
+  >([]);
+  const [isShowAdditionalFields, setIsShowAdditionalFields] = useState(false);
+  // ---- end of states
+
+  // update exchange rate here if it is changed from parent.
   useEffect(() => {
     setExchangeRateValue(transactionExchangeRate);
   }, [transactionExchangeRate]);
 
+  // hold id of the item we are editing in modal
   const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
   /**
    * only call this function if we want to update any needed state in the parent component.
@@ -246,19 +274,14 @@ export function LineItemInputTable({
         item_total: line_item.item_total,
         item_total_tax_included: line_item.item_total_tax_included,
         is_loading: false,
-        account: {
-          label: line_item.account_name,
-          value: line_item.account_id,
-        },
+        account: makeAccountRSelectOptions({
+          account_id: line_item.account_id,
+          account_name: line_item.account_name,
+        }),
       }));
-      const someLineHasDiscount = mapped_line_items.some(
-        (line_item) => line_item.discount_amount !== 0,
-      );
-      setShowDiscountColumn(someLineHasDiscount);
 
       setIsInclusiveTax(isTransactionInclusiveTax);
       setLineItems(mapped_line_items);
-      console.log("mapped_line_items", mapped_line_items);
       onLineItemsUpdate?.({
         line_items: mapped_line_items,
         is_inclusive_tax: isTransactionInclusiveTax,
@@ -266,14 +289,6 @@ export function LineItemInputTable({
       }); // parent callback
     }
   }, [line_items]);
-
-  const [isInitialItemLoadingDone, setIsInitialItemLoadingDone] =
-    useState(false);
-  const [isInitialLoadingInProgress, setIsInitialLoadingInProgress] =
-    useState(false);
-  const [itemDefaultList, setItemDefaultList] = useState<
-    { label: string; value: number }[]
-  >([]);
 
   const itemAutoCompleteFetch = useCallback(
     async (search_text: string): Promise<Array<LINE_ITEM_OPTION_TYPE>> => {
@@ -548,6 +563,23 @@ export function LineItemInputTable({
     );
     setLineItemsAndCalculate(temp_line_item);
   };
+  const handleLineItemAccountChange = (
+    selected_account: ChartOfAccount,
+    index: number,
+  ) => {
+    const temp_line_item = [...lineItems].map(
+      (item, item_index): LineItemRowType => {
+        if (item_index === index) {
+          return {
+            ...item,
+            account: selected_account,
+          };
+        }
+        return item;
+      },
+    );
+    setLineItemsAndCalculate(temp_line_item);
+  };
 
   const handleDescriptionChange = (
     ev: React.FocusEvent<HTMLTextAreaElement>,
@@ -579,6 +611,7 @@ export function LineItemInputTable({
     setItemEditingModalOpenFor(null);
   };
 
+  // handle exchange rate change in the mini exchange rate component.
   const handleExchangeInfoSave: onExchangeInfoSave = ({
     exchange_rate,
     update_all_line_items,
@@ -640,24 +673,23 @@ export function LineItemInputTable({
             />
           )}
         </div>
-        <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[900px]">
+        <Table className="divide-y  divide-gray-200 border-y border-gray-300 w-[1000px]">
           <TableHeader>
             <TableRow className="divide-x divide-gray-200 hover:bg-transparent  ">
-              <TableHead className="w-[380px] px-4 py-1 text_thead">
-                item
+              <TableHead className=" px-4 py-1 text_thead">item</TableHead>
+              <TableHead className="w-[150px] px-4 py-1 text_thead">
+                Account
               </TableHead>
-              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+              <TableHead className="w-[120px] px-4 py-1 text_thead text-right">
                 quantity
               </TableHead>
-              <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
+              <TableHead className="w-[90px] px-4 py-1 text_thead text-right">
                 rate
               </TableHead>
-              {showDiscountColumn && (
-                <TableHead className="w-[100px] px-4 py-1 text_thead text-right">
-                  discount (%)
-                </TableHead>
-              )}
-              <TableHead className="w-[170px] px-4 py-1 text_thead">
+              <TableHead className="w-[70px] px-4 py-1 text_thead text-right">
+                discount (%)
+              </TableHead>
+              <TableHead className="w-[150px] px-4 py-1 text_thead">
                 tax (%)
               </TableHead>
               <TableHead className="text-right px-4 pr-1 text_thead">
@@ -666,19 +698,15 @@ export function LineItemInputTable({
                   <div className={"absolute -top-[17px] -right-[32px] "}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <CircleEllipsis className={"w-4 h-4 text-primary"} />
+                        <CircleEllipsis className={"w-4 h-4 text-primary cursor-pointer"} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         side={"bottom"}
                         align={"end"}
-                        className="w-36"
+                        className="w-44"
                       >
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setShowDiscountColumn((prev) => !prev);
-                          }}
-                        >
-                          {showDiscountColumn ? "Hide" : "Show"} Discount
+                        <DropdownMenuItem onClick={() => {}}>
+                          Show additional fields
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -807,6 +835,30 @@ export function LineItemInputTable({
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className={"px-0 py-0 align-top"}>
+                      <div>
+                        <ReactSelect
+                          className={"w-full z-100"}
+                          value={lineItem.account}
+                          name={"line_item_account"}
+                          options={lineItemAccountsDropDown}
+                          placeholder={"Select account"}
+                          classNames={reactSelectStyleBorderLess}
+                          components={{
+                            ...reactSelectComponentOverride,
+                          }}
+                          formatOptionLabel={formatOptionLabelOfAccounts}
+                          isClearable={false}
+                          menuPortalTarget={document.body}
+                          onChange={(selected_account) => {
+                            handleLineItemAccountChange(
+                              selected_account,
+                              index,
+                            );
+                          }}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell className="px-1 py-1 align-top">
                       <div className={"flex flex-col items-end space-y-2"}>
                         <RNumberFormat
@@ -853,25 +905,23 @@ export function LineItemInputTable({
                         />
                       </div>
                     </TableCell>
-                    {showDiscountColumn && (
-                      <TableCell className="px-1 py-1 align-top">
-                        <div>
-                          <RNumberFormat
-                            name={"line_item_discount_percentage"}
-                            value={lineItem.discount_percentage}
-                            customInput={Input}
-                            className="w-full border-0 text-right"
-                            allowNegative={false}
-                            onBlur={() => {
-                              handleInputFocusChange();
-                            }}
-                            onValueChange={({ floatValue }) => {
-                              handleDiscountChange(floatValue, index);
-                            }}
-                          />
-                        </div>
-                      </TableCell>
-                    )}
+                    <TableCell className="px-1 py-1 align-top">
+                      <div>
+                        <RNumberFormat
+                          name={"line_item_discount_percentage"}
+                          value={lineItem.discount_percentage}
+                          customInput={Input}
+                          className="w-full border-0 text-right"
+                          allowNegative={false}
+                          onBlur={() => {
+                            handleInputFocusChange();
+                          }}
+                          onValueChange={({ floatValue }) => {
+                            handleDiscountChange(floatValue, index);
+                          }}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell className="px-0 py-0 align-top">
                       <div>
                         <ReactSelect
@@ -961,7 +1011,9 @@ export function LineItemInputTable({
           </TableBody>
         </Table>
         <div className="flex mt-2.5 justify-between w-[900px] ">
-          <div className={"flex flex-col flex-1 justify-between mr-10"}>
+          <div
+            className={"flex flex-col flex-1  w-[400px] justify-between mr-10"}
+          >
             <div className={"flex"}>
               <Button
                 variant="secondary"
@@ -1010,8 +1062,7 @@ export function LineItemInputTable({
               />
             </div>
           </div>
-
-          <div className={"w-[400px]"}>
+          <div className={"grow"}>
             <LineItemOverviewComponent
               line_items={lineItems}
               is_inclusive_tax={isInclusiveTax}
@@ -1022,7 +1073,7 @@ export function LineItemInputTable({
               }
             />
           </div>
-        </div>{" "}
+        </div>
       </div>
       <ItemAddModal
         openModal={!!itemEditingModalOpenFor}

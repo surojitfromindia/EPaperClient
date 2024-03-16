@@ -55,12 +55,10 @@ export default function EPaper() {
               <TopBar
 
               />
-              <div className={"flex grid-cols-6 relative"}>
+              <div className={"flex grow relative"}>
                 <Sidebar sideBarFloat={openSideDrawer} />
-                <div className={"col-span-5 w-full"}>
-                  <div className={"h-screen"}>
+                <div className={"w-full"}>
                     <Outlet />
-                  </div>
                   <Toaster />
                 </div>
                 <Button

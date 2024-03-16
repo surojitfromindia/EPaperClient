@@ -2,7 +2,8 @@ import { Currency } from "@/API/Resources/v1/Currency/Currency";
 import { ItemUnit } from "@/API/Resources/v1/ItemUnit.ts";
 import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
-import {AutoNumberGroup} from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
+import { AutoNumberGroup } from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
+import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 
 const mapPaymentTermToRSelect = (paymentTerm: Partial<PaymentTerm>) => ({
   label: `${paymentTerm.payment_term_name}`,
@@ -29,31 +30,54 @@ const makeTaxRSelectOptions = (tax: Partial<TaxRate>) => {
   return {
     label: `${tax.tax_name} [${tax.tax_percentage}%]`,
     value: tax.tax_id,
+    tax_percentage: tax.tax_percentage,
   };
 };
 
-const makeAutoNumberGroupRSelect = (autoNumberGroup: Pick<AutoNumberGroup,"auto_number_group_name"|"auto_number_group_id">) => {
-    return {
-        label: `${autoNumberGroup.auto_number_group_name}`,
-        value: autoNumberGroup.auto_number_group_id,
-    };
-}
+const makeAutoNumberGroupRSelect = (
+  autoNumberGroup: Pick<
+    AutoNumberGroup,
+    "auto_number_group_name" | "auto_number_group_id"
+  >,
+) => {
+  return {
+    label: `${autoNumberGroup.auto_number_group_name}`,
+    value: autoNumberGroup.auto_number_group_id,
+  };
+};
+
+const makeAccountRSelectOptions = (account: Pick<ChartOfAccount,"account_name"|"account_id">) => {
+  return {
+    label: `${account.account_name}`,
+    value: account.account_id,
+    account_name: account.account_name,
+    ...account,
+  };
+};
+
 export {
   makeCurrencyRSelectOptions,
   makeTaxRSelectOptions,
   makeUnitRSelectOptions,
   mapPaymentTermToRSelect,
   makeAutoNumberGroupRSelect,
+  makeAccountRSelectOptions,
 };
 
 type TaxRSelectOption = ReturnType<typeof makeTaxRSelectOptions>;
 type CurrencyRSelectOption = ReturnType<typeof makeCurrencyRSelectOptions>;
 type UnitRSelectOption = ReturnType<typeof makeUnitRSelectOptions>;
 type PaymentTermRSelectOption = ReturnType<typeof mapPaymentTermToRSelect>;
+type AutoNumberGroupRSelectOption = ReturnType<
+  typeof makeAutoNumberGroupRSelect
+>;
+type AccountRSelectOption = ReturnType<typeof makeAccountRSelectOptions>;
 
 export type {
   TaxRSelectOption,
   CurrencyRSelectOption,
   UnitRSelectOption,
   PaymentTermRSelectOption,
+  AutoNumberGroupRSelectOption,
+  AccountRSelectOption,
 };

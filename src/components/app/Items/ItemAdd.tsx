@@ -34,7 +34,11 @@ import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccou
 import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
 import { ReactSelectOptionComponentsUnit } from "@/components/app/common/ReactSelectComponents.tsx";
-import {makeTaxRSelectOptions, makeUnitRSelectOptions} from "@/components/app/common/reactSelectOptionCompositions.ts";
+import {
+  makeAccountRSelectOptions,
+  makeTaxRSelectOptions,
+  makeUnitRSelectOptions
+} from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const itemService = new ItemService();
 
@@ -96,27 +100,21 @@ export default function ItemAdd(props: ItemAddProp) {
       .finally(() => setIsLoading(false));
   }, [editItemId]);
 
+  // ---- dropdown options
   const unitsDropDownOptions = useMemo(() => {
     const units = editPageContent.units;
     return units.map(makeUnitRSelectOptions);
   }, [editPageContent]);
   const incomeAccountsDropDown = useMemo(() => {
-    return editPageContent.income_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
+    return editPageContent.income_accounts_list.map(makeAccountRSelectOptions)
   }, [editPageContent.income_accounts_list]);
   const purchaseAccountsDropDown = useMemo(() => {
-    return editPageContent.purchase_accounts_list.map((acc) => ({
-      label: acc.account_name,
-      value: acc.account_id,
-      ...acc,
-    }));
+    return editPageContent.purchase_accounts_list.map(makeAccountRSelectOptions);
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
     return editPageContent.taxes.map(makeTaxRSelectOptions);
   }, [editPageContent.taxes]);
+  // ---- end of dropdown options
   const handleCloseClick = () => {
     if (props.isModal === true) {
       props.closeModal();
