@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useMemo, useState } from "react";
-import { Edit, Loader2, MoreVertical, Plus } from "lucide-react";
+import { Edit, Loader2, MoreVertical, Plus, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,9 @@ import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
@@ -29,9 +32,7 @@ import { JSX } from "react/jsx-runtime";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx";
@@ -58,6 +59,7 @@ interface InvoiceListingProps extends React.HTMLAttributes<HTMLDivElement> {
   isFetching: boolean;
   onInvoiceEditClick: (invoice_id: number) => void;
   onInvoiceAddClick: () => void;
+    onListRefresh: () => void;
   onInvoiceModificationSuccess: OnInvoiceModification;
 }
 
@@ -80,6 +82,7 @@ export function InvoiceListing({
   invoices = [],
   isFetching = true,
   onInvoiceAddClick,
+  onListRefresh,
 }: InvoiceListingProps) {
   const {
     entity_views: { default_filters },
@@ -213,6 +216,10 @@ export function InvoiceListing({
     );
   };
 
+  const handleListRefresh = () => {
+    onListRefresh();
+  }
+
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -221,9 +228,37 @@ export function InvoiceListing({
     );
   }
 
+  const sortOptionsInDD = [
+    {
+      label: "Issue date",
+      value: "issue_date",
+      order: "asc",
+    },
+    {
+      label: "Due date",
+      value: "due_date",
+      order: null,
+    },
+    {
+      label: "Invoice number",
+      value: "invoice_number",
+      order: null,
+    },
+    {
+      label: "Total",
+      value: "total",
+      order: null,
+    },
+    {
+      label: "Balance",
+      value: "balance",
+      order: null,
+    },
+  ];
+
   return (
     <>
-      <main className={" flex max-h-screen flex-col border-r-1 h-screen"}>
+      <main className={"flex max-h-screen flex-col border-r-1 h-screen"}>
         <section
           className={
             "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
@@ -245,9 +280,46 @@ export function InvoiceListing({
             </Select>
           </div>
 
-          <Button size={"sm"} onClick={onInvoiceAddClick}>
-            <Plus className="h-4 w-4" /> New
-          </Button>
+          <div className={"flex gap-x-2"}>
+            <Button size={"sm"} onClick={onInvoiceAddClick}>
+              <Plus className="h-4 w-4" /> New
+            </Button>
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button size={"sm"} variant={"outline"} className={"shadow"}>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align={"end"}
+                className="text-sm bg-gray-50 outline-none  p-1 w-56"
+              >
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                {sortOptionsInDD.map((option, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    role={"button"}
+                    onClick={() => console.log(option.value)}
+                    className={"menu-item-ok"}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup className={"bg-green-50"}>
+                  <DropdownMenuItem
+                    role={"button"}
+                    className={"menu-item-ok text-green-700"}
+                    onClick={handleListRefresh}
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    <span>Refresh</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </section>
         <section
           className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
@@ -326,7 +398,7 @@ export function InvoiceListing({
                           <DropdownMenuContent
                             className="text-sm bg-gray-50 outline-none  p-1"
                             align={"end"}
-                            >
+                          >
                             <DropdownMenuItem
                               className={"menu-item-ok"}
                               role={"button"}

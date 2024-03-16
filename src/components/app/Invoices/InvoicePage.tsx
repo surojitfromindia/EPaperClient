@@ -39,6 +39,7 @@ export default function InvoicePage() {
   const [, setEditingItemId] = useState<number>();
 
   const loadInvoices = useCallback(() => {
+    setIsLoading(true);
     invoiceService.getInvoices().then((invoices) => {
       setInvoices(invoices?.invoices ?? []);
       setIsLoading(false);
@@ -88,6 +89,11 @@ export default function InvoicePage() {
     };
   }, [loadInvoices]);
 
+
+  const handleListRefresh = useCallback(() => {
+    loadInvoices();
+  }, [loadInvoices])
+
   return (
     <>
       <div className={"grid grid-cols-8"}>
@@ -105,6 +111,7 @@ export default function InvoicePage() {
             onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
             onInvoiceEditClick={handleInvoiceEditClick}
             onInvoiceAddClick={handleInvoiceAddClick}
+            onListRefresh={handleListRefresh}
           />
         </div>
         {isDetailsPageOpen && (
