@@ -44,6 +44,9 @@ const CustomerAddWrapper = React.lazy(
 const ContactDetails = React.lazy(
   () => import("@/components/app/Contacts/ContactDetails.tsx"),
 );
+const InvoiceDetails = React.lazy(
+  () => import("@/components/app/Invoices/InvoiceDetails.tsx"),
+);
 const LazyWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense
@@ -197,6 +200,18 @@ const router = createBrowserRouter([
                 <InvoicePage />
               </LazyWrapper>
             ),
+            children: [
+              {
+                path: ":invoice_id_param",
+                element: (
+                  <LazyWrapper>
+                    <div className={"px-5"}>
+                      <ArrivingSoon />
+                    </div>
+                  </LazyWrapper>
+                ),
+              },
+            ],
           },
           {
             path: "new",

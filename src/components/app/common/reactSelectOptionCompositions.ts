@@ -4,6 +4,7 @@ import { PaymentTerm } from "@/API/Resources/v1/PaymentTerm.ts";
 import { TaxRate } from "@/API/Resources/v1/TaxRate.ts";
 import { AutoNumberGroup } from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
 import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
+import { groupBy } from "lodash";
 
 const mapPaymentTermToRSelect = (paymentTerm: Partial<PaymentTerm>) => ({
   label: `${paymentTerm.payment_term_name}`,
@@ -12,21 +13,21 @@ const mapPaymentTermToRSelect = (paymentTerm: Partial<PaymentTerm>) => ({
   payment_term: paymentTerm.payment_term,
   interval: paymentTerm.interval,
 });
-const makeCurrencyRSelectOptions = (currency: Partial<Currency>) => {
+const mapCurrencyRSelectOption = (currency: Partial<Currency>) => {
   return {
     label: `${currency.currency_code}(${currency.currency_symbol}) - ${currency.currency_name}`,
     value: currency.currency_id,
     ...currency,
   };
 };
-const makeUnitRSelectOptions = (unit: ItemUnit) => {
+const mapUnitRSelectOption = (unit: ItemUnit) => {
   return {
     label: unit.unit,
     value: unit.unit,
     unit_id: unit.unit_id,
   };
 };
-const makeTaxRSelectOptions = (tax: Partial<TaxRate>) => {
+const mapTaxRSelectOption = (tax: Partial<TaxRate>) => {
   return {
     label: `${tax.tax_name} [${tax.tax_percentage}%]`,
     value: tax.tax_id,
@@ -34,7 +35,7 @@ const makeTaxRSelectOptions = (tax: Partial<TaxRate>) => {
   };
 };
 
-const makeAutoNumberGroupRSelect = (
+const mapAutoNumberGroupRSelectOption = (
   autoNumberGroup: Pick<
     AutoNumberGroup,
     "auto_number_group_name" | "auto_number_group_id"
@@ -46,7 +47,9 @@ const makeAutoNumberGroupRSelect = (
   };
 };
 
-const makeAccountRSelectOptions = (account: Pick<ChartOfAccount,"account_name"|"account_id">) => {
+const mapAccountRSelectOption = (
+  account: Pick<ChartOfAccount, "account_name" | "account_id">,
+) => {
   return {
     label: `${account.account_name}`,
     value: account.account_id,
@@ -55,23 +58,44 @@ const makeAccountRSelectOptions = (account: Pick<ChartOfAccount,"account_name"|"
   };
 };
 
-export {
-  makeCurrencyRSelectOptions,
-  makeTaxRSelectOptions,
-  makeUnitRSelectOptions,
-  mapPaymentTermToRSelect,
-  makeAutoNumberGroupRSelect,
-  makeAccountRSelectOptions,
+const makeAccountRSelectGroupedOptions = (
+  accounts: Pick<
+    ChartOfAccount,
+    "account_name" | "account_id" | "account_type_name_formatted"
+  >[],
+) => {
+  // group by account type
+  const groupedAccounts = groupBy(accounts, "account_type_name_formatted");
+  return Object.keys(groupedAccounts).map((accountType) => {
+    const accounts = groupedAccounts[accountType];
+    return {
+      label: accountType,
+      options: accounts.map((account) => mapAccountRSelectOption(account)),
+    };
+  });
 };
 
-type TaxRSelectOption = ReturnType<typeof makeTaxRSelectOptions>;
-type CurrencyRSelectOption = ReturnType<typeof makeCurrencyRSelectOptions>;
-type UnitRSelectOption = ReturnType<typeof makeUnitRSelectOptions>;
+export {
+  mapCurrencyRSelectOption,
+  mapTaxRSelectOption,
+  mapUnitRSelectOption,
+  mapPaymentTermToRSelect,
+  mapAutoNumberGroupRSelectOption,
+  mapAccountRSelectOption,
+  makeAccountRSelectGroupedOptions,
+};
+
+type TaxRSelectOption = ReturnType<typeof mapTaxRSelectOption>;
+type CurrencyRSelectOption = ReturnType<typeof mapCurrencyRSelectOption>;
+type UnitRSelectOption = ReturnType<typeof mapUnitRSelectOption>;
 type PaymentTermRSelectOption = ReturnType<typeof mapPaymentTermToRSelect>;
 type AutoNumberGroupRSelectOption = ReturnType<
-  typeof makeAutoNumberGroupRSelect
+  typeof mapAutoNumberGroupRSelectOption
 >;
-type AccountRSelectOption = ReturnType<typeof makeAccountRSelectOptions>;
+type AccountRSelectOption = ReturnType<typeof mapAccountRSelectOption>;
+type AccountRSelectGroupedOptions = ReturnType<
+  typeof makeAccountRSelectGroupedOptions
+>;
 
 export type {
   TaxRSelectOption,

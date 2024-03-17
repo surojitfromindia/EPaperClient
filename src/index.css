@@ -106,4 +106,8 @@
   .text_thead {
     font-size: 0.67rem;
   }
+
+  .link_blue {
+    @apply text-primary/80
+  }
 }

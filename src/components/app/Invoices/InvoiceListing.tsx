@@ -7,18 +7,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useMemo, useState } from "react";
-import { Edit, Loader2, MoreVertical, Plus, RefreshCcw } from "lucide-react";
-import { Button } from "@/components/ui/button.tsx";
+import { Edit, Loader2, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import classNames from "classnames";
 import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
@@ -29,14 +25,8 @@ import { OnInvoiceModification } from "@/components/app/Invoices/InvoicePage.tsx
 import { Invoice } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import { JSX } from "react/jsx-runtime";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select.tsx";
 import { selectCustomViewStateOfInvoice } from "@/redux/features/customView/customViewSlice.ts";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 interface InvoiceTableView
   extends Pick<
@@ -58,8 +48,6 @@ interface InvoiceListingProps extends React.HTMLAttributes<HTMLDivElement> {
   invoices: Invoice[];
   isFetching: boolean;
   onInvoiceEditClick: (invoice_id: number) => void;
-  onInvoiceAddClick: () => void;
-    onListRefresh: () => void;
   onInvoiceModificationSuccess: OnInvoiceModification;
 }
 
@@ -81,29 +69,31 @@ export function InvoiceListing({
   selectedInvoiceId,
   invoices = [],
   isFetching = true,
-  onInvoiceAddClick,
-  onListRefresh,
 }: InvoiceListingProps) {
-  const {
-    entity_views: { default_filters },
-    entity_select_columns,
-  } = useAppSelector(selectCustomViewStateOfInvoice);
+  const { entity_select_columns } = useAppSelector(
+    selectCustomViewStateOfInvoice,
+  );
 
   const navigate = useNavigate();
   const isLoading = isFetching;
   // highlight row after coming from the details page
   const [lastSelectedId, setLastSelectedId] = useState<number>();
-  const onListingPage = useMemo(() => !selectedInvoiceId, [selectedInvoiceId]);
+  const isOnListingPage = useMemo(
+    () => !selectedInvoiceId,
+    [selectedInvoiceId],
+  );
 
   const handleAccountDeleteAction = async (selected_account_ids: number[]) => {
     console.log(selected_account_ids);
   };
   const handleRowClick = (invoice_id: number) => {
     setLastSelectedId(invoice_id);
-    navigate(`/app/invoices/${invoice_id}`);
+    navigate(
+      AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(invoice_id.toString()),
+    );
   };
   const handleAccountEditOptionClick = (invoice_id: number) => {
-    navigate(`/app/invoices/${invoice_id}/edit`);
+    navigate(AppURLPaths.APP_PAGE.INVOICES.INVOICE_EDIT(invoice_id.toString()));
   };
 
   const dynamicHeaders: Record<
@@ -169,22 +159,12 @@ export function InvoiceListing({
           />
         );
       } else if (col_data.type === "enum" && col_key === "due_days_formatted") {
-        const due_days = invoice["due_days"];
-        let color: string;
-        if (invoice.transaction_status === "draft") {
-          color = "bg-yellow-100 text-yellow-500 hover:bg-yellow-200";
-        } else if (invoice.transaction_status === "sent" && due_days === 0) {
-          color = "bg-green-100 text-green-500 hover:bg-green-200";
-        } else if (invoice.transaction_status === "sent" && due_days > 0) {
-          color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
-        } else if (invoice.transaction_status === "sent" && due_days < 0) {
-          color = "bg-red-100 text-red-500 hover:bg-red-200";
-        }
-
         content = (
-          <Badge className={`${color} uppercase rounded-md`}>
-            {invoice[col_key]}
-          </Badge>
+          <BadgeTransactionStatus
+            due_days={invoice.due_days}
+            transaction_status={invoice.transaction_status}
+            text_value={invoice[col_key]}
+          />
         );
       } else {
         content = invoice[col_key];
@@ -215,11 +195,6 @@ export function InvoiceListing({
       tableCells,
     );
   };
-
-  const handleListRefresh = () => {
-    onListRefresh();
-  }
-
   if (isLoading) {
     return (
       <div className={"relative h-screen w-full"}>
@@ -227,136 +202,67 @@ export function InvoiceListing({
       </div>
     );
   }
-
-  const sortOptionsInDD = [
-    {
-      label: "Issue date",
-      value: "issue_date",
-      order: "asc",
-    },
-    {
-      label: "Due date",
-      value: "due_date",
-      order: null,
-    },
-    {
-      label: "Invoice number",
-      value: "invoice_number",
-      order: null,
-    },
-    {
-      label: "Total",
-      value: "total",
-      order: null,
-    },
-    {
-      label: "Balance",
-      value: "balance",
-      order: null,
-    },
-  ];
-
   return (
     <>
-      <main className={"flex max-h-screen flex-col border-r-1 h-screen"}>
-        <section
-          className={
-            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
-          }
-        >
-          <div>
-            <h1 className={"text-lg"}>Invoices</h1>
-            <Select>
-              <SelectTrigger className="w-[100px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
-                <SelectValue placeholder="Select filter" />
-              </SelectTrigger>
-              <SelectContent>
-                {default_filters.map((filter, index) => (
-                  <SelectItem key={index} value={filter.value} showTick={false}>
-                    {filter.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className={"flex gap-x-2"}>
-            <Button size={"sm"} onClick={onInvoiceAddClick}>
-              <Plus className="h-4 w-4" /> New
-            </Button>
-
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button size={"sm"} variant={"outline"} className={"shadow"}>
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align={"end"}
-                className="text-sm bg-gray-50 outline-none  p-1 w-56"
+      <section
+        className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
+      >
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {!isLoading && (
+          <Table className={"h-full "}>
+            {!shrinkTable && (
+              <TableHeader
+                className={"bg-background shadow-sm sticky top-0 z-[1]"}
               >
-                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                {sortOptionsInDD.map((option, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    role={"button"}
-                    onClick={() => console.log(option.value)}
-                    className={"menu-item-ok"}
+                <TableRow className={"uppercase text-xs"}>
+                  <TableHead className={"w-12"}>&nbsp;</TableHead>
+                  {entity_select_columns
+                    .filter((col) => col.default_filter_order > -1)
+                    .map((col) => (
+                      <TableHead
+                        key={col.key}
+                        className={classNames(
+                          col.align === "right" && "text-right",
+                        )}
+                      >
+                        <div className={""}>{col.value}</div>
+                      </TableHead>
+                    ))}
+                  <TableHead>&nbsp;</TableHead>
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
+              {invoices.map((invoice) => {
+                return shrinkTable ? (
+                  <TableRow
+                    key={invoice.invoice_id}
+                    className={classNames(
+                      invoice.invoice_id === selectedInvoiceId && "bg-accent",
+                      "cursor-pointer h-10",
+                    )}
                   >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup className={"bg-green-50"}>
-                  <DropdownMenuItem
-                    role={"button"}
-                    className={"menu-item-ok text-green-700"}
-                    onClick={handleListRefresh}
-                  >
-                    <RefreshCcw className="h-4 w-4 mr-2" />
-                    <span>Refresh</span>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </section>
-        <section
-          className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
-        >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {!isLoading && (
-            <Table className={"h-full "}>
-              {!shrinkTable && (
-                <TableHeader
-                  className={"bg-background shadow-sm sticky top-0 z-[1]"}
-                >
-                  <TableRow className={"uppercase text-xs"}>
-                    <TableHead className={"w-12"}>&nbsp;</TableHead>
-                    {entity_select_columns
-                      .filter((col) => col.default_filter_order > -1)
-                      .map((col) => (
-                        <TableHead
-                          key={col.key}
-                          className={classNames(
-                            col.align === "right" && "text-right",
-                          )}
-                        >
-                          <div className={""}>{col.value}</div>
-                        </TableHead>
-                      ))}
-                    <TableHead>&nbsp;</TableHead>
+                    <TableCell className={"w-1 align-top"}>
+                      <Checkbox />
+                    </TableCell>
+                    <TableCell
+                      onClick={() => {
+                        handleRowClick(invoice.invoice_id);
+                      }}
+                      className={
+                        "py-3 font-medium whitespace-nowrap align-top "
+                      }
+                    >
+                      <InvoiceSidePanelItem invoice={invoice} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-              )}
-              <TableBody>
-                {invoices.map((invoice) => (
+                ) : (
                   <TableRow
                     key={invoice.invoice_id}
                     className={classNames(
                       invoice.invoice_id === selectedInvoiceId && "bg-accent",
                       invoice.invoice_id === lastSelectedId &&
-                        onListingPage &&
+                        isOnListingPage &&
                         "animate-twinkle",
                       "cursor-pointer h-10",
                     )}
@@ -381,7 +287,7 @@ export function InvoiceListing({
                         handleRowClick(invoice.invoice_id);
                       }}
                       className={
-                        "py-3 font-medium whitespace-nowrap align-top "
+                        "py-3 font-medium whitespace-nowrap align-top link_blue "
                       }
                     >
                       <span className={"w-36"}>{invoice.invoice_number}</span>
@@ -423,12 +329,69 @@ export function InvoiceListing({
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}{" "}
-        </section>
-      </main>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}{" "}
+      </section>
     </>
   );
 }
+
+
+
+const BadgeTransactionStatus = ({
+  transaction_status,
+  due_days,
+  text_value,
+}) => {
+  let color: string;
+  if (transaction_status === "draft") {
+    color = "bg-yellow-100 text-yellow-500 hover:bg-yellow-200";
+  } else if (transaction_status === "sent" && due_days === 0) {
+    color = "bg-green-100 text-green-500 hover:bg-green-200";
+  } else if (transaction_status === "sent" && due_days > 0) {
+    color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
+  } else if (transaction_status === "sent" && due_days < 0) {
+    color = "bg-red-100 text-red-500 hover:bg-red-200";
+  }
+
+  return (
+    <Badge className={`${color} uppercase rounded-md text-xs font-normal`}>
+      {text_value}
+    </Badge>
+  );
+};
+const InvoiceSidePanelItem = ({ invoice }: { invoice: Invoice }) => {
+  return (
+    <div className={"-mt-1"}>
+      <div className={"flex justify-between"}>
+        <span>{invoice.contact_name}</span>
+        <span>{invoice.total_formatted}</span>
+      </div>
+      <div className={"flex justify-between mt-2"}>
+        <div className={"flex gap-x-3"}>
+          <Link
+            to={AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL_TRANSACTIONS(
+              invoice.invoice_id.toString(),
+            )}
+            className={"link_blue"}
+          >
+            {invoice.invoice_number}
+          </Link>
+          <div className={"text-muted-foreground"}>
+            {invoice.issue_date_formatted}
+          </div>
+        </div>
+        <div className={"text-xs"}>
+          <BadgeTransactionStatus
+            due_days={invoice.due_days}
+            transaction_status={invoice.transaction_status}
+            text_value={invoice.due_days_formatted}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};

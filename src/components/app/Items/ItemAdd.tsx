@@ -35,9 +35,9 @@ import RNumberFormat from "@/components/app/common/RNumberFormat.tsx";
 import { toast } from "@/components/ui/use-toast.ts";
 import { ReactSelectOptionComponentsUnit } from "@/components/app/common/ReactSelectComponents.tsx";
 import {
-  makeAccountRSelectOptions,
-  makeTaxRSelectOptions,
-  makeUnitRSelectOptions
+  mapAccountRSelectOption,
+  mapTaxRSelectOption,
+  mapUnitRSelectOption
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 
 const itemService = new ItemService();
@@ -103,16 +103,16 @@ export default function ItemAdd(props: ItemAddProp) {
   // ---- dropdown options
   const unitsDropDownOptions = useMemo(() => {
     const units = editPageContent.units;
-    return units.map(makeUnitRSelectOptions);
+    return units.map(mapUnitRSelectOption);
   }, [editPageContent]);
   const incomeAccountsDropDown = useMemo(() => {
-    return editPageContent.income_accounts_list.map(makeAccountRSelectOptions)
+    return editPageContent.income_accounts_list.map(mapAccountRSelectOption)
   }, [editPageContent.income_accounts_list]);
   const purchaseAccountsDropDown = useMemo(() => {
-    return editPageContent.purchase_accounts_list.map(makeAccountRSelectOptions);
+    return editPageContent.purchase_accounts_list.map(mapAccountRSelectOption);
   }, [editPageContent.purchase_accounts_list]);
   const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map(makeTaxRSelectOptions);
+    return editPageContent.taxes.map(mapTaxRSelectOption);
   }, [editPageContent.taxes]);
   // ---- end of dropdown options
   const handleCloseClick = () => {

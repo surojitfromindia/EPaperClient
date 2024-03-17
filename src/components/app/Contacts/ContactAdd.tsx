@@ -31,8 +31,8 @@ import { SALUTATION } from "@/constants/Contact.Constants.ts";
 
 import {
   CurrencyRSelectOption,
-  makeCurrencyRSelectOptions,
-  makeTaxRSelectOptions,
+  mapCurrencyRSelectOption,
+  mapTaxRSelectOption,
   mapPaymentTermToRSelect,
   PaymentTermRSelectOption,
   TaxRSelectOption,
@@ -135,7 +135,7 @@ export default function ContactAdd(props: ContactAddProp) {
         setValue("company_name", data.company_name);
         setValue(
           "currency",
-          makeCurrencyRSelectOptions({
+          mapCurrencyRSelectOption({
             currency_code: data.currency_code,
             currency_id: data.currency_id,
             currency_name: data.currency_name,
@@ -186,13 +186,13 @@ export default function ContactAdd(props: ContactAddProp) {
   }, [editContactId, setFormData]);
 
   const taxesDropDown = useMemo(() => {
-    return editPageContent.taxes.map(makeTaxRSelectOptions);
+    return editPageContent.taxes.map(mapTaxRSelectOption);
   }, [editPageContent.taxes]);
   const paymentTermsDropDown = useMemo(() => {
     return editPageContent.payment_terms.map(mapPaymentTermToRSelect);
   }, [editPageContent.payment_terms]);
   const currenciesDropDown = useMemo(() => {
-    return editPageContent.currencies.map(makeCurrencyRSelectOptions);
+    return editPageContent.currencies.map(mapCurrencyRSelectOption);
   }, [editPageContent.currencies]);
 
   const handleCloseClick = () => {

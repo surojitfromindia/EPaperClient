@@ -46,7 +46,7 @@ import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import {
-  makeAutoNumberGroupRSelect,
+  mapAutoNumberGroupRSelectOption,
   mapPaymentTermToRSelect,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import AutoNumberConfigModal from "@/components/app/common/AutoNumberConfigModal.tsx";
@@ -196,7 +196,7 @@ export default function InvoiceAdd() {
         invoiceSettings?.is_auto_number_enabled ?? false;
       const { prefix_string, next_number } =
         invoiceSettings.default_auto_number_group.auto_number;
-      const defaultAutoNumberGroupRSelect = makeAutoNumberGroupRSelect(
+      const defaultAutoNumberGroupRSelect = mapAutoNumberGroupRSelectOption(
         invoiceSettings.default_auto_number_group,
       );
       setValue("auto_number_group", defaultAutoNumberGroupRSelect);
@@ -242,7 +242,7 @@ export default function InvoiceAdd() {
   }, [editPageContent.payment_terms]);
   const autoNumberGroupsDropDown = useMemo(() => {
     return editPageContent.invoice_settings?.auto_number_groups.map(
-      makeAutoNumberGroupRSelect,
+      mapAutoNumberGroupRSelectOption,
     );
   }, [editPageContent.invoice_settings?.auto_number_groups]);
 
@@ -611,12 +611,13 @@ export default function InvoiceAdd() {
         <Form {...form}>
           <form>
             <div className={"grid py-4 grid-cols-12 space-y-4 p-5 my-6"}>
+              {/*Customer*/}
               <FormField
                 name={"contact"}
                 render={({ field }) => (
                   <FormItem
                     className={
-                      "space-y-0 grid grid-cols-12 col-span-12 items-baseline "
+                      "gap-x-2 grid grid-cols-12 col-span-12 items-baseline"
                     }
                   >
                     <FormLabel
@@ -673,7 +674,7 @@ export default function InvoiceAdd() {
                   render={({ field }) => (
                     <FormItem
                       className={
-                        "space-y-0 grid grid-cols-12 col-span-12 items-center"
+                        "gap-x-2 grid grid-cols-12 col-span-12 items-center"
                       }
                     >
                       <FormLabel
@@ -683,7 +684,7 @@ export default function InvoiceAdd() {
                         Invoice#
                       </FormLabel>
                       {showAutoNumberSelection && (
-                        <div className="col-span-4 flex-col mr-3">
+                        <div className="col-span-4 flex-col">
                           <FormControl>
                             <ReactSelect
                               className={"col-span-3"}
@@ -740,7 +741,7 @@ export default function InvoiceAdd() {
                 render={({ field }) => (
                   <FormItem
                     className={
-                      "space-y-0 grid grid-cols-12 col-span-12 items-center "
+                      "gap-x-2 grid grid-cols-12 col-span-12 items-center"
                     }
                   >
                     <FormLabel
@@ -854,7 +855,6 @@ export default function InvoiceAdd() {
                 />
               </div>
             </div>
-            <div className={"h-32"}></div>
           </form>
         </Form>
       </div>
@@ -892,8 +892,9 @@ export default function InvoiceAdd() {
           cancel
         </Button>
       </div>
-      {/**Auto Number Modal*/}
 
+
+      {/**Auto Number Modal*/}
       <AutoNumberConfigModal
         openModal={isAutoNumberModalOpen}
         onClose={handleAutoNumberModalClose}

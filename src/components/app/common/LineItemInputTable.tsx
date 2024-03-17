@@ -57,12 +57,11 @@ import {
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { ChartOfAccount } from "@/API/Resources/v1/ChartOfAccount/ChartOfAccount.Service.ts";
 import {
-  makeAccountRSelectOptions,
-  makeTaxRSelectOptions,
+  makeAccountRSelectGroupedOptions,
+  mapAccountRSelectOption,
+  mapTaxRSelectOption,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
-import { Simulate } from "react-dom/test-utils";
-import select = Simulate.select;
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -173,12 +172,11 @@ export function LineItemInputTable({
     if (!contactDetails) return false;
     return contactDetails.currency_code !== organizationDetails.currency_code;
   }, [contactDetails, organizationDetails]);
-
-  const lineItemAccountsDropDown = useMemo(() => {
-    return lineItemAccountsList.map(makeAccountRSelectOptions);
+  useMemo(() => {
+    return lineItemAccountsList.map(mapAccountRSelectOption);
   }, [lineItemAccountsList]);
   const taxesDropDown = useMemo(() => {
-    return taxesList.map(makeTaxRSelectOptions);
+    return taxesList.map(mapTaxRSelectOption);
   }, [taxesList]);
 
   // ---- states
@@ -274,7 +272,7 @@ export function LineItemInputTable({
         item_total: line_item.item_total,
         item_total_tax_included: line_item.item_total_tax_included,
         is_loading: false,
-        account: makeAccountRSelectOptions({
+        account: mapAccountRSelectOption({
           account_id: line_item.account_id,
           account_name: line_item.account_name,
         }),
@@ -452,6 +450,10 @@ export function LineItemInputTable({
                 itemFor === "sales"
                   ? fetched_item.sales_account_id
                   : fetched_item.purchase_account_id,
+              account_name:
+                itemFor === "sales"
+                  ? fetched_item.sales_account_name
+                  : fetched_item.purchase_account_name,
             };
             return item;
           }
@@ -698,7 +700,9 @@ export function LineItemInputTable({
                   <div className={"absolute -top-[17px] -right-[32px] "}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <CircleEllipsis className={"w-4 h-4 text-primary cursor-pointer"} />
+                        <CircleEllipsis
+                          className={"w-4 h-4 text-primary cursor-pointer"}
+                        />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         side={"bottom"}
@@ -841,7 +845,9 @@ export function LineItemInputTable({
                           className={"w-full z-100"}
                           value={lineItem.account}
                           name={"line_item_account"}
-                          options={lineItemAccountsDropDown}
+                          options={makeAccountRSelectGroupedOptions(
+                            lineItemAccountsList,
+                          )}
                           placeholder={"Select account"}
                           classNames={reactSelectStyleBorderLess}
                           components={{
@@ -851,6 +857,7 @@ export function LineItemInputTable({
                           isClearable={false}
                           menuPortalTarget={document.body}
                           onChange={(selected_account) => {
+                            console.log(selected_account);
                             handleLineItemAccountChange(
                               selected_account,
                               index,
