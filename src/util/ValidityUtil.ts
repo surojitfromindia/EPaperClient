@@ -1,5 +1,5 @@
 class ValidityUtil {
-  static isEmpty(value: any): boolean {
+  static isEmpty(value: unknown): boolean {
     if (value === null || value === undefined) {
       return true;
     }

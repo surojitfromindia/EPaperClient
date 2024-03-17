@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import classNames from "classnames";
 import { cn } from "@/lib/utils.ts";
+import {defaultInvoiceFilter} from "@/API/Resources/v1/util/invoiceFilter.ts";
 
 export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
   const { pathname } = useLocation();
@@ -44,7 +45,7 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
     {
       label: "Invoice",
       icon: <Receipt className={"h-4 w-4 "} />,
-      path: "/app/invoices",
+      path: `/app/invoices?filter_by=${defaultInvoiceFilter}`,
     },
     {
       label: "Chart Of Accounts",

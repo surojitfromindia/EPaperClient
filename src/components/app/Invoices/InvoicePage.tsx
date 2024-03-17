@@ -1,24 +1,42 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast.ts";
 import classNames from "classnames";
 import InvoiceService, {
+  DEFAULT_GET_INVOICES_PARAMS,
   Invoice,
 } from "@/API/Resources/v1/Invoice/Invoice.Service.ts";
 import { InvoiceListing } from "@/components/app/Invoices/InvoiceListing.tsx";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
-import {Button} from "@/components/ui/button.tsx";
-import {MoreVertical, Plus, RefreshCcw} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { MoreVertical, Plus, RefreshCcw } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuContent, DropdownMenuGroup,
-  DropdownMenuLabel, DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import {DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
-import {useAppSelector} from "@/redux/hooks.ts";
-import {selectCustomViewStateOfInvoice} from "@/redux/features/customView/customViewSlice.ts";
-import {AppURLPaths} from "@/constants/AppURLPaths.Constants.ts";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { useAppSelector } from "@/redux/hooks.ts";
+import { selectCustomViewStateOfInvoice } from "@/redux/features/customView/customViewSlice.ts";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
+import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
+import {
+  defaultInvoiceFilter,
+  InvoiceAppliedFilter,
+} from "@/API/Resources/v1/util/invoiceFilter.ts";
+import {
+  mergePathNameAndSearchParams,
+  updateOrAddSearchParam,
+} from "@/util/urlUtil.ts";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -35,6 +53,7 @@ const invoiceService = new InvoiceService();
 export default function InvoicePage() {
   const navigate = useNavigate();
   const { invoice_id_param } = useParams();
+  const { search } = useLocation();
   const selectedInvoiceId = useMemo(() => {
     const parseResult = Number.parseInt(invoice_id_param ?? "");
     if (!Number.isNaN(parseResult)) {
@@ -47,16 +66,39 @@ export default function InvoicePage() {
 
   // states
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [pageContext, setPageContext] = useState<InvoicePageContext>({
+    filter_by: defaultInvoiceFilter,
+    page: 1,
+    per_page: 200,
+    sort_column: "issue_date",
+    sort_order: "A",
+  });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [, setIsEditModalOpen] = useState<boolean>(false);
   const [, setEditingItemId] = useState<number>();
+  const [appliedFilter, setAppliedFilter] =
+    useState<InvoiceAppliedFilter>(defaultInvoiceFilter);
 
-  const loadInvoices = useCallback(() => {
+  const loadInvoices = useCallback((search_query_string: string) => {
+    const query = new URLSearchParams(search_query_string);
+    const appliedFilter = query.get("filter_by") ?? defaultInvoiceFilter;
+
     setIsLoading(true);
-    invoiceService.getInvoices().then((invoices) => {
-      setInvoices(invoices?.invoices ?? []);
-      setIsLoading(false);
-    });
+    invoiceService
+      .getInvoices(
+        {
+          filter_by: appliedFilter,
+        },
+        {
+          ...DEFAULT_GET_INVOICES_PARAMS.options,
+        },
+      )
+      .then((data) => {
+        setInvoices(data?.invoices ?? []);
+        setPageContext(data?.page_context);
+        setAppliedFilter(data?.page_context.filter_by);
+        setIsLoading(false);
+      });
   }, []);
 
   const handleInvoiceEditClick = useCallback((edit_item_id?: number) => {
@@ -90,29 +132,27 @@ export default function InvoicePage() {
           description: "Invoice is delete successfully",
         });
       }
-      loadInvoices();
+      loadInvoices(search);
     },
-    [loadInvoices],
+    [loadInvoices, search],
   );
 
   useEffect(() => {
-    loadInvoices();
+    loadInvoices(search);
     return () => {
       invoiceService.abortGetRequest();
     };
-  }, [loadInvoices]);
-
+  }, [loadInvoices, search]);
 
   const handleListRefresh = useCallback(() => {
-    loadInvoices();
-  }, [loadInvoices])
+    loadInvoices(search);
+  }, [search, loadInvoices]);
 
   const {
     entity_views: { default_filters },
-    entity_select_columns,
   } = useAppSelector(selectCustomViewStateOfInvoice);
 
-  const sortOptionsInDD = [
+  const sortOptions = [
     {
       label: "Issue date",
       value: "issue_date",
@@ -140,34 +180,51 @@ export default function InvoicePage() {
     },
   ];
 
+  const handleAppliedFilterChange = (value: InvoiceAppliedFilter) => {
+    navigate(
+      mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.INVOICES.INDEX,
+        search_params: updateOrAddSearchParam({
+          search_string: search,
+          key: "filter_by",
+          value: value,
+        }),
+      }),
+    );
+  };
 
   return (
     <>
       <div className={"grid grid-cols-12"}>
         <div
-            className={classNames(
-                "col-span-12",
-                isDetailsPageOpen && ` hidden lg:block lg:col-span-4`,
-            )}
+          className={classNames(
+            "col-span-12",
+            isDetailsPageOpen && ` hidden lg:block lg:col-span-4`,
+          )}
         >
-
           <section
-              className={
-                "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
-              }
+            className={
+              "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
+            }
           >
             <div>
               <h1 className={"text-lg"}>Invoices</h1>
-              <Select>
-                <SelectTrigger
-                    className="w-[100px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
-                  <SelectValue placeholder="Select filter"/>
+              <Select
+                value={appliedFilter}
+                onValueChange={handleAppliedFilterChange}
+              >
+                <SelectTrigger className="w-[100px] p-0 h-7 text-left focus:ring-0 bg-transparent border-0 focus:ring-offset-0">
+                  <SelectValue placeholder="Select filter" />
                 </SelectTrigger>
                 <SelectContent>
                   {default_filters.map((filter, index) => (
-                      <SelectItem key={index} value={filter.value} showTick={false}>
-                        {filter.title}
-                      </SelectItem>
+                    <SelectItem
+                      key={index}
+                      value={filter.value}
+                      showTick={false}
+                    >
+                      {filter.title}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -175,37 +232,37 @@ export default function InvoicePage() {
 
             <div className={"flex gap-x-2"}>
               <Button size={"sm"} onClick={handleInvoiceAddClick}>
-                <Plus className="h-4 w-4"/> New
+                <Plus className="h-4 w-4" /> New
               </Button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button size={"sm"} variant={"outline"} className={"shadow"}>
-                    <MoreVertical className="h-4 w-4"/>
+                    <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                    align={"end"}
-                    className="text-sm bg-gray-50 outline-none  p-1 w-56"
+                  align={"end"}
+                  className="text-sm bg-gray-50 outline-none  p-1 w-56"
                 >
                   <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                  {sortOptionsInDD.map((option, index) => (
-                      <DropdownMenuItem
-                          key={index}
-                          role={"button"}
-                          onClick={() => console.log(option.value)}
-                          className={"menu-item-ok"}
-                      >
-                        {option.label}
-                      </DropdownMenuItem>
+                  {sortOptions.map((option, index) => (
+                    <DropdownMenuItem
+                      key={index}
+                      role={"button"}
+                      onClick={() => console.log(option.value)}
+                      className={"menu-item-ok"}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
                   ))}
-                  <DropdownMenuSeparator/>
+                  <DropdownMenuSeparator />
                   <DropdownMenuGroup className={"bg-green-50"}>
                     <DropdownMenuItem
-                        role={"button"}
-                        className={"menu-item-ok text-green-700"}
-                        onClick={handleListRefresh}
+                      role={"button"}
+                      className={"menu-item-ok text-green-700"}
+                      onClick={handleListRefresh}
                     >
-                      <RefreshCcw className="h-4 w-4 mr-2"/>
+                      <RefreshCcw className="h-4 w-4 mr-2" />
                       <span>Refresh</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
@@ -215,18 +272,18 @@ export default function InvoicePage() {
           </section>
 
           <InvoiceListing
-              shrinkTable={isDetailsPageOpen}
-              selectedInvoiceId={selectedInvoiceId}
-              invoices={invoices}
-              isFetching={isLoading}
-              onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
-              onInvoiceEditClick={handleInvoiceEditClick}
+            shrinkTable={isDetailsPageOpen}
+            selectedInvoiceId={selectedInvoiceId}
+            invoices={invoices}
+            isFetching={isLoading}
+            onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
+            onInvoiceEditClick={handleInvoiceEditClick}
           />
         </div>
         {isDetailsPageOpen && (
-            <div className={"col-span-12 lg:col-span-8"}>
-              <Outlet/>
-            </div>
+          <div className={"col-span-12 lg:col-span-8"}>
+            <Outlet />
+          </div>
         )}
       </div>
     </>

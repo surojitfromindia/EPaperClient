@@ -12,6 +12,8 @@ import {
   InvoiceAutoNumberSettingsUpdatePayload,
   InvoiceSettings,
 } from "@/API/Resources/v1/Invoice/invoice";
+import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
+import { defaultInvoiceFilter } from "@/API/Resources/v1/util/invoiceFilter.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -105,6 +107,31 @@ type InvoiceEditPageFromContactContent = {
   invoice_settings: InvoiceSettings;
 };
 
+interface GetInvoicesParamsQuery {
+  filter_by?: string;
+}
+interface GetInvoicesParamsQueryOptions {
+  per_page?: number;
+  page?: number;
+  sort_column?: string;
+  sort_order?: string;
+}
+
+const DEFAULT_GET_INVOICES_PARAMS: {
+  query: GetInvoicesParamsQuery;
+  options: GetInvoicesParamsQueryOptions;
+} = {
+  query: {
+    filter_by: defaultInvoiceFilter,
+  },
+  options: {
+    per_page: 200,
+    page: 0,
+    sort_column: "issue_date",
+    sort_order: "A",
+  },
+};
+
 class InvoiceService implements APIService {
   readonly urlFragment: string = "/invoices";
   readonly urlSettingsFragment: string = "/settings/invoice";
@@ -116,12 +143,39 @@ class InvoiceService implements APIService {
     this.abortController = new AbortController();
   }
 
-  getInvoices() {
+  getInvoices(
+    query: GetInvoicesParamsQuery = {},
+    options: GetInvoicesParamsQueryOptions = {},
+  ) {
+    const { page, per_page, sort_column, sort_order } = options;
+    const { filter_by } = query;
     const url = this.urlFragment;
     return this.#axiosConfig.APIGetRequestWrapper<{
       invoices: Invoice[];
+      page_context: InvoicePageContext;
     }>(url, {
-      searchParameters: [],
+      searchParameters: [
+        {
+          key: "filter_by",
+          value: filter_by,
+        },
+        {
+          key: "per_page",
+          value: per_page,
+        },
+        {
+          key: "page",
+          value: page,
+        },
+        {
+          key: "sort_column",
+          value: sort_column,
+        },
+        {
+          key: "sort_order",
+          value: sort_order,
+        },
+      ],
       abortController: this.abortController,
     });
   }
@@ -199,6 +253,7 @@ class InvoiceService implements APIService {
   }
 }
 export default InvoiceService;
+export { DEFAULT_GET_INVOICES_PARAMS };
 export type {
   Invoice,
   InvoiceEditPageContent,

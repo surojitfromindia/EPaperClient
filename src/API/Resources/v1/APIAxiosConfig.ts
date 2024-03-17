@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import {LocalStorageAccess} from "@/util/LocalStorageAccess.ts";
+import {ValidityUtil} from "@/util/ValidityUtil.ts";
 
 const baseURL = `${import.meta.env["VITE_API_BASE_URL"]}/v1`;
 const axiosInstance = () => {
@@ -147,7 +148,7 @@ class APIAxiosConfig {
   ) {
     // loop over each key value of parameterArray and set it to urlSearchParams
     for (const [, value] of parameterArray.entries()) {
-      if (value?.value) {
+      if (ValidityUtil.isNotEmpty(value?.value)) {
         urlSearchParams.set(value.key, value.value.toString());
       }
     }
