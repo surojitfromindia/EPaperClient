@@ -108,6 +108,13 @@
   }
 
   .link_blue {
-    @apply text-primary/80
+    @apply text-primary/80 cursor-pointer
+  }
+  .link_disabled {
+    @apply text-primary/30 cursor-not-allowed
+  }
+
+  .menu-item-checked {
+   @apply after:content-['✓'] bg-muted text-primary;
   }
 }

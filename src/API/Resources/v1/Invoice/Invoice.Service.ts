@@ -14,6 +14,7 @@ import {
 } from "@/API/Resources/v1/Invoice/invoice";
 import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
 import { defaultInvoiceFilter } from "@/API/Resources/v1/util/invoiceFilter.ts";
+import {DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE} from "@/constants/Pagination.Constants.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -125,8 +126,8 @@ const DEFAULT_GET_INVOICES_PARAMS: {
     filter_by: defaultInvoiceFilter,
   },
   options: {
-    per_page: 200,
-    page: 0,
+    per_page: DEFAULT_PAGE_SIZE,
+    page:DEFAULT_PAGE_NUMBER,
     sort_column: "issue_date",
     sort_order: "A",
   },

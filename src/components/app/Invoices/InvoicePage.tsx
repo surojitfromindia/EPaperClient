@@ -37,6 +37,8 @@ import {
   mergePathNameAndSearchParams,
   updateOrAddSearchParam,
 } from "@/util/urlUtil.ts";
+import PaginationSelector from "@/components/app/common/PaginationSelector.tsx";
+import {DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE} from "@/constants/Pagination.Constants.ts";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -68,10 +70,11 @@ export default function InvoicePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pageContext, setPageContext] = useState<InvoicePageContext>({
     filter_by: defaultInvoiceFilter,
-    page: 1,
-    per_page: 200,
+    page: DEFAULT_PAGE_NUMBER,
+    per_page: DEFAULT_PAGE_SIZE,
     sort_column: "issue_date",
     sort_order: "A",
+    has_more_page: false,
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [, setIsEditModalOpen] = useState<boolean>(false);
@@ -82,6 +85,8 @@ export default function InvoicePage() {
   const loadInvoices = useCallback((search_query_string: string) => {
     const query = new URLSearchParams(search_query_string);
     const appliedFilter = query.get("filter_by") ?? defaultInvoiceFilter;
+    const page = query.get("page") ? Number(query.get("page")) : DEFAULT_PAGE_NUMBER
+    const per_page = query.get("per_page") ? Number(query.get("per_page")) : DEFAULT_PAGE_SIZE;
 
     setIsLoading(true);
     invoiceService
@@ -91,6 +96,8 @@ export default function InvoicePage() {
         },
         {
           ...DEFAULT_GET_INVOICES_PARAMS.options,
+          page,
+          per_page,
         },
       )
       .then((data) => {
@@ -193,18 +200,32 @@ export default function InvoicePage() {
     );
   };
 
+  const handlePageChange = (page: number) => {
+    console.log(page, "page");
+    navigate(
+      mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.INVOICES.INDEX,
+        search_params: updateOrAddSearchParam({
+          search_string: search,
+          key: "page",
+          value: page.toString(),
+        }),
+      }),
+    );
+  };
+
   return (
     <>
-      <div className={"grid grid-cols-12"}>
+      <div className={"grid grid-cols-12 h-full"}>
         <div
           className={classNames(
-            "col-span-12",
+            "flex flex-col col-span-12 h-full overflow-auto relative",
             isDetailsPageOpen && ` hidden lg:block lg:col-span-4`,
           )}
         >
           <section
             className={
-              "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
+              "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted"
             }
           >
             <div>
@@ -271,15 +292,28 @@ export default function InvoicePage() {
             </div>
           </section>
 
-          <InvoiceListing
-            shrinkTable={isDetailsPageOpen}
-            selectedInvoiceId={selectedInvoiceId}
-            invoices={invoices}
-            isFetching={isLoading}
-            onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
-            onInvoiceEditClick={handleInvoiceEditClick}
-          />
+          <div className={"overflow-y-scroll flex-grow"}>
+            <InvoiceListing
+              shrinkTable={isDetailsPageOpen}
+              selectedInvoiceId={selectedInvoiceId}
+              invoices={invoices}
+              isFetching={isLoading}
+              onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
+              onInvoiceEditClick={handleInvoiceEditClick}
+            />
+            <div className={"flex justify-end px-5 mb-20 mt-5"}>
+              <PaginationSelector
+                currentPage={pageContext.page}
+                perPage={pageContext.per_page}
+                hasMore={pageContext.has_more_page}
+                currentRecords={invoices.length}
+                onPageChange={handlePageChange}
+                onPerPageChange={() => {}}
+              />
+            </div>
+          </div>
         </div>
+
         {isDetailsPageOpen && (
           <div className={"col-span-12 lg:col-span-8"}>
             <Outlet />

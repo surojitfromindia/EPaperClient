@@ -55,7 +55,7 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
   ];
 
   return (
-    <div
+    <nav
       className={classNames(
         sideBarFloat
           ? "absolute bg-background z-40 sm:flex sm:static"
@@ -102,6 +102,6 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
           </Button>
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

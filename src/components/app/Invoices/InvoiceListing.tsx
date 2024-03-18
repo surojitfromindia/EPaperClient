@@ -205,7 +205,7 @@ export function InvoiceListing({
   return (
     <>
       <section
-        className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
+        className={"flex flex-col items-center overflow-y-auto grow-0"}
       >
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {!isLoading && (

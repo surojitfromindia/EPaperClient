@@ -5,6 +5,7 @@ type SortOrder = "A" | "D";
 interface PageContext {
     per_page: number;
     page: number;
+    has_more_page: boolean;
 }
 interface PageContextSingleFilter {
     filter_by: string;

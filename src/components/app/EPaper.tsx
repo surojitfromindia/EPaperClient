@@ -46,21 +46,18 @@ export default function EPaper() {
       <Provider store={store}>
         {applicationLoading && <LoaderFullPage />}
         {!applicationLoading && (
-          <div className={"block"}>
-            <div
+            <main
               className={
-                " top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden h-screen"
+                "top-0 bottom-0 left-0 right-0 flex flex-col overflow-hidden h-screen"
               }
             >
-              <TopBar
-
-              />
-              <div className={"flex grow relative"}>
+              <TopBar />
+              <div className={"flex grow  relative"}>
                 <Sidebar sideBarFloat={openSideDrawer} />
-                <div className={"w-full"}>
-                    <Outlet />
+                <section className={"w-full h-screen"}>
+                  <Outlet />
                   <Toaster />
-                </div>
+                </section>
                 <Button
                   onClick={() => {
                     setOpenSideDrawer((prev) => !prev);
@@ -71,8 +68,7 @@ export default function EPaper() {
                   <MenuIcon />
                 </Button>
               </div>
-            </div>
-          </div>
+            </main>
         )}
       </Provider>
     </>
