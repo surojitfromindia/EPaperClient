@@ -354,7 +354,7 @@ const BadgeTransactionStatus = ({
   if (transaction_status === "draft") {
     color = "bg-yellow-100 text-yellow-500 hover:bg-yellow-200";
   } else if (transaction_status === "sent" && due_days === 0) {
-    color = "bg-green-100 text-green-500 hover:bg-green-200";
+    color = "bg-violet-100 text-violet-500 hover:bg-violet-200";
   } else if (transaction_status === "sent" && due_days > 0) {
     color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
   } else if (transaction_status === "sent" && due_days < 0) {

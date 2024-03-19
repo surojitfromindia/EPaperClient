@@ -7,10 +7,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useMemo, useState } from "react";
-import { Edit, Loader2, MoreVertical, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button.tsx";
+import { Edit, Loader2, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { useNavigate } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import classNames from "classnames";
 import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
@@ -25,6 +24,8 @@ import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { ContactTableView } from "@/API/Resources/v1/Contact/Contact.TableView";
 import { JSX } from "react/jsx-runtime";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
+import {mergePathNameAndSearchParams} from "@/util/urlUtil.ts";
+import {AppURLPaths} from "@/constants/AppURLPaths.Constants.ts";
 
 interface ContactListingProps extends React.HTMLAttributes<HTMLDivElement> {
   contact_type: "customer" | "vendor";
@@ -32,7 +33,6 @@ interface ContactListingProps extends React.HTMLAttributes<HTMLDivElement> {
   selectedContactId?: number;
   contacts: Contact[];
   isContactsFetching: boolean;
-  onContactAddClick: () => void;
 }
 
 type TableHeaderBodyType = {
@@ -51,12 +51,12 @@ export default function ContactListing({
   selectedContactId,
   contacts = [],
   isContactsFetching = true,
-  onContactAddClick,
 }: ContactListingProps) {
   const organizationCurrencySymbol = useAppSelector(
     ({ organization }) => organization.currency_symbol,
   );
   const navigate = useNavigate();
+  const {search} = useLocation();
   const isLoading = isContactsFetching;
   // highlight row after coming from the details page
   const [lastSelectedId, setLastSelectedId] = useState<number>();
@@ -67,10 +67,15 @@ export default function ContactListing({
   };
   const handleRowClick = (contact_id: number) => {
     setLastSelectedId(contact_id);
-    navigate(`/app/customers/${contact_id}`);
+    navigate(
+        mergePathNameAndSearchParams({
+          path_name: AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL(contact_id.toString()),
+          search_params: search,
+        }),
+    );
   };
   const handleAccountEditOptionClick = (contact_id: number) => {
-    navigate(`/app/customers/${contact_id}/edit`);
+    navigate(AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_EDIT(contact_id.toString()));
   };
 
   const dynamicHeaders: Partial<
@@ -211,20 +216,8 @@ export default function ContactListing({
 
   return (
     <>
-      <main className={" flex max-h-screen flex-col border-r-1 h-screen"}>
         <section
-          className={
-            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
-          }
-        >
-          <h1 className={"text-md"}>Contacts</h1>
-          <Button size={"sm"} onClick={onContactAddClick}>
-            <Plus className="h-4 w-4" />
-            {shrinkTable ? "" : "New"}
-          </Button>
-        </section>
-        <section
-          className={"mb-12 flex flex-col items-center overflow-y-auto grow-0"}
+          className={"flex flex-col items-center overflow-y-auto grow-0"}
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isLoading && (
@@ -270,7 +263,7 @@ export default function ContactListing({
                         handleRowClick(contact.contact_id);
                       }}
                       className={
-                        "py-3 font-medium whitespace-nowrap align-top "
+                        "py-3 font-medium whitespace-nowrap align-top link_blue"
                       }
                     >
                       <span className={"w-36"}>{contact.contact_name}</span>
@@ -317,7 +310,6 @@ export default function ContactListing({
             </Table>
           )}{" "}
         </section>
-      </main>
     </>
   );
 }

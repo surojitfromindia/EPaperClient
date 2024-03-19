@@ -5,6 +5,16 @@ import classNames from "classnames";
 import ContactListing from "@/components/app/Contacts/ContactListing.tsx";
 import { ContactService } from "@/API/Resources/v1/Contact/Contact.Service.ts";
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
+import PaginationSelector from "@/components/app/common/PaginationSelector.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {MoreVertical, Plus, RefreshCcw} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent, DropdownMenuGroup,
+  DropdownMenuLabel, DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.tsx";
+import {DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
 
 type OnItemsDeleteSuccess = (action_type: "delete", item_ids: number[]) => void;
 type OnItemAddOrEditSuccess = (
@@ -40,7 +50,7 @@ export default function ContactPage() {
     });
   }, []);
 
-  const onContactAddClick = useCallback(() => {
+  const handleContactAddClick = useCallback(() => {
     navigate("/app/customers/new");
   }, [navigate]);
   useCallback<OnItemModification>(
@@ -72,28 +82,113 @@ export default function ContactPage() {
     };
   }, [loadContacts]);
 
+  const sortOptions = [
+    {
+      label: "Name",
+      value: "name",
+      order: "asc",
+    },
+    {
+      label: "Company name",
+      value: "company_name",
+      order: null,
+    },
+    {
+      label: "Email",
+      value: "email",
+      order: null,
+    },
+  ];
+
+  const handleListRefresh = useCallback(() => {
+    // todo
+  }, [])
+
   return (
     <>
-      <div className={"grid grid-cols-8"}>
+      <div className={"w-full h-full flex"}>
         <div
           className={classNames(
-            "col-span-8",
-            isDetailsPageOpen && ` hidden lg:block lg:col-span-2`,
+            "flex flex-col h-full overflow-y-auto relative shrink-0",
+            !isDetailsPageOpen && "w-full",
+            isDetailsPageOpen && `w-[350px]`,
           )}
         >
-          <ContactListing
-            shrinkTable={isDetailsPageOpen}
-            selectedContactId={selectedContactId}
-            contacts={contacts}
-            isContactsFetching={isLoading}
-            onContactAddClick={onContactAddClick}
-            contact_type={"customer"}
-          />
+          <section
+              className={
+                "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted"
+              }
+          >
+            <div>
+              <h1 className={"text-lg"}>Customers</h1>
+            </div>
+            <div className={"flex gap-x-2"}>
+              <Button size={"sm"} onClick={handleContactAddClick}>
+                <Plus className="h-4 w-4"/> New
+              </Button>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button size={"sm"} variant={"outline"} className={"shadow"}>
+                    <MoreVertical className="h-4 w-4"/>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align={"end"}
+                    className="text-sm bg-gray-50 outline-none  p-1 w-56"
+                >
+                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                  {sortOptions.map((option, index) => (
+                      <DropdownMenuItem
+                          key={index}
+                          role={"button"}
+                          onClick={() => console.log(option.value)}
+                          className={"menu-item-ok"}
+                      >
+                        {option.label}
+                      </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator/>
+                  <DropdownMenuGroup className={"bg-green-50"}>
+                    <DropdownMenuItem
+                        role={"button"}
+                        className={"menu-item-ok text-green-700"}
+                        onClick={handleListRefresh}
+                    >
+                      <RefreshCcw className="h-4 w-4 mr-2"/>
+                      <span>Refresh</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+          </section>
+          <div className={"overflow-y-auto flex-grow"}>
+            <ContactListing
+                shrinkTable={isDetailsPageOpen}
+                selectedContactId={selectedContactId}
+                contacts={contacts}
+                isContactsFetching={isLoading}
+                contact_type={"customer"}
+            />
+            <div className={"flex justify-end px-5 mb-20 mt-5"}>
+              <PaginationSelector
+                  currentPage={1}
+                  perPage={10}
+                  hasMore={false}
+                  currentRecords={contacts.length}
+                  onPageChange={() => {
+                  }}
+                  onPerPageChange={() => {
+                  }}
+              />
+            </div>
+          </div>
         </div>
         {isDetailsPageOpen && (
-          <div className={"col-span-8 lg:col-span-6"}>
-            <Outlet />
-          </div>
+            <div className={"flex-grow"}>
+              <Outlet/>
+            </div>
         )}
       </div>
     </>
