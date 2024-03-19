@@ -38,7 +38,10 @@ import {
   updateOrAddSearchParam,
 } from "@/util/urlUtil.ts";
 import PaginationSelector from "@/components/app/common/PaginationSelector.tsx";
-import {DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE} from "@/constants/Pagination.Constants.ts";
+import {
+  DEFAULT_PAGE_NUMBER,
+  DEFAULT_PAGE_SIZE,
+} from "@/constants/Pagination.Constants.ts";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -85,8 +88,12 @@ export default function InvoicePage() {
   const loadInvoices = useCallback((search_query_string: string) => {
     const query = new URLSearchParams(search_query_string);
     const appliedFilter = query.get("filter_by") ?? defaultInvoiceFilter;
-    const page = query.get("page") ? Number(query.get("page")) : DEFAULT_PAGE_NUMBER
-    const per_page = query.get("per_page") ? Number(query.get("per_page")) : DEFAULT_PAGE_SIZE;
+    const page = query.get("page")
+      ? Number(query.get("page"))
+      : DEFAULT_PAGE_NUMBER;
+    const per_page = query.get("per_page")
+      ? Number(query.get("per_page"))
+      : DEFAULT_PAGE_SIZE;
 
     setIsLoading(true);
     invoiceService
@@ -216,11 +223,12 @@ export default function InvoicePage() {
 
   return (
     <>
-      <div className={"grid grid-cols-12 h-full"}>
+      <div className={"w-full h-full"}>
         <div
           className={classNames(
-            "flex flex-col col-span-12 h-full overflow-auto relative",
-            isDetailsPageOpen && ` hidden lg:block lg:col-span-4`,
+            "flex flex-col h-full overflow-y-auto relative shrink-0",
+            !isDetailsPageOpen && "w-full",
+            isDetailsPageOpen && `w-[400px]`,
           )}
         >
           <section
@@ -291,8 +299,7 @@ export default function InvoicePage() {
               </DropdownMenu>
             </div>
           </section>
-
-          <div className={"overflow-y-scroll flex-grow"}>
+          <div className={"overflow-y-auto flex-grow"}>
             <InvoiceListing
               shrinkTable={isDetailsPageOpen}
               selectedInvoiceId={selectedInvoiceId}
@@ -315,7 +322,7 @@ export default function InvoicePage() {
         </div>
 
         {isDetailsPageOpen && (
-          <div className={"col-span-12 lg:col-span-8"}>
+          <div className={"flex-grow"}>
             <Outlet />
           </div>
         )}
