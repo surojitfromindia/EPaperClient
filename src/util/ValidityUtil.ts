@@ -35,6 +35,36 @@ class ValidityUtil {
       return this.isEmpty(object_copy[key]);
     });
   };
+
+  static isValidNumber(value: unknown) {
+    if (typeof value === "number") return true;
+    if (value === null) return false;
+    if (value === undefined) return false;
+    if (value === "") return false;
+    if (Number.isNaN(value)) return false;
+    if (Array.isArray(value)) return false;
+  }
+
+  static optionalChain<T>(
+    values: (unknown|T)[],
+    checkFunction: (value: unknown) => boolean,
+    default_value: T,
+  ): T {
+    let n: T = default_value;
+    for(const m of values){
+      if(checkFunction(m)){
+        n = m as T;
+        break
+      }
+    }
+    return n;
+  }
+  static optionalChainNotEmpty<T>(
+      values: (unknown|T)[],
+      default_value: T,
+  ):T{
+    return this.optionalChain(values,this.isNotEmpty, default_value)
+  }
 }
 
 export { ValidityUtil };

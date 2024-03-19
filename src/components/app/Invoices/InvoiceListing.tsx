@@ -9,7 +9,7 @@ import {
 import React, { useMemo, useState } from "react";
 import { Edit, Loader2, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames";
 import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
@@ -27,6 +27,10 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { JSX } from "react/jsx-runtime";
 import { selectCustomViewStateOfInvoice } from "@/redux/features/customView/customViewSlice.ts";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
+import {
+  mergePathNameAndSearchParams,
+  updateOrAddSearchParam,
+} from "@/util/urlUtil.ts";
 
 interface InvoiceTableView
   extends Pick<
@@ -75,6 +79,7 @@ export function InvoiceListing({
   );
 
   const navigate = useNavigate();
+  const { search } = useLocation();
   const isLoading = isFetching;
   // highlight row after coming from the details page
   const [lastSelectedId, setLastSelectedId] = useState<number>();
@@ -89,7 +94,10 @@ export function InvoiceListing({
   const handleRowClick = (invoice_id: number) => {
     setLastSelectedId(invoice_id);
     navigate(
-      AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(invoice_id.toString()),
+      mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(invoice_id.toString()),
+        search_params: search,
+      }),
     );
   };
   const handleAccountEditOptionClick = (invoice_id: number) => {
@@ -204,9 +212,7 @@ export function InvoiceListing({
   }
   return (
     <>
-      <section
-        className={"flex flex-col items-center overflow-y-auto grow-0"}
-      >
+      <section className={"flex flex-col items-center overflow-y-auto grow-0"}>
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {!isLoading && (
           <Table className={"h-full "}>
@@ -338,8 +344,6 @@ export function InvoiceListing({
     </>
   );
 }
-
-
 
 const BadgeTransactionStatus = ({
   transaction_status,

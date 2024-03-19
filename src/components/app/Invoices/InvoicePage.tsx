@@ -29,10 +29,7 @@ import { useAppSelector } from "@/redux/hooks.ts";
 import { selectCustomViewStateOfInvoice } from "@/redux/features/customView/customViewSlice.ts";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
-import {
-  defaultInvoiceFilter,
-  InvoiceAppliedFilter,
-} from "@/API/Resources/v1/util/invoiceFilter.ts";
+import { InvoiceAppliedFilter } from "@/API/Resources/v1/util/invoiceFilter.ts";
 import {
   mergePathNameAndSearchParams,
   updateOrAddSearchParam,
@@ -42,6 +39,8 @@ import {
   DEFAULT_PAGE_NUMBER,
   DEFAULT_PAGE_SIZE,
 } from "@/constants/Pagination.Constants.ts";
+import { INVOICE_DEFAULT_FILTER_BY } from "@/constants/Invoice.Constants.ts";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -68,11 +67,14 @@ export default function InvoicePage() {
   const isDetailsPageOpen: boolean = !!(
     selectedInvoiceId && selectedInvoiceId > 0
   );
+  const currentPath = selectedInvoiceId
+    ? AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(selectedInvoiceId.toString())
+    : AppURLPaths.APP_PAGE.INVOICES.INDEX;
 
   // states
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pageContext, setPageContext] = useState<InvoicePageContext>({
-    filter_by: defaultInvoiceFilter,
+    filter_by: INVOICE_DEFAULT_FILTER_BY,
     page: DEFAULT_PAGE_NUMBER,
     per_page: DEFAULT_PAGE_SIZE,
     sort_column: "issue_date",
@@ -82,24 +84,31 @@ export default function InvoicePage() {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [, setIsEditModalOpen] = useState<boolean>(false);
   const [, setEditingItemId] = useState<number>();
-  const [appliedFilter, setAppliedFilter] =
-    useState<InvoiceAppliedFilter>(defaultInvoiceFilter);
+  const [appliedFilter, setAppliedFilter] = useState<InvoiceAppliedFilter>(
+    INVOICE_DEFAULT_FILTER_BY,
+  );
 
   const loadInvoices = useCallback((search_query_string: string) => {
     const query = new URLSearchParams(search_query_string);
-    const appliedFilter = query.get("filter_by") ?? defaultInvoiceFilter;
-    const page = query.get("page")
-      ? Number(query.get("page"))
-      : DEFAULT_PAGE_NUMBER;
-    const per_page = query.get("per_page")
-      ? Number(query.get("per_page"))
-      : DEFAULT_PAGE_SIZE;
+    const page_query = query.get("page");
+    const per_page_query = query.get("per_page");
+    const filter_by_query = query.get("filter_by");
+    const filterBy = ValidityUtil.optionalChainNotEmpty<string>(
+      [filter_by_query],
+      INVOICE_DEFAULT_FILTER_BY,
+    );
+    const page = Number(
+      ValidityUtil.optionalChainNotEmpty([page_query], DEFAULT_PAGE_NUMBER),
+    );
+    const per_page = Number(
+      ValidityUtil.optionalChainNotEmpty([per_page_query], DEFAULT_PAGE_SIZE),
+    );
 
     setIsLoading(true);
     invoiceService
       .getInvoices(
         {
-          filter_by: appliedFilter,
+          filter_by: filterBy,
         },
         {
           ...DEFAULT_GET_INVOICES_PARAMS.options,
@@ -115,18 +124,6 @@ export default function InvoicePage() {
       });
   }, []);
 
-  const handleInvoiceEditClick = useCallback((edit_item_id?: number) => {
-    if (edit_item_id) {
-      setEditingItemId(edit_item_id);
-    } else {
-      setEditingItemId(undefined);
-    }
-    setIsEditModalOpen((prev) => !prev);
-  }, []);
-
-  const handleInvoiceAddClick = useCallback(() => {
-    navigate(AppURLPaths.APP_PAGE.INVOICES.INVOICE_CREATE(""));
-  }, [navigate]);
 
   const handleInvoiceModificationSuccess = useCallback<OnInvoiceModification>(
     (action_type: string) => {
@@ -197,7 +194,7 @@ export default function InvoicePage() {
   const handleAppliedFilterChange = (value: InvoiceAppliedFilter) => {
     navigate(
       mergePathNameAndSearchParams({
-        path_name: AppURLPaths.APP_PAGE.INVOICES.INDEX,
+        path_name: currentPath,
         search_params: updateOrAddSearchParam({
           search_string: search,
           key: "filter_by",
@@ -206,12 +203,10 @@ export default function InvoicePage() {
       }),
     );
   };
-
   const handlePageChange = (page: number) => {
-    console.log(page, "page");
     navigate(
       mergePathNameAndSearchParams({
-        path_name: AppURLPaths.APP_PAGE.INVOICES.INDEX,
+        path_name: currentPath,
         search_params: updateOrAddSearchParam({
           search_string: search,
           key: "page",
@@ -220,10 +215,33 @@ export default function InvoicePage() {
       }),
     );
   };
+  const handleInvoiceEditClick = useCallback((edit_item_id?: number) => {
+    if (edit_item_id) {
+      setEditingItemId(edit_item_id);
+    } else {
+      setEditingItemId(undefined);
+    }
+    setIsEditModalOpen((prev) => !prev);
+  }, []);
+  const handleInvoiceAddClick = useCallback(() => {
+    navigate(AppURLPaths.APP_PAGE.INVOICES.INVOICE_CREATE(""));
+  }, [navigate]);
+  const handlePerPageChange = (per_page:number)=>{
+    navigate(
+        mergePathNameAndSearchParams({
+          path_name: currentPath,
+          search_params: updateOrAddSearchParam({
+            search_string: search,
+            key: "per_page",
+            value: per_page.toString(),
+          }),
+        }),
+    );
+  }
 
   return (
     <>
-      <div className={"w-full h-full"}>
+      <div className={"w-full h-full flex"}>
         <div
           className={classNames(
             "flex flex-col h-full overflow-y-auto relative shrink-0",
@@ -315,7 +333,7 @@ export default function InvoicePage() {
                 hasMore={pageContext.has_more_page}
                 currentRecords={invoices.length}
                 onPageChange={handlePageChange}
-                onPerPageChange={() => {}}
+                onPerPageChange={handlePerPageChange}
               />
             </div>
           </div>

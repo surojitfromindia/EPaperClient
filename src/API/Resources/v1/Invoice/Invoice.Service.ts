@@ -13,8 +13,8 @@ import {
   InvoiceSettings,
 } from "@/API/Resources/v1/Invoice/invoice";
 import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
-import { defaultInvoiceFilter } from "@/API/Resources/v1/util/invoiceFilter.ts";
 import {DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE} from "@/constants/Pagination.Constants.ts";
+import {INVOICE_DEFAULT_FILTER_BY} from "@/constants/Invoice.Constants.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -123,7 +123,7 @@ const DEFAULT_GET_INVOICES_PARAMS: {
   options: GetInvoicesParamsQueryOptions;
 } = {
   query: {
-    filter_by: defaultInvoiceFilter,
+    filter_by: INVOICE_DEFAULT_FILTER_BY,
   },
   options: {
     per_page: DEFAULT_PAGE_SIZE,

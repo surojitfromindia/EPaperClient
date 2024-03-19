@@ -42,7 +42,6 @@ import { MathLib } from "@/util/MathLib/mathLib.ts";
 import ItemAdd from "@/components/app/Items/ItemAdd.tsx";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
-import { isValidNumber } from "@/util/validityCheckUtil.ts";
 import {
   FormControl,
   FormField,
@@ -62,6 +61,7 @@ import {
   mapTaxRSelectOption,
 } from "@/components/app/common/reactSelectOptionCompositions.ts";
 import { formatOptionLabelOfAccounts } from "@/components/app/common/FormatAccountsLabel.tsx";
+import {ValidityUtil} from "@/util/ValidityUtil.ts";
 
 const autoCompleteService = new AutoCompleteService();
 const itemService = new ItemService();
@@ -329,14 +329,14 @@ export function LineItemInputTable({
   const singleLineItemCalculation = useCallback(
     (line_item: LineItemRowType, is_inclusive_tax: boolean) => {
       // calculate sub total
-      const quantity = isValidNumber(line_item.quantity)
+      const quantity = ValidityUtil.isValidNumber(line_item.quantity)
         ? line_item.quantity
         : 0;
 
-      const rate = isValidNumber(line_item.rate)
+      const rate = ValidityUtil.isValidNumber(line_item.rate)
         ? mathLib.getWithPrecision(line_item.rate)
         : 0;
-      const tax_percentage = isValidNumber(line_item.tax_percentage)
+      const tax_percentage = ValidityUtil.isValidNumber(line_item.tax_percentage)
         ? line_item.tax_percentage
         : 0;
 
