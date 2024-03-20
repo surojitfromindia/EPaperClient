@@ -16,13 +16,12 @@ import {
   FormControl,
   FormField,
   FormItem,
-
 } from "@/components/ui/form.tsx";
 import { FormValidationErrorAlert } from "@/components/app/common/FormValidationErrorAlert.tsx";
 import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 import OrganizationService from "@/API/Resources/v1/Organization/Organization.Service.ts";
-import {ValidityUtil} from "@/util/ValidityUtil.ts";
-import {LocalStorageAccess} from "@/util/LocalStorageAccess.ts";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
+import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 const validationSchema = z.object({
@@ -70,15 +69,17 @@ export default function CreateOrganizationForm({
     };
 
     try {
-      const organization_created_data = await organizationService.registerOrganization({
-        payload: createOrganizationPayload,
-      });
-      if(ValidityUtil.isNotEmpty(organization_created_data)){
+      const organization_created_data =
+        await organizationService.registerOrganization({
+          payload: createOrganizationPayload,
+        });
+      if (ValidityUtil.isNotEmpty(organization_created_data)) {
         // add organization id to local storage
-        LocalStorageAccess.saveOrganizationId(organization_created_data.organization.organization_id.toString());
+        LocalStorageAccess.saveOrganizationId(
+          organization_created_data.organization.organization_id.toString(),
+        );
         // and dashboard
-        navigate(AppURLPaths.APP_PAGE.DASHBOARD);
-
+        navigate(AppURLPaths.APP_PAGE.APP_HOME.INDEX);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -107,7 +108,6 @@ export default function CreateOrganizationForm({
           <Form {...form}>
             <form>
               <div className={"grid gap-2"}>
-
                 <FormField
                   render={() => (
                     <FormItem>
@@ -121,58 +121,59 @@ export default function CreateOrganizationForm({
 
                 <div className={"grid grid-cols-2 gap-2"}>
                   <FormField
-                      render={() => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                  {...register("country_code")}
-                                  placeholder={"Country"}
-                                  autoComplete={"off"}
-                                  autoCorrect={"off"}
-                              />
-                            </FormControl>
-                          </FormItem>
-                      )}
-                      name={"first_name"}
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...register("country_code")}
+                            placeholder={"Country"}
+                            autoComplete={"off"}
+                            autoCorrect={"off"}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                    name={"first_name"}
                   />
                   <FormField
-                      render={() => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                  {...register("currency_code")}
-                                  placeholder={"Currency"}
-                              />
-                            </FormControl>
-                          </FormItem>
-                      )}
-                      name={"last_name"}
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            {...register("currency_code")}
+                            placeholder={"Currency"}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                    name={"last_name"}
                   />
                 </div>
 
                 <FormField
-                    render={() => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...register("sector")} placeholder={"Sector"} />
-                          </FormControl>
-                        </FormItem>
-                    )}
-                    name={"sector"}
+                  render={() => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...register("sector")} placeholder={"Sector"} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                  name={"sector"}
                 />
 
                 <FormField
-                    render={() => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...register("primary_address")} placeholder={"Address"} />
-                          </FormControl>
-                        </FormItem>
-                    )}
-                    name={"primary_address"}
+                  render={() => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          {...register("primary_address")}
+                          placeholder={"Address"}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                  name={"primary_address"}
                 />
-
-
 
                 <Button
                   className={"mt-2 uppercase text-xs"}

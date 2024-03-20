@@ -27,7 +27,9 @@ export default function WelcomePage() {
                 </svg>
                 EPaper Inc
               </div>
-              <div><AccessAppButtons isisSignedIn={isSignedIn} /></div>
+              <div>
+                <AccessAppButtons isisSignedIn={isSignedIn} />
+              </div>
             </div>
             <div className="">
               <blockquote className="space-y-2">
@@ -45,19 +47,19 @@ export default function WelcomePage() {
   );
 }
 
-const AccessAppButtons = ({isisSignedIn}) => {
+const AccessAppButtons = ({ isisSignedIn }) => {
   return (
     <div className="flex flex-row space-x-2 items-center justify-center">
-      { isisSignedIn &&
+      {isisSignedIn && (
         <Button className={"uppercase text-xs "} asChild variant={"secondary"}>
-          <Link to={AppURLPaths.APP_PAGE.DASHBOARD}>dashboard</Link>
+          <Link to={AppURLPaths.APP_PAGE.APP_HOME.INDEX}>dashboard</Link>
         </Button>
-      }
-      { !isisSignedIn &&
+      )}
+      {!isisSignedIn && (
         <Button className={"uppercase text-xs "} asChild variant={"secondary"}>
           <Link to={AppURLPaths.SIGN_IN}>Sign In</Link>
         </Button>
-      }
+      )}
       <Button className={"uppercase text-xs"} asChild variant={"secondary"}>
         <Link to={AppURLPaths.SIGN_UP}>New Account</Link>
       </Button>
