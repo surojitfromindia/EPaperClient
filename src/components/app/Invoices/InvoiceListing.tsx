@@ -362,7 +362,7 @@ const BadgeTransactionStatus = ({
   }
 
   return (
-    <Badge className={`${color} uppercase rounded-md text-xs font-normal`}>
+    <Badge className={`${color} uppercase  text-xs font-normal`}>
       {text_value}
     </Badge>
   );

@@ -9,7 +9,7 @@ import {
 import React, { useMemo, useState } from "react";
 import { Edit, Loader2, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
-import {useLocation, useNavigate} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames";
 import { objectEntries } from "@/util/typedJSFunctions.ts";
 import {
@@ -24,8 +24,8 @@ import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import { ContactTableView } from "@/API/Resources/v1/Contact/Contact.TableView";
 import { JSX } from "react/jsx-runtime";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
-import {mergePathNameAndSearchParams} from "@/util/urlUtil.ts";
-import {AppURLPaths} from "@/constants/AppURLPaths.Constants.ts";
+import { mergePathNameAndSearchParams } from "@/util/urlUtil.ts";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 interface ContactListingProps extends React.HTMLAttributes<HTMLDivElement> {
   contact_type: "customer" | "vendor";
@@ -56,7 +56,7 @@ export default function ContactListing({
     ({ organization }) => organization.currency_symbol,
   );
   const navigate = useNavigate();
-  const {search} = useLocation();
+  const { search } = useLocation();
   const isLoading = isContactsFetching;
   // highlight row after coming from the details page
   const [lastSelectedId, setLastSelectedId] = useState<number>();
@@ -68,14 +68,18 @@ export default function ContactListing({
   const handleRowClick = (contact_id: number) => {
     setLastSelectedId(contact_id);
     navigate(
-        mergePathNameAndSearchParams({
-          path_name: AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL(contact_id.toString()),
-          search_params: search,
-        }),
+      mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL(
+          contact_id.toString(),
+        ),
+        search_params: search,
+      }),
     );
   };
   const handleAccountEditOptionClick = (contact_id: number) => {
-    navigate(AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_EDIT(contact_id.toString()));
+    navigate(
+      AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_EDIT(contact_id.toString()),
+    );
   };
 
   const dynamicHeaders: Partial<
@@ -216,100 +220,110 @@ export default function ContactListing({
 
   return (
     <>
-        <section
-          className={"flex flex-col items-center overflow-y-auto grow-0"}
-        >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {!isLoading && (
-            <Table className={"h-full "}>
-              {!shrinkTable && (
-                <TableHeader
-                  className={"bg-background shadow-sm sticky top-0 z-[1]"}
-                >
-                  <TableRow className={"uppercase text-xs"}>
-                    <TableHead className={"w-12"}>&nbsp;</TableHead>
-                    <TableHead>name</TableHead>
-                    {dynamicHeadersAsArray.map(([col_key, col]) => (
-                      <TableHead
-                        key={col_key}
-                        className={classNames(
-                          col.type === "numeric" && "text-right",
-                        )}
-                      >
-                        <div className={""}>{col.label}</div>
-                      </TableHead>
-                    ))}
-                    <TableHead>&nbsp;</TableHead>
-                  </TableRow>
-                </TableHeader>
-              )}
-              <TableBody>
-                {contacts.map((contact) => (
-                  <TableRow
-                    key={contact.contact_id}
-                    className={classNames(
-                      contact.contact_id === selectedContactId && "bg-accent",
-                      contact.contact_id === lastSelectedId &&
-                        onListingPage &&
-                        "animate-twinkle",
-                      "cursor-pointer h-10",
-                    )}
-                  >
-                    <TableCell className={"w-1 align-top"}>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        handleRowClick(contact.contact_id);
-                      }}
-                      className={
-                        "py-3 font-medium whitespace-nowrap align-top link_blue"
-                      }
+      <section className={"flex flex-col items-center overflow-y-auto grow-0"}>
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {!isLoading && (
+          <Table className={"h-full "}>
+            {!shrinkTable && (
+              <TableHeader
+                className={"bg-background shadow-sm sticky top-0 z-[1]"}
+              >
+                <TableRow className={"uppercase text-xs"}>
+                  <TableHead className={"w-12"}>&nbsp;</TableHead>
+                  <TableHead>name</TableHead>
+                  {dynamicHeadersAsArray.map(([col_key, col]) => (
+                    <TableHead
+                      key={col_key}
+                      className={classNames(
+                        col.type === "numeric" && "text-right",
+                      )}
                     >
-                      <span className={"w-36"}>{contact.contact_name}</span>
-                    </TableCell>
-                    <>
-                      {!shrinkTable && <DynamicRowElement contact={contact} />}
-                    </>
-                    {!shrinkTable && (
-                      <TableCell className={"align-top"}>
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <MoreVertical className={"h-4 cursor-pointer"} />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            className="text-sm  bg-gray-50 outline-none  p-1"
-                            align={"end"}
+                      <div className={""}>{col.label}</div>
+                    </TableHead>
+                  ))}
+                  <TableHead>&nbsp;</TableHead>
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
+              {contacts.map((contact) => (
+                <TableRow
+                  key={contact.contact_id}
+                  className={classNames(
+                    contact.contact_id === selectedContactId && "bg-accent",
+                    contact.contact_id === lastSelectedId &&
+                      onListingPage &&
+                      "animate-twinkle",
+                    "cursor-pointer h-10",
+                  )}
+                >
+                  <TableCell className={"w-1 align-top"}>
+                    <Checkbox />
+                  </TableCell>
+                  <TableCell
+                    onClick={() => {
+                      handleRowClick(contact.contact_id);
+                    }}
+                    className={
+                      "py-3 font-medium whitespace-nowrap align-top flex flex-col -mt-1"
+                    }
+                  >
+                    <span className={"w-36 link_blue"}>
+                      {contact.contact_name}
+                    </span>
+                    {shrinkTable &&
+                      <RNumberFormatAsText
+                        value={
+                          contact_type === "customer"
+                            ? contact.outstanding_credits_receivable_amount
+                            : contact.outstanding_credits_payable_amount
+                        }
+                        thousandSeparator={true}
+                        prefix={contact.currency_symbol}
+                        className={"text-muted-foreground"}
+                      />
+                    }
+                  </TableCell>
+                  <>{!shrinkTable && <DynamicRowElement contact={contact} />}</>
+                  {!shrinkTable && (
+                    <TableCell className={"align-top"}>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <MoreVertical className={"h-4 cursor-pointer"} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="text-sm  bg-gray-50 outline-none  p-1"
+                          align={"end"}
+                        >
+                          <DropdownMenuItem
+                            className={"menu-item-ok"}
+                            role={"button"}
+                            onClick={() =>
+                              handleAccountEditOptionClick(contact.contact_id)
+                            }
                           >
-                            <DropdownMenuItem
-                              className={"menu-item-ok"}
-                              role={"button"}
-                              onClick={() =>
-                                handleAccountEditOptionClick(contact.contact_id)
-                              }
-                            >
-                              <Edit className={"h-4 w-4"} />
-                              <span>Edit</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className={"menu-item-danger"}
-                              role={"button"}
-                              onClick={() =>
-                                handleAccountDeleteAction([contact.contact_id])
-                              }
-                            >
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}{" "}
-        </section>
+                            <Edit className={"h-4 w-4"} />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className={"menu-item-danger"}
+                            role={"button"}
+                            onClick={() =>
+                              handleAccountDeleteAction([contact.contact_id])
+                            }
+                          >
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}{" "}
+      </section>
     </>
   );
 }

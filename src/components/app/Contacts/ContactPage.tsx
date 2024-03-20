@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 import {DropdownMenuItem} from "@radix-ui/react-dropdown-menu";
+import {AppURLPaths} from "@/constants/AppURLPaths.Constants.ts";
 
 type OnItemsDeleteSuccess = (action_type: "delete", item_ids: number[]) => void;
 type OnItemAddOrEditSuccess = (
@@ -51,7 +52,7 @@ export default function ContactPage() {
   }, []);
 
   const handleContactAddClick = useCallback(() => {
-    navigate("/app/customers/new");
+    navigate(AppURLPaths.APP_PAGE.CUSTOMERS.CUSTOMER_CREATE);
   }, [navigate]);
   useCallback<OnItemModification>(
     (action_type: string) => {

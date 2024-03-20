@@ -41,6 +41,7 @@ import {
 } from "@/constants/Pagination.Constants.ts";
 import { INVOICE_DEFAULT_FILTER_BY } from "@/constants/Invoice.Constants.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
+import InvoiceDashBoard from "@/components/app/Invoices/InvoiceDashBoard.tsx";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -55,6 +56,9 @@ type OnInvoiceModification = OnInvoiceAddOrEditSuccess & OnInvoiceDeleteSuccess;
 const invoiceService = new InvoiceService();
 
 export default function InvoicePage() {
+  const { currency_symbol } = useAppSelector(
+    ({ organization }) => organization,
+  );
   const navigate = useNavigate();
   const { invoice_id_param } = useParams();
   const { search } = useLocation();
@@ -123,7 +127,6 @@ export default function InvoicePage() {
         setIsLoading(false);
       });
   }, []);
-
 
   const handleInvoiceModificationSuccess = useCallback<OnInvoiceModification>(
     (action_type: string) => {
@@ -226,18 +229,18 @@ export default function InvoicePage() {
   const handleInvoiceAddClick = useCallback(() => {
     navigate(AppURLPaths.APP_PAGE.INVOICES.INVOICE_CREATE(""));
   }, [navigate]);
-  const handlePerPageChange = (per_page:number)=>{
+  const handlePerPageChange = (per_page: number) => {
     navigate(
-        mergePathNameAndSearchParams({
-          path_name: currentPath,
-          search_params: updateOrAddSearchParam({
-            search_string: search,
-            key: "per_page",
-            value: per_page.toString(),
-          }),
+      mergePathNameAndSearchParams({
+        path_name: currentPath,
+        search_params: updateOrAddSearchParam({
+          search_string: search,
+          key: "per_page",
+          value: per_page.toString(),
         }),
+      }),
     );
-  }
+  };
 
   return (
     <>
@@ -318,6 +321,11 @@ export default function InvoicePage() {
             </div>
           </section>
           <div className={"overflow-y-auto flex-grow"}>
+            {
+             !isDetailsPageOpen && <div className={"py-3 px-3"}>
+                <InvoiceDashBoard currencySymbol={currency_symbol} />
+              </div>
+            }
             <InvoiceListing
               shrinkTable={isDetailsPageOpen}
               selectedInvoiceId={selectedInvoiceId}
