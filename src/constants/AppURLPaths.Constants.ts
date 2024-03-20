@@ -21,25 +21,33 @@ class CUSTOMER {
 }
 
 class INVOICE {
-    static basicPath = "/app/invoices";
-    static INDEX = this.basicPath;
-    static INVOICE_CREATE=(params?:string) => this.basicPath + "/new"+params;
-    static INVOICE_EDIT = (id: string) => `${this.basicPath}/${id}/edit`;
-    static INVOICE_DETAIL = (id: string) => `${this.basicPath}/${id}`;
-    static INVOICE_DETAIL_COMMENTS = (id: string) =>
-        `${this.basicPath}/${id}/comments`;
+  static basicPath = "/app/invoices";
+  static INDEX = this.basicPath;
+  static INVOICE_CREATE = (params?: string) => this.basicPath + "/new" + params;
+  static INVOICE_EDIT = (id: string) => `${this.basicPath}/${id}/edit`;
+  static INVOICE_DETAIL = (id: string) => `${this.basicPath}/${id}`;
+  static INVOICE_DETAIL_COMMENTS = (id: string) =>
+    `${this.basicPath}/${id}/comments`;
 
-    static INVOICE_DETAIL_TRANSACTIONS = (id: string) =>
-        `${this.basicPath}/${id}/transactions`;
+  static INVOICE_DETAIL_TRANSACTIONS = (id: string) =>
+    `${this.basicPath}/${id}/transactions`;
 }
 
-class APP_PATH {
-  static basicPath = "/app";
+// home page of the app it will have dashboard and get started and other pages
+class APP_HOME {
+  static basicPath = "/app/home";
   static INDEX = this.basicPath;
-  static DASHBOARD = "/app/dashboard";
+  static DASHBOARD = this.basicPath + "/dashboard";
+  static GET_STARTED = this.basicPath + "/get_started";
+}
+
+class APP_PAGE {
+  static basicPath = "/app";
+  static INDEX = APP_HOME.INDEX;
+  static APP_HOME = APP_HOME;
   static INVENTORY = INVENTORY;
   static CUSTOMERS = CUSTOMER;
-    static INVOICE = INVOICE;
+  static INVOICE = INVOICE;
 }
 
 class EPaperURL {
@@ -48,7 +56,7 @@ class EPaperURL {
   static SIGN_IN = "/sign_in";
   static SIGN_OUT = "/sign_out";
   static CREATE_ORGANIZATION = "/new_organization";
-  static APP_PAGE = APP_PATH;
+  static APP_PAGE = APP_PAGE;
 }
 
 const AppURLPaths = {
@@ -58,8 +66,13 @@ const AppURLPaths = {
   SIGN_OUT: EPaperURL.SIGN_OUT,
   CREATE_ORGANIZATION: EPaperURL.CREATE_ORGANIZATION,
   APP_PAGE: {
-    INDEX: EPaperURL.APP_PAGE.INDEX,
-    DASHBOARD: EPaperURL.APP_PAGE.DASHBOARD,
+    INDEX: EPaperURL.APP_PAGE.APP_HOME.INDEX,
+    APP_HOME: {
+      INDEX: EPaperURL.APP_PAGE.APP_HOME.INDEX,
+      DASHBOARD: EPaperURL.APP_PAGE.APP_HOME.DASHBOARD,
+      GET_STARTED: EPaperURL.APP_PAGE.APP_HOME.GET_STARTED,
+    },
+
     INVENTORY: {
       INDEX: EPaperURL.APP_PAGE.INVENTORY.INDEX,
       ITEMS: EPaperURL.APP_PAGE.INVENTORY.ITEMS,
@@ -78,15 +91,15 @@ const AppURLPaths = {
         EPaperURL.APP_PAGE.CUSTOMERS.CUSTOMER_DETAIL_TRANSACTIONS,
     },
     INVOICES: {
-        INDEX: EPaperURL.APP_PAGE.INVOICE.INDEX,
-        INVOICE_CREATE: EPaperURL.APP_PAGE.INVOICE.INVOICE_CREATE,
-        INVOICE_EDIT: EPaperURL.APP_PAGE.INVOICE.INVOICE_EDIT,
-        INVOICE_DETAIL: EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL,
-        INVOICE_DETAIL_COMMENTS:
-            EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_COMMENTS,
-        INVOICE_DETAIL_TRANSACTIONS:
-            EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_TRANSACTIONS,
-    }
+      INDEX: EPaperURL.APP_PAGE.INVOICE.INDEX,
+      INVOICE_CREATE: EPaperURL.APP_PAGE.INVOICE.INVOICE_CREATE,
+      INVOICE_EDIT: EPaperURL.APP_PAGE.INVOICE.INVOICE_EDIT,
+      INVOICE_DETAIL: EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL,
+      INVOICE_DETAIL_COMMENTS:
+        EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_COMMENTS,
+      INVOICE_DETAIL_TRANSACTIONS:
+        EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_TRANSACTIONS,
+    },
   },
 };
 
