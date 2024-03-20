@@ -47,6 +47,10 @@ const ContactDetails = React.lazy(
 const InvoiceDetails = React.lazy(
   () => import("@/components/app/Invoices/InvoiceDetails.tsx"),
 );
+const AppHome = React.lazy(
+  () => import("@/components/app/AppHome/AppHome.tsx"),
+);
+
 const LazyWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense
@@ -114,16 +118,29 @@ const router = createBrowserRouter([
     errorElement: <Page404 />,
     children: [
       {
-        path: "",
-        element: <Dashboard />,
+        path: "home",
+
+        element: (
+          <LazyWrapper>
+            <AppHome />
+          </LazyWrapper>
+        ),
+        children: [
+          {
+            index: true,
+            path: "dashboard",
+            element: <Dashboard />,
+            errorElement: <Page404 />,
+          },
+          {
+            path: "get_started",
+            element: <Dashboard />,
+            errorElement: <Page404 />,
+          },
+        ],
         errorElement: <Page404 />,
       },
-      {
-        index: true,
-        path: "dashboard",
-        element: <Dashboard />,
-        errorElement: <Page404 />,
-      },
+
       {
         path: "inventory",
         errorElement: <Page404 />,

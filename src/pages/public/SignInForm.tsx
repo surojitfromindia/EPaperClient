@@ -13,8 +13,8 @@ import AuthenticationService, {
 } from "@/API/Authentication/v1/loginService.ts";
 import { Loader2 } from "lucide-react";
 
-import {LocalStorageAccess} from "@/util/LocalStorageAccess.ts";
-import {AppURLPaths} from "@/constants/AppURLPaths.Constants.ts";
+import { LocalStorageAccess } from "@/util/LocalStorageAccess.ts";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -48,10 +48,10 @@ export default function SignInForm({ className, ...props }: UserAuthFormProps) {
       LocalStorageAccess.removeToken();
       const { token } =
         await AuthenticationService.loginWithEmail(loginPayload);
-      LocalStorageAccess.saveToken(token)
-      navigate("/app/dashboard");
+      LocalStorageAccess.saveToken(token);
+      navigate(AppURLPaths.APP_PAGE.INDEX);
     } catch (error) {
-      console.error("Hit error",error);
+      console.error("Hit error", error);
     } finally {
       setIsLoading(false);
     }
@@ -98,14 +98,20 @@ export default function SignInForm({ className, ...props }: UserAuthFormProps) {
                 />
               </div>
 
-              <Button className={"mt-2 uppercase text-xs"} type={"submit"} disabled={isLoading}>
+              <Button
+                className={"mt-2 uppercase text-xs"}
+                type={"submit"}
+                disabled={isLoading}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
-              <div className={"text-center my-1 text-sm"}>
-                OR
-              </div>
-              <Button className={"uppercase text-xs"} asChild variant={"secondary"}>
+              <div className={"text-center my-1 text-sm"}>OR</div>
+              <Button
+                className={"uppercase text-xs"}
+                asChild
+                variant={"secondary"}
+              >
                 <Link to={AppURLPaths.SIGN_UP}>Create New Account</Link>
               </Button>
             </div>

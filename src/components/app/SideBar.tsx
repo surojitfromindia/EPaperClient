@@ -28,9 +28,9 @@ export function Sidebar({ sideBarFloat }: { sideBarFloat: boolean }) {
 
   const navOptions = [
     {
-      label: "Dashboard",
+      label: "Home",
       icon: <LayoutDashboard className={"h-4 w-4 "} />,
-      path: "/app/dashboard",
+      path: "/app/home",
     },
     {
       label: "Item",
