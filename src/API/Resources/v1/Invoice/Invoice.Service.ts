@@ -10,11 +10,15 @@ import { InvoiceUpdatePayloadType } from "@/API/Resources/v1/Invoice/InvoiceUpda
 import { Contact } from "@/API/Resources/v1/Contact/Contact";
 import {
   InvoiceAutoNumberSettingsUpdatePayload,
+  InvoiceDashboardData,
   InvoiceSettings,
 } from "@/API/Resources/v1/Invoice/invoice";
 import { InvoicePageContext } from "@/API/Resources/v1/util/pageContext.ts";
-import {DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE} from "@/constants/Pagination.Constants.ts";
-import {INVOICE_DEFAULT_FILTER_BY} from "@/constants/Invoice.Constants.ts";
+import {
+  DEFAULT_PAGE_NUMBER,
+  DEFAULT_PAGE_SIZE,
+} from "@/constants/Pagination.Constants.ts";
+import { INVOICE_DEFAULT_FILTER_BY } from "@/constants/Invoice.Constants.ts";
 
 interface InvoiceGenerated {
   invoice_id: number;
@@ -127,7 +131,7 @@ const DEFAULT_GET_INVOICES_PARAMS: {
   },
   options: {
     per_page: DEFAULT_PAGE_SIZE,
-    page:DEFAULT_PAGE_NUMBER,
+    page: DEFAULT_PAGE_NUMBER,
     sort_column: "issue_date",
     sort_order: "A",
   },
@@ -247,6 +251,15 @@ class InvoiceService implements APIService {
         invoice_settings: InvoiceSettings;
       }
     >(url, payload);
+  }
+  getInvoiceDashboard() {
+    const url = this.urlFragment + "/dashboard";
+    return this.#axiosConfig.APIGetRequestWrapper<{
+      dash_board_data: InvoiceDashboardData
+    }>(url, {
+      searchParameters: [],
+      abortController: this.abortController,
+    });
   }
 
   abortGetRequest(): void {

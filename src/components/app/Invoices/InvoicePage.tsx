@@ -42,6 +42,7 @@ import {
 import { INVOICE_DEFAULT_FILTER_BY } from "@/constants/Invoice.Constants.ts";
 import { ValidityUtil } from "@/util/ValidityUtil.ts";
 import InvoiceDashBoard from "@/components/app/Invoices/InvoiceDashBoard.tsx";
+import { InvoiceDashboardData } from "@/API/Resources/v1/Invoice/invoice";
 
 type OnInvoiceDeleteSuccess = (
   action_type: "delete",
@@ -56,9 +57,6 @@ type OnInvoiceModification = OnInvoiceAddOrEditSuccess & OnInvoiceDeleteSuccess;
 const invoiceService = new InvoiceService();
 
 export default function InvoicePage() {
-  const { currency_symbol } = useAppSelector(
-    ({ organization }) => organization,
-  );
   const navigate = useNavigate();
   const { invoice_id_param } = useParams();
   const { search } = useLocation();
@@ -86,11 +84,23 @@ export default function InvoicePage() {
     has_more_page: false,
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isDashboardLoading, setIsDashboardLoading] =
+    React.useState<boolean>(true);
   const [, setIsEditModalOpen] = useState<boolean>(false);
   const [, setEditingItemId] = useState<number>();
   const [appliedFilter, setAppliedFilter] = useState<InvoiceAppliedFilter>(
     INVOICE_DEFAULT_FILTER_BY,
   );
+  const [invoiceDashboardData, setInvoiceDashboardData] =
+    useState<InvoiceDashboardData>({
+      currency_symbol: "",
+      due_today: 0,
+      due_today_formatted: "0.0",
+      due_within_30_days: 0,
+      due_within_30_days_formatted: "0.0",
+      total_overdue: 0,
+      total_overdue_formatted: "0.0",
+    });
 
   const loadInvoices = useCallback((search_query_string: string) => {
     const query = new URLSearchParams(search_query_string);
@@ -127,6 +137,13 @@ export default function InvoicePage() {
         setIsLoading(false);
       });
   }, []);
+  const loadInvoiceDashboard = useCallback(() => {
+    setIsDashboardLoading(true);
+    invoiceService.getInvoiceDashboard().then((data) => {
+      setInvoiceDashboardData(data.dash_board_data);
+      setIsDashboardLoading(false);
+    });
+  }, []);
 
   const handleInvoiceModificationSuccess = useCallback<OnInvoiceModification>(
     (action_type: string) => {
@@ -157,6 +174,12 @@ export default function InvoicePage() {
       invoiceService.abortGetRequest();
     };
   }, [loadInvoices, search]);
+  useEffect(() => {
+    loadInvoiceDashboard();
+    return () => {
+      invoiceService.abortGetRequest();
+    };
+  }, [loadInvoiceDashboard]);
 
   const handleListRefresh = useCallback(() => {
     loadInvoices(search);
@@ -241,6 +264,9 @@ export default function InvoicePage() {
       }),
     );
   };
+  const handleDashboardRefresh = () => {
+    loadInvoiceDashboard();
+  }
 
   return (
     <>
@@ -322,9 +348,16 @@ export default function InvoicePage() {
           </section>
           <div className={"overflow-y-auto flex-grow"}>
             {
-             !isDetailsPageOpen && <div className={"py-3 px-3"}>
-                <InvoiceDashBoard currencySymbol={currency_symbol} />
-              </div>
+              // invoice dashboard
+              !isDetailsPageOpen && (
+                <div className={"py-3 px-3"}>
+                  <InvoiceDashBoard
+                    invoiceDashboardData={invoiceDashboardData}
+                    isLoading={isDashboardLoading}
+                    onRefresh={handleDashboardRefresh}
+                  />
+                </div>
+              )
             }
             <InvoiceListing
               shrinkTable={isDetailsPageOpen}

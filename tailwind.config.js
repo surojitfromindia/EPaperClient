@@ -96,6 +96,7 @@ module.exports = {
       transitionProperty: {
         'width': 'width',
       },
+      "visibility": ["group-hover","hover"],
     },
   },
   plugins: [require("tailwindcss-animate")],

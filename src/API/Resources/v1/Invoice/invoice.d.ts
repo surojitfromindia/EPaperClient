@@ -1,4 +1,8 @@
-import {AutoNumber, AutoNumberGroupForSingleEntity} from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
+import {
+  AutoNumber,
+  AutoNumberGroupForSingleEntity,
+} from "@/API/Resources/v1/AutoNumberSeries/AutoNumberSeries";
+import { Currency } from "@/API/Resources/v1/Currency/Currency";
 
 interface InvoiceSettings {
   is_auto_number_enabled: boolean;
@@ -12,6 +16,14 @@ interface InvoiceAutoNumberSettingsUpdatePayload {
   next_number: AutoNumber["next_number"];
   prefix_string: AutoNumber["prefix_string"];
 }
+interface InvoiceDashboardData {
+  due_today: number;
+  due_within_30_days: number;
+  total_overdue: number;
+  due_today_formatted: string;
+  due_within_30_days_formatted: string;
+  total_overdue_formatted: string;
+  currency_symbol: Currency["currency_symbol"];
+}
 
-
-export { InvoiceSettings, InvoiceAutoNumberSettingsUpdatePayload };
+export { InvoiceSettings, InvoiceAutoNumberSettingsUpdatePayload, InvoiceDashboardData };
