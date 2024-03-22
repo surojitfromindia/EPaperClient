@@ -10,7 +10,7 @@ class INVENTORY {
 class CUSTOMER {
   static basicPath = "/app/customers";
   static INDEX = this.basicPath;
-  static CUSTOMER_CREATE = this.basicPath + "/create";
+  static CUSTOMER_CREATE = this.basicPath + "/new";
   static CUSTOMER_EDIT = (id: string) => `${this.basicPath}/${id}/edit`;
   static CUSTOMER_DETAIL = (id: string) => `${this.basicPath}/${id}`;
   static CUSTOMER_DETAIL_COMMENTS = (id: string) =>

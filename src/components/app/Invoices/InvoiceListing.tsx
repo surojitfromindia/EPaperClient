@@ -31,6 +31,7 @@ import {
   mergePathNameAndSearchParams,
   updateOrAddSearchParam,
 } from "@/util/urlUtil.ts";
+import { INVOICE_DEFAULT_FILTER_BY } from "@/constants/Invoice.Constants.ts";
 
 interface InvoiceTableView
   extends Pick<
@@ -54,6 +55,7 @@ interface InvoiceListingProps extends React.HTMLAttributes<HTMLDivElement> {
   isFetching: boolean;
   onInvoiceEditClick: (invoice_id: number) => void;
   onInvoiceModificationSuccess: OnInvoiceModification;
+  filterBy: string;
 }
 
 /**
@@ -74,7 +76,14 @@ export function InvoiceListing({
   selectedInvoiceId,
   invoices = [],
   isFetching = true,
+  filterBy = INVOICE_DEFAULT_FILTER_BY,
 }: InvoiceListingProps) {
+  const NoRecordFoundMessages = {
+    "Status.All": "No invoices found",
+    "Status.Draft": "No draft invoices found",
+    "Status.Overdue": "No overdue invoices found",
+  };
+
   const { entity_select_columns } = useAppSelector(
     selectCustomViewStateOfInvoice,
   );
@@ -254,116 +263,135 @@ export function InvoiceListing({
                 </TableRow>
               </TableHeader>
             )}
-            <TableBody>
-              {invoices.map((invoice) => {
-                return shrinkTable ? (
-                  <TableRow
-                    key={invoice.invoice_id}
-                    className={classNames(
-                      invoice.invoice_id === selectedInvoiceId && "bg-accent",
-                      "cursor-pointer h-10",
-                    )}
-                  >
-                    <TableCell className={"w-1 align-top"}>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        handleRowClick(invoice.invoice_id);
-                      }}
-                      className={
-                        "py-3 font-medium whitespace-nowrap align-top "
-                      }
+            <TableBody className={"border-t-1"}>
+              {invoices.length > 0 &&
+                invoices.map((invoice) => {
+                  return shrinkTable ? (
+                    <TableRow
+                      key={invoice.invoice_id}
+                      className={classNames(
+                        invoice.invoice_id === selectedInvoiceId && "bg-accent",
+                        "cursor-pointer h-10",
+                      )}
                     >
-                      <InvoiceSidePanelItem invoice={invoice} />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <TableRow
-                    key={invoice.invoice_id}
-                    className={classNames(
-                      invoice.invoice_id === selectedInvoiceId && "bg-accent",
-                      invoice.invoice_id === lastSelectedId &&
-                        isOnListingPage &&
-                        "animate-twinkle",
-                      "cursor-pointer h-10",
-                    )}
-                  >
-                    <TableCell className={"w-1 align-top"}>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        handleRowClick(invoice.invoice_id);
-                      }}
-                      className={
-                        "py-3 font-medium whitespace-nowrap align-top "
-                      }
-                    >
-                      <span className={"w-36"}>
-                        {invoice.issue_date_formatted}
-                      </span>
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        handleRowClick(invoice.invoice_id);
-                      }}
-                      className={
-                        "py-3 font-medium whitespace-nowrap align-top link_blue "
-                      }
-                    >
-                      <Link
-                        to={mergePathNameAndSearchParams({
-                          path_name:
-                            AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(
-                              invoice.invoice_id.toString(),
-                            ),
-                          search_params: search,
-                        })}
-                        className={"w-36"}
-                      >
-                        {invoice.invoice_number}
-                      </Link>
-                    </TableCell>
-                    <>
-                      {!shrinkTable && <DynamicRowElement invoice={invoice} />}
-                    </>
-                    {!shrinkTable && (
-                      <TableCell className={"align-top"}>
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <MoreVertical className={"h-4 cursor-pointer"} />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            className="text-sm bg-gray-50 outline-none  p-1"
-                            align={"end"}
-                          >
-                            <DropdownMenuItem
-                              className={"menu-item-ok"}
-                              role={"button"}
-                              onClick={() =>
-                                handleAccountEditOptionClick(invoice.invoice_id)
-                              }
-                            >
-                              <Edit className={"h-4 w-4"} />
-                              <span>Edit</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className={"menu-item-danger"}
-                              role={"button"}
-                              onClick={() =>
-                                handleAccountDeleteAction([invoice.invoice_id])
-                              }
-                            >
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell className={"w-1 align-top"}>
+                        <Checkbox />
                       </TableCell>
-                    )}
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(invoice.invoice_id);
+                        }}
+                        className={
+                          "py-3 font-medium whitespace-nowrap align-top "
+                        }
+                      >
+                        <InvoiceSidePanelItem invoice={invoice} />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow
+                      key={invoice.invoice_id}
+                      className={classNames(
+                        invoice.invoice_id === selectedInvoiceId && "bg-accent",
+                        invoice.invoice_id === lastSelectedId &&
+                          isOnListingPage &&
+                          "animate-twinkle",
+                        "cursor-pointer h-10",
+                      )}
+                    >
+                      <TableCell className={"w-1 align-top"}>
+                        <Checkbox />
+                      </TableCell>
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(invoice.invoice_id);
+                        }}
+                        className={
+                          "py-3 font-medium whitespace-nowrap align-top "
+                        }
+                      >
+                        <span className={"w-36"}>
+                          {invoice.issue_date_formatted}
+                        </span>
+                      </TableCell>
+                      <TableCell
+                        onClick={() => {
+                          handleRowClick(invoice.invoice_id);
+                        }}
+                        className={
+                          "py-3 font-medium whitespace-nowrap align-top link_blue "
+                        }
+                      >
+                        <Link
+                          to={mergePathNameAndSearchParams({
+                            path_name:
+                              AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(
+                                invoice.invoice_id.toString(),
+                              ),
+                            search_params: search,
+                          })}
+                          className={"w-36"}
+                        >
+                          {invoice.invoice_number}
+                        </Link>
+                      </TableCell>
+                      <>
+                        {!shrinkTable && (
+                          <DynamicRowElement invoice={invoice} />
+                        )}
+                      </>
+                      {!shrinkTable && (
+                        <TableCell className={"align-top"}>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <MoreVertical className={"h-4 cursor-pointer"} />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              className="text-sm bg-gray-50 outline-none  p-1"
+                              align={"end"}
+                            >
+                              <DropdownMenuItem
+                                className={"menu-item-ok"}
+                                role={"button"}
+                                onClick={() =>
+                                  handleAccountEditOptionClick(
+                                    invoice.invoice_id,
+                                  )
+                                }
+                              >
+                                <Edit className={"h-4 w-4"} />
+                                <span>Edit</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className={"menu-item-danger"}
+                                role={"button"}
+                                onClick={() =>
+                                  handleAccountDeleteAction([
+                                    invoice.invoice_id,
+                                  ])
+                                }
+                              >
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              {
+                // No records found
+                invoices.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={shrinkTable ? 2 : 7}>
+                      <div className={"flex justify-center"}>
+                        {NoRecordFoundMessages[filterBy]}
+                      </div>
+                    </TableCell>
                   </TableRow>
-                );
-              })}
+                )
+              }
             </TableBody>
           </Table>
         )}{" "}
@@ -389,7 +417,7 @@ const BadgeTransactionStatus = ({
   }
 
   return (
-    <Badge className={`${color} uppercase  text-xs font-normal`}>
+    <Badge className={`${color} uppercase  text-xs font-medium`}>
       {text_value}
     </Badge>
   );

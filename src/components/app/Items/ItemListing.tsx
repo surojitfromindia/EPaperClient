@@ -124,7 +124,7 @@ export function ItemListing({
       <main className={" flex max-h-screen flex-col border-r-1 h-screen"}>
         <section
           className={
-            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm bg-accent-muted"
+            "flex px-5 py-3  justify-between items-center shrink-0 drop-shadow-sm "
           }
         >
           <h1 className={"text-md"}>Items</h1>

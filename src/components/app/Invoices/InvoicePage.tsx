@@ -280,7 +280,7 @@ export default function InvoicePage() {
         >
           <section
             className={
-              "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted border-r-1"
+              "flex px-5 py-3  justify-between items-center drop-shadow-sm border-r-1"
             }
           >
             <div>
@@ -366,6 +366,7 @@ export default function InvoicePage() {
               isFetching={isLoading}
               onInvoiceModificationSuccess={handleInvoiceModificationSuccess}
               onInvoiceEditClick={handleInvoiceEditClick}
+              filterBy={appliedFilter}
             />
             <div className={"flex justify-end px-5 mb-20 mt-5"}>
               <PaginationSelector

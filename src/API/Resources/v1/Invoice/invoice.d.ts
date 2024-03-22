@@ -23,7 +23,13 @@ interface InvoiceDashboardData {
   due_today_formatted: string;
   due_within_30_days_formatted: string;
   total_overdue_formatted: string;
+  total_outstanding: number;
+  total_outstanding_formatted: string;
   currency_symbol: Currency["currency_symbol"];
 }
 
-export { InvoiceSettings, InvoiceAutoNumberSettingsUpdatePayload, InvoiceDashboardData };
+export {
+  InvoiceSettings,
+  InvoiceAutoNumberSettingsUpdatePayload,
+  InvoiceDashboardData,
+};

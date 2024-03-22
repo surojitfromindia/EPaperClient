@@ -117,7 +117,7 @@ export default function ContactPage() {
         >
           <section
               className={
-                "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted"
+                "flex px-5 py-3  justify-between items-center drop-shadow-sm"
               }
           >
             <div>

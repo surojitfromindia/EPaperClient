@@ -54,6 +54,7 @@ function PaginationSelector({
       onPageChange(currentPage - 1);
     }
   };
+  if(currentRecords === 0) return <></>
 
   return (
     <div className="inline-flex">

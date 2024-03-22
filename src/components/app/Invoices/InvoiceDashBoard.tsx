@@ -24,9 +24,10 @@ function InvoiceDashBoard({
     due_today_formatted,
     due_within_30_days_formatted,
     total_overdue_formatted,
+      total_outstanding_formatted
   } = invoiceDashboardData;
   return (
-    <section className={"w-full px-5 py-6 bg-accent-muted rounded"}>
+    <section className={"w-full p-6 bg-accent-muted rounded"}>
       <div className={"mb-4"}>
         <div className={"text-sm text-muted-foreground mr-4 inline-flex"}>
           Payment summary
@@ -53,7 +54,7 @@ function InvoiceDashBoard({
             </span>
             <div className={"mt-1"}>
               <span className={"font-semibold"}>
-                <Badge variant="default">Coming soon..</Badge>
+                    {total_outstanding_formatted}
               </span>
             </div>
           </div>
