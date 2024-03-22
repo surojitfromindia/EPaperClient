@@ -100,6 +100,8 @@ export default function InvoicePage() {
       due_within_30_days_formatted: "0.0",
       total_overdue: 0,
       total_overdue_formatted: "0.0",
+      total_outstanding_formatted: "0.0",
+      total_outstanding: 0,
     });
 
   const loadInvoices = useCallback((search_query_string: string) => {
@@ -273,9 +275,9 @@ export default function InvoicePage() {
       <div className={"w-full h-full flex "}>
         <div
           className={classNames(
-            "flex flex-col h-full overflow-y-auto relative shrink-0",
-            !isDetailsPageOpen && "w-full",
-            isDetailsPageOpen && `w-[400px]`,
+            !isDetailsPageOpen && "w-full flex",
+            isDetailsPageOpen && `w-[370px] hidden lg:flex`,
+            "flex-col h-full overflow-y-auto relative shrink-0",
           )}
         >
           <section
@@ -350,7 +352,7 @@ export default function InvoicePage() {
             {
               // invoice dashboard
               !isDetailsPageOpen && (
-                <div className={"py-3 px-3"}>
+                <div className={" px-3"}>
                   <InvoiceDashBoard
                     invoiceDashboardData={invoiceDashboardData}
                     isLoading={isDashboardLoading}

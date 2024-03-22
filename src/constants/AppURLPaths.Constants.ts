@@ -5,6 +5,10 @@ class INVENTORY {
   static ITEM_CREATE = this.basicPath + "/items/create";
   static ITEM_EDIT = (id: string) => `${this.basicPath}/items/${id}/edit`;
   static ITEM_DETAIL = (id: string) => `${this.basicPath}/items/${id}`;
+  static ITEM_DETAIL_COMMENTS = (id: string) =>
+    `${this.basicPath}/items/${id}/comments`;
+  static ITEM_DETAIL_TRANSACTIONS = (id: string) =>
+    `${this.basicPath}/items/${id}/transactions`;
 }
 
 class CUSTOMER {
@@ -79,6 +83,9 @@ const AppURLPaths = {
       ITEM_CREATE: EPaperURL.APP_PAGE.INVENTORY.ITEM_CREATE,
       ITEM_EDIT: EPaperURL.APP_PAGE.INVENTORY.ITEM_EDIT,
       ITEM_DETAIL: EPaperURL.APP_PAGE.INVENTORY.ITEM_DETAIL,
+      ITEM_DETAIL_COMMENTS: EPaperURL.APP_PAGE.INVENTORY.ITEM_DETAIL_COMMENTS,
+      ITEM_DETAIL_TRANSACTIONS:
+        EPaperURL.APP_PAGE.INVENTORY.ITEM_DETAIL_TRANSACTIONS,
     },
     CUSTOMERS: {
       INDEX: EPaperURL.APP_PAGE.CUSTOMERS.INDEX,

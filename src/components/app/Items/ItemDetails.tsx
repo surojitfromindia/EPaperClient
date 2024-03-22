@@ -20,6 +20,7 @@ import ItemService, { Item } from "@/API/Resources/v1/Item/Item.Service.ts";
 import LoaderComponent from "@/components/app/common/LoaderComponent.tsx";
 import { useAppSelector } from "@/redux/hooks.ts";
 import { RNumberFormatAsText } from "@/components/app/common/RNumberFormat.tsx";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
 
 const itemService = new ItemService();
 
@@ -63,19 +64,30 @@ export default function ItemDetails() {
   const handleCloseClick = () => {
     navigate(
       mergePathNameAndSearchParams({
-        path_name: "/app/inventory/items",
+        path_name: AppURLPaths.APP_PAGE.INVENTORY.ITEMS,
         search_params: search,
       }),
     );
   };
   const handleEditClick = useCallback(() => {
-    navigate(`/app/inventory/items/${editItemId}/edit`);
+    navigate(AppURLPaths.APP_PAGE.INVENTORY.ITEM_EDIT(item_id_param));
   }, [editItemId, navigate]);
   const handleTransactionTabClick = () => {
-    navigate(`/app/inventory/items/${editItemId}/transactions`);
+    navigate(
+      mergePathNameAndSearchParams({
+        path_name:
+          AppURLPaths.APP_PAGE.INVENTORY.ITEM_DETAIL_TRANSACTIONS(
+            item_id_param,
+          ),
+        search_params: search,
+      }),
+    );
   };
   const handleOverViewTabClick = () => {
-    navigate(`/app/inventory/items/${editItemId}`);
+    navigate(mergePathNameAndSearchParams({
+        path_name: AppURLPaths.APP_PAGE.INVENTORY.ITEM_DETAIL(item_id_param),
+        search_params: search,
+    }));
   };
 
   // effects

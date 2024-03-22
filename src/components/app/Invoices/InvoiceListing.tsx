@@ -242,7 +242,7 @@ export function InvoiceListing({
       >
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {!isLoading && (
-          <Table className={"h-full "}>
+          <Table className={"h-full min-w-max"}>
             {!shrinkTable && (
               <TableHeader
                 className={"bg-background shadow-sm sticky top-0 z-[1]"}
@@ -407,7 +407,7 @@ const BadgeTransactionStatus = ({
 }) => {
   let color: string;
   if (transaction_status === "draft") {
-    color = "bg-yellow-100 text-yellow-500 hover:bg-yellow-200";
+    color = "bg-gray-200 text-gray-500 hover:bg-gray-200";
   } else if (transaction_status === "sent" && due_days === 0) {
     color = "bg-violet-100 text-violet-500 hover:bg-violet-200";
   } else if (transaction_status === "sent" && due_days > 0) {
@@ -417,7 +417,7 @@ const BadgeTransactionStatus = ({
   }
 
   return (
-    <Badge className={`${color} uppercase  text-xs font-medium`}>
+    <Badge className={`${color} uppercase  text-xs font-medium overflow-hidden`}>
       {text_value}
     </Badge>
   );
