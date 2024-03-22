@@ -41,6 +41,7 @@ interface InvoiceTableView
     | "due_date_formatted"
     | "due_days_formatted"
     | "total"
+    | "balance"
   > {}
 
 interface FixedTableFields
@@ -77,6 +78,10 @@ export function InvoiceListing({
   const { entity_select_columns } = useAppSelector(
     selectCustomViewStateOfInvoice,
   );
+  const active_entity_select_columns = useMemo(
+    () => entity_select_columns.filter((ec) => ec.default_filter_order > -1),
+    [entity_select_columns],
+  );
 
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -95,7 +100,9 @@ export function InvoiceListing({
     setLastSelectedId(invoice_id);
     navigate(
       mergePathNameAndSearchParams({
-        path_name: AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(invoice_id.toString()),
+        path_name: AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(
+          invoice_id.toString(),
+        ),
         search_params: search,
       }),
     );
@@ -126,6 +133,13 @@ export function InvoiceListing({
       },
       total: {
         label: "total",
+        removable: true,
+        type: "numeric",
+        isCurrency: true,
+        currencyPrefix: (value: string) => value,
+      },
+      balance: {
+        label: "balance due",
         removable: true,
         type: "numeric",
         isCurrency: true,
@@ -212,7 +226,11 @@ export function InvoiceListing({
   }
   return (
     <>
-      <section className={"flex flex-col items-center overflow-y-auto grow-0"}>
+      <section
+        className={
+          "flex flex-col items-center overflow-y-auto grow-0 border-r-1"
+        }
+      >
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {!isLoading && (
           <Table className={"h-full "}>
@@ -222,18 +240,16 @@ export function InvoiceListing({
               >
                 <TableRow className={"uppercase text-xs"}>
                   <TableHead className={"w-12"}>&nbsp;</TableHead>
-                  {entity_select_columns
-                    .filter((col) => col.default_filter_order > -1)
-                    .map((col) => (
-                      <TableHead
-                        key={col.key}
-                        className={classNames(
-                          col.align === "right" && "text-right",
-                        )}
-                      >
-                        <div className={""}>{col.value}</div>
-                      </TableHead>
-                    ))}
+                  {active_entity_select_columns.map((col) => (
+                    <TableHead
+                      key={col.key}
+                      className={classNames(
+                        col.align === "right" && "text-right",
+                      )}
+                    >
+                      <div className={""}>{col.value}</div>
+                    </TableHead>
+                  ))}
                   <TableHead>&nbsp;</TableHead>
                 </TableRow>
               </TableHeader>
@@ -296,7 +312,18 @@ export function InvoiceListing({
                         "py-3 font-medium whitespace-nowrap align-top link_blue "
                       }
                     >
-                      <span className={"w-36"}>{invoice.invoice_number}</span>
+                      <Link
+                        to={mergePathNameAndSearchParams({
+                          path_name:
+                            AppURLPaths.APP_PAGE.INVOICES.INVOICE_DETAIL(
+                              invoice.invoice_id.toString(),
+                            ),
+                          search_params: search,
+                        })}
+                        className={"w-36"}
+                      >
+                        {invoice.invoice_number}
+                      </Link>
                     </TableCell>
                     <>
                       {!shrinkTable && <DynamicRowElement invoice={invoice} />}
@@ -384,6 +411,7 @@ const InvoiceSidePanelItem = ({ invoice }: { invoice: Invoice }) => {
           >
             {invoice.invoice_number}
           </Link>
+
           <div className={"text-muted-foreground"}>
             {invoice.issue_date_formatted}
           </div>

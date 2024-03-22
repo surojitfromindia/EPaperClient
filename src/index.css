@@ -110,6 +110,12 @@
   .link_blue {
     @apply text-primary/80 cursor-pointer
   }
+
+  .hover_blue {
+    @apply hover:text-primary/80 cursor-pointer !important;
+  }
+
+
   .link_disabled {
     @apply text-primary/30 cursor-not-allowed
   }

@@ -37,6 +37,8 @@ interface InvoiceGenerated {
   sub_total_formatted: string;
   total_formatted: string;
   exchange_rate_formatted: string;
+  balance: number;
+  balance_formatted: string;
 }
 interface InvoiceLineItemGenerated {
   line_item_id: number;
@@ -255,7 +257,17 @@ class InvoiceService implements APIService {
   getInvoiceDashboard() {
     const url = this.urlFragment + "/dashboard";
     return this.#axiosConfig.APIGetRequestWrapper<{
-      dash_board_data: InvoiceDashboardData
+      dash_board_data: InvoiceDashboardData;
+    }>(url, {
+      searchParameters: [],
+      abortController: this.abortController,
+    });
+  }
+
+  getInvoice({ invoice_id }: { invoice_id: number }) {
+    const url = this.urlFragment + "/" + invoice_id;
+    return this.#axiosConfig.APIGetRequestWrapper<{
+      invoice: Invoice;
     }>(url, {
       searchParameters: [],
       abortController: this.abortController,

@@ -222,9 +222,7 @@ const router = createBrowserRouter([
                 path: ":invoice_id_param",
                 element: (
                   <LazyWrapper>
-                    <div className={"px-5"}>
-                      <ArrivingSoon />
-                    </div>
+                    <InvoiceDetails />
                   </LazyWrapper>
                 ),
               },
