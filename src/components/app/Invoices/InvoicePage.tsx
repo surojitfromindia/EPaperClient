@@ -266,11 +266,11 @@ export default function InvoicePage() {
   };
   const handleDashboardRefresh = () => {
     loadInvoiceDashboard();
-  }
+  };
 
   return (
     <>
-      <div className={"w-full h-full flex"}>
+      <div className={"w-full h-full flex "}>
         <div
           className={classNames(
             "flex flex-col h-full overflow-y-auto relative shrink-0",
@@ -280,7 +280,7 @@ export default function InvoicePage() {
         >
           <section
             className={
-              "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted"
+              "flex px-5 py-3  justify-between items-center drop-shadow-sm bg-accent-muted border-r-1"
             }
           >
             <div>
@@ -346,7 +346,7 @@ export default function InvoicePage() {
               </DropdownMenu>
             </div>
           </section>
-          <div className={"overflow-y-auto flex-grow"}>
+          <div className={"overflow-y-auto flex-grow border-r-1"}>
             {
               // invoice dashboard
               !isDetailsPageOpen && (
