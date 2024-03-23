@@ -27,7 +27,7 @@ function InvoiceDashBoard({
       total_outstanding_formatted
   } = invoiceDashboardData;
   return (
-    <section className={"min-w-full overflow-scroll p-6 bg-accent-muted rounded"}>
+    <section className={"min-w-full overflow-y-scroll p-6 bg-accent-muted rounded"}>
       <div className={"mb-4"}>
         <div className={"text-sm text-muted-foreground mr-4 inline-flex"}>
           Payment summary
