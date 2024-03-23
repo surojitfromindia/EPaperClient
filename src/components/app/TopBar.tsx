@@ -1,12 +1,10 @@
-import { CheckCircle, CircleDollarSign, LucideSettings } from "lucide-react";
+import { LucideSettings } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Link } from "react-router-dom";
-import React, { useEffect, useMemo } from "react";
-import { AppStateOrganization } from "@/API/Resources/v1/AppState/AppState.ts";
+import React, { useEffect } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -14,11 +12,12 @@ import {
 import { useAppSelector } from "@/redux/hooks.ts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar.tsx";
 import {
-  Organization,
   OrganizationsUser,
 } from "@/API/Resources/v1/Organization/Organization";
 import OrganizationService from "@/API/Resources/v1/Organization/Organization.Service.ts";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
+import { AppURLPaths } from "../../constants/AppURLPaths.Constants";
+import EPaperLogo from "./common/EpaperLogo";
 
 const organizationService = new OrganizationService();
 
@@ -46,8 +45,8 @@ export default function TopBar() {
       <div className={"logo_container h-12 w-[200px] -m-1 overflow-hidden "}>
         <div className={"logo-collapse flex items-center"}>
           <span className={"mt-3 mb-3 ml-4 h-6"}>
-            <Link to={"/app/dashboard"}>
-              <CircleDollarSign className={"inline-flex mr-2"} />
+            <Link to={AppURLPaths.APP_PAGE.APP_HOME.INDEX}>
+              <EPaperLogo className={"inline-flex mr-2 -mt-1"} />
               EPaper
             </Link>
           </span>
