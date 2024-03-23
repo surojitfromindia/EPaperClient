@@ -10,8 +10,8 @@ const invoiceLineItemSchema = z.object({
       value: z.number().optional(),
     },
     {
-      invalid_type_error: "Please select an item",
-      required_error: "Please select an item",
+      invalid_type_error: "Select an item",
+      required_error: "Select an item",
     },
   ),
   line_item_id: z.number().optional(),
@@ -24,8 +24,8 @@ const invoiceLineItemSchema = z.object({
       value: z.number(),
     },
     {
-      invalid_type_error: "Please select an item account",
-      required_error: "Please select an item account",
+      invalid_type_error: "Select an item account",
+      required_error: "Select an item account",
     },
   ),
   unit: z.string().optional(),

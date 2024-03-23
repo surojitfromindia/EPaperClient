@@ -176,7 +176,7 @@ function ContactDetails() {
               </Button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant={"default"}>
+                  <Button variant={"default"} className="!px-3">
                     New transaction
                     <ChevronDown className={"w-4 h-4 ml-1"} />
                   </Button>
@@ -192,7 +192,7 @@ function ContactDetails() {
               </DropdownMenu>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant={"outline"}>
+                  <Button variant={"outline"} className="!px-3">
                     More
                     <ChevronDown className={"w-4 h-4 ml-1"} />
                   </Button>

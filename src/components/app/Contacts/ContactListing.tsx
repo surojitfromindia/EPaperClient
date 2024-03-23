@@ -245,7 +245,7 @@ export default function ContactListing({
                 </TableRow>
               </TableHeader>
             )}
-            <TableBody>
+            <TableBody className={"border-t-1"}>
               {contacts.map((contact) => (
                 <TableRow
                   key={contact.contact_id}

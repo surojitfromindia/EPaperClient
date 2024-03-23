@@ -204,21 +204,7 @@ export function LineItemInputTable({
 
   // hold id of the item we are editing in modal
   const [itemEditingModalOpenFor, setItemEditingModalOpenFor] = useState(null);
-  /**
-   * only call this function if we want to update any needed state in the parent component.
-   * such as selected item, or when tax treatment is changed.
-   * or a new row is added, deleted, cloned.
-   */
-  const updateParentLineItemState = useCallback(
-    (new_line_items: LineItemRowType[]) => {
-      updateParentLineItemAndTaxState(
-        new_line_items,
-        isInclusiveTax,
-        exchangeRateValue,
-      );
-    },
-    [isInclusiveTax, exchangeRateValue],
-  );
+
   const updateParentLineItemAndTaxState = useCallback(
     (
       new_line_items: LineItemRowType[],
@@ -234,6 +220,22 @@ export function LineItemInputTable({
     },
     [onLineItemsUpdate],
   );
+  /**
+   * only call this function if we want to update any needed state in the parent component.
+   * such as selected item, or when tax treatment is changed.
+   * or a new row is added, deleted, cloned.
+   */
+  const updateParentLineItemState = useCallback(
+    (new_line_items: LineItemRowType[]) => {
+      updateParentLineItemAndTaxState(
+        new_line_items,
+        isInclusiveTax,
+        exchangeRateValue,
+      );
+    },
+    [updateParentLineItemAndTaxState, isInclusiveTax, exchangeRateValue],
+  );
+  
   useEffect(() => {
     // at the time of creation, if line_items is empty, then add a blank row.
     if (isCreateMode && lineItems.length === 0) {
@@ -820,6 +822,7 @@ export function LineItemInputTable({
                                 index,
                               );
                             }}
+                            cacheOptions={true}
                             isLoading={isInitialLoadingInProgress}
                             hideSelectedOptions={true}
                             noOptionsMessage={() => "No item found"}
@@ -997,7 +1000,7 @@ export function LineItemInputTable({
                           </DropdownMenu>
                         </div>
                         {
-                          <div
+                         lineItems.length!==1 && <div
                             className={"absolute -top-[17px] -right-[55px] "}
                           >
                             <XCircle

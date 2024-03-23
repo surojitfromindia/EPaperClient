@@ -45,6 +45,7 @@ export default function ContactPage() {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
   const loadContacts = useCallback(() => {
+    setIsLoading(true)
     contactService.getContacts().then((contacts) => {
       setContacts(contacts?.contacts ?? []);
       setIsLoading(false);
@@ -102,22 +103,22 @@ export default function ContactPage() {
   ];
 
   const handleListRefresh = useCallback(() => {
-    // todo
-  }, [])
+    loadContacts()
+  }, [loadContacts])
 
   return (
     <>
       <div className={"w-full h-full flex"}>
         <div
           className={classNames(
-            "flex flex-col h-full overflow-y-auto relative shrink-0",
-            !isDetailsPageOpen && "w-full",
-            isDetailsPageOpen && `w-[350px]`,
+            !isDetailsPageOpen && "w-full flex",
+            isDetailsPageOpen && `w-[270px] hidden lg:flex`,
+            "flex-col h-full overflow-y-auto relative shrink-0",
           )}
         >
           <section
               className={
-                "flex px-5 py-3  justify-between items-center drop-shadow-sm"
+                "flex px-5 py-3  justify-between items-center drop-shadow-sm border-r-1"
               }
           >
             <div>
@@ -164,7 +165,7 @@ export default function ContactPage() {
             </div>
 
           </section>
-          <div className={"overflow-y-auto flex-grow"}>
+          <div className={"overflow-y-auto flex-grow border-r-1"}>
             <ContactListing
                 shrinkTable={isDetailsPageOpen}
                 selectedContactId={selectedContactId}
