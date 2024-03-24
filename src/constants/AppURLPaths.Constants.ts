@@ -35,9 +35,10 @@ class INVOICE {
 
   static INVOICE_DETAIL_TRANSACTIONS = (id: string) =>
     `${this.basicPath}/${id}/transactions`;
+  static INVOICE_PAYMENT = (id: string) => `${this.basicPath}/${id}/payment`;
 }
 
-// home page of the app it will have dashboard and get started and other pages
+// home page of the app it will have a dashboard and get started and other pages
 class APP_HOME {
   static basicPath = "/app/home";
   static INDEX = this.basicPath;
@@ -106,6 +107,7 @@ const AppURLPaths = {
         EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_COMMENTS,
       INVOICE_DETAIL_TRANSACTIONS:
         EPaperURL.APP_PAGE.INVOICE.INVOICE_DETAIL_TRANSACTIONS,
+      INVOICE_PAYMENT: EPaperURL.APP_PAGE.INVOICE.INVOICE_PAYMENT,
     },
   },
 };

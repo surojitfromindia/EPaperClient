@@ -79,6 +79,7 @@ const defaultIssueDate = new Date();
 export default function InvoiceAdd() {
   const { invoice_id_param } = useParams();
   const { search } = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(search);
 
   const editInvoiceId = useMemo(() => {
@@ -91,7 +92,6 @@ export default function InvoiceAdd() {
   const contact_id_search_param = searchParams.get('contact_id');
   const isEditMode = useMemo(() => !!editInvoiceId, [editInvoiceId]);
   const pageHeaderText = isEditMode ? 'update invoice' : 'new invoice';
-  const navigate = useNavigate();
 
   // edit page states
   const [editPageInvoiceDetails, setEditPageInvoiceDetails] = useState<Invoice>();
@@ -616,6 +616,7 @@ export default function InvoiceAdd() {
                               handleInvoiceNumberOnBlur(event.target.value);
                             }}
                             onChange={() => {}}
+                            disabled={invoiceSettings.is_auto_number_enabled}
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <Settings2Icon className={'w-4 h-4 text-primary'} onClick={handleAutoNumberModalOpen} />

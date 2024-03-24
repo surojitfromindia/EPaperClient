@@ -17,7 +17,7 @@ const reactSelectStyle: ClassNamesConfig = {
       "!border-input",
       state.isFocused && "!border-ring !shadow-none",
       "!text-sm",
-      state.isDisabled && "!cursor-not-allowed",
+      state.isDisabled && "!cursor-not-allowed !bg-transparent",
     ),
   container: (state) =>
     classNames(
@@ -28,7 +28,7 @@ const reactSelectStyle: ClassNamesConfig = {
   menuList: () => classNames("!p-1 !max-h-52 overflow-y-scroll"),
 };
 const reactSelectComponentOverride = {
-  IndicatorSeparator: ():null => null,
+  IndicatorSeparator: (): null => null,
 };
 
 const reactSelectStyleBorderLess: ClassNamesConfig = {

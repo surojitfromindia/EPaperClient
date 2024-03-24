@@ -50,6 +50,12 @@ const InvoiceDetails = React.lazy(
 const AppHome = React.lazy(
   () => import("@/components/app/AppHome/AppHome.tsx"),
 );
+const CustomerPaymentSingleInvoice = React.lazy(
+  () =>
+    import(
+      "@/components/app/CustomerPayments/CustomerPaymentSingleInvoice.tsx"
+    ),
+);
 
 const LazyWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -140,7 +146,6 @@ const router = createBrowserRouter([
         ],
         errorElement: <Page404 />,
       },
-
       {
         path: "inventory",
         errorElement: <Page404 />,
@@ -226,6 +231,14 @@ const router = createBrowserRouter([
                   </LazyWrapper>
                 ),
               },
+              {
+                path: ":invoice_id_param/payment",
+                element: (
+                  <LazyWrapper>
+                    <CustomerPaymentSingleInvoice />
+                  </LazyWrapper>
+                ),
+              },
             ],
           },
           {
@@ -304,7 +317,6 @@ const router = createBrowserRouter([
           },
         ],
       },
-
       {
         path: "*",
         element: <Page404 />,
