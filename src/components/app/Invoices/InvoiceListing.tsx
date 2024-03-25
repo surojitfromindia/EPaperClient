@@ -40,7 +40,7 @@ interface InvoiceTableView
     | "invoice_number"
     | "contact_name"
     | "due_date_formatted"
-    | "due_days_formatted"
+    | "transaction_status_formatted"
     | "total"
     | "balance"
   > {}
@@ -130,9 +130,9 @@ export function InvoiceListing({
         removable: true,
         type: "text",
       },
-      due_days_formatted: {
+      transaction_status_formatted: {
         label: "status",
-        removable: true,
+        removable: false,
         type: "enum",
       },
       contact_name: {
@@ -189,12 +189,13 @@ export function InvoiceListing({
             thousandSeparator={true}
           />
         );
-      } else if (col_data.type === "enum" && col_key === "due_days_formatted") {
+      } else if (col_data.type === "enum" && col_key === "transaction_status_formatted") {
         content = (
           <BadgeTransactionStatus
             due_days={invoice.due_days}
             transaction_status={invoice.transaction_status}
             text_value={invoice[col_key]}
+            payment_status={invoice.payment_status}
           />
         );
       } else {
@@ -404,16 +405,24 @@ const BadgeTransactionStatus = ({
   transaction_status,
   due_days,
   text_value,
+  payment_status
 }) => {
   let color: string;
-  if (transaction_status === "draft") {
-    color = "bg-gray-200 text-gray-500 hover:bg-gray-200";
-  } else if (transaction_status === "sent" && due_days === 0) {
-    color = "bg-violet-100 text-violet-500 hover:bg-violet-200";
-  } else if (transaction_status === "sent" && due_days > 0) {
-    color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
-  } else if (transaction_status === "sent" && due_days < 0) {
-    color = "bg-red-100 text-red-500 hover:bg-red-200";
+  if(payment_status==="paid" || payment_status==="partial_paid"){
+    color = "bg-green-100 text-green-500 hover:bg-green-200"
+  }
+
+
+  if(payment_status!=="paid"){
+    if (transaction_status === "draft") {
+      color = "bg-gray-200 text-gray-500 hover:bg-gray-200";
+    } else if (transaction_status === "sent" && due_days === 0) {
+      color = "bg-violet-100 text-violet-500 hover:bg-violet-200";
+    } else if (transaction_status === "sent" && due_days > 0) {
+      color = "bg-blue-100 text-blue-500 hover:bg-blue-200";
+    } else if (transaction_status === "sent" && due_days < 0) {
+      color = "bg-red-100 text-red-500 hover:bg-red-200";
+    }
   }
 
   return (
@@ -448,7 +457,8 @@ const InvoiceSidePanelItem = ({ invoice }: { invoice: Invoice }) => {
           <BadgeTransactionStatus
             due_days={invoice.due_days}
             transaction_status={invoice.transaction_status}
-            text_value={invoice.due_days_formatted}
+            text_value={invoice.transaction_status_formatted}
+            payment_status={invoice.payment_status}
           />
         </div>
       </div>

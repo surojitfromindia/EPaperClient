@@ -28,7 +28,6 @@ interface InvoiceGenerated {
   sub_total: number;
   total: number;
   due_days: number;
-  due_days_formatted: string;
   transaction_status_formatted: string;
   issue_date_formatted: string;
   due_date_formatted: string;
@@ -39,6 +38,7 @@ interface InvoiceGenerated {
   exchange_rate_formatted: string;
   balance: number;
   balance_formatted: string;
+  payment_status : "paid" | "not_paid" | "partial_paid"
 }
 interface InvoiceLineItemGenerated {
   line_item_id: number;
@@ -54,7 +54,6 @@ interface Invoice extends InvoiceGenerated {
   payment_term_name?: string;
   payment_term?: number;
   payment_term_interval?: string;
-
   contact_id: number;
   contact_name: string;
   reference_number: string;
