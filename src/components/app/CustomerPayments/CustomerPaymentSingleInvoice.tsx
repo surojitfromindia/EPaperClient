@@ -1,27 +1,36 @@
-import { Button } from '@/components/ui/button.tsx';
-import { Loader2, Settings2Icon } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { mergePathNameAndSearchParams } from '@/util/urlUtil.ts';
-import { AppURLPaths } from '@/constants/AppURLPaths.Constants.ts';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form.tsx';
-import ReactAsyncSelect from 'react-select/async';
-import { reactSelectComponentOverride, reactSelectStyle } from '@/util/style/reactSelectStyle.ts';
-import ReactSelect from 'react-select';
-import { Input } from '@/components/ui/input.tsx';
-import { Separator } from '@/components/ui/separator.tsx';
-import { Textarea } from '@/components/ui/textarea.tsx';
-import { FormValidationErrorAlert } from '@/components/app/common/FormValidationErrorAlert.tsx';
-import { ReactHookFormUtil } from '@/util/reactHookFormUtil.ts';
-import { DateUtil } from '@/util/dateUtil.ts';
-import { ValidityUtil } from '@/util/ValidityUtil.ts';
+import { Button } from "@/components/ui/button.tsx";
+import { Loader2, Settings2Icon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { mergePathNameAndSearchParams } from "@/util/urlUtil.ts";
+import { AppURLPaths } from "@/constants/AppURLPaths.Constants.ts";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form.tsx";
+import ReactAsyncSelect from "react-select/async";
+import {
+  reactSelectComponentOverride,
+  reactSelectStyle,
+} from "@/util/style/reactSelectStyle.ts";
+import ReactSelect from "react-select";
+import { Input } from "@/components/ui/input.tsx";
+import { Separator } from "@/components/ui/separator.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
+import { FormValidationErrorAlert } from "@/components/app/common/FormValidationErrorAlert.tsx";
+import { ReactHookFormUtil } from "@/util/reactHookFormUtil.ts";
+import { DateUtil } from "@/util/dateUtil.ts";
+import { ValidityUtil } from "@/util/ValidityUtil.ts";
 
 const defaultIssueDate = new Date();
 
-function CustomerPaymentSingleInvoice() {
+export default function CustomerPaymentSingleInvoice() {
   const navigate = useNavigate();
   const { invoice_id_param } = useParams();
   const { search } = useLocation();
@@ -456,5 +465,3 @@ function CustomerPaymentSingleInvoice() {
     </div>
   );
 }
-
-export default CustomerPaymentSingleInvoice;
