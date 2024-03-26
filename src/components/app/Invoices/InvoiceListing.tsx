@@ -411,9 +411,7 @@ const BadgeTransactionStatus = ({
   if(payment_status==="paid" || payment_status==="partial_paid"){
     color = "bg-green-100 text-green-500 hover:bg-green-200"
   }
-
-
-  if(payment_status!=="paid"){
+  else{
     if (transaction_status === "draft") {
       color = "bg-gray-200 text-gray-500 hover:bg-gray-200";
     } else if (transaction_status === "sent" && due_days === 0) {
