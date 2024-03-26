@@ -408,8 +408,11 @@ const BadgeTransactionStatus = ({
   payment_status
 }) => {
   let color: string;
-  if(payment_status==="paid" || payment_status==="partial_paid"){
+  if(payment_status==="paid" ){
     color = "bg-green-100 text-green-500 hover:bg-green-200"
+  }
+  else if(payment_status==="partial_paid"){
+    color = "bg-lime-200 text-lime-600 hover:bg-lime-300"
   }
   else{
     if (transaction_status === "draft") {
